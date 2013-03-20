@@ -1,9 +1,10 @@
-#include <GL/glew.h>
-#include <GL/glfw.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 #include <tinythread.h>
+
+#include "Utils.h"
 
 using namespace tthread;
 
@@ -20,11 +21,29 @@ bool TitleUpdated = false;
 
 char* TitleString;
 
+GLuint
+    ProjectionMatrixUniformLocation,
+    ViewMatrixUniformLocation,
+    ModelMatrixUniformLocation,
+    BufferIds[3] = { 0 },
+    ShaderIds[3] = { 0 };
+
+glm::mat4
+    ProjectionMatrix,
+    ViewMatrix,
+    ModelMatrix;
+
+float CubeRotation;
+double LastTime = 0;
+
 void Initialize();
 void InitWindow();
 void GLFWCALL ResizeFunction(int, int);
 void RenderFunction(void);
 void FramesTimer(void* arg);
+void CreateCube(void);
+void DestroyCube(void);
+void DrawCube(void);
 
 int main(void)
 {
@@ -52,6 +71,8 @@ int main(void)
     runFrameTimer = false;
     frameThread.join();
 
+    DestroyCube();
+
     // Close window and terminate GLFW
     glfwTerminate();
 
@@ -65,6 +86,7 @@ void Initialize(void)
 
     InitWindow();
 
+    glewExperimental = GL_TRUE;
     GlewInitResult = glewInit();
 
     if (GLEW_OK != GlewInitResult) {
@@ -82,7 +104,25 @@ void Initialize(void)
         glGetString(GL_VERSION)
     );
 
+    glGetError();
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
+    ExitOnGLError("ERROR: Could not set OpenGL depth testing options");
+
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+    glFrontFace(GL_CCW);
+    ExitOnGLError("ERROR: Could not set OpenGL culling options");
+
+    ModelMatrix = glm::mat4(1.0f);
+    ProjectionMatrix = glm::mat4(1.0f);
+    ViewMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, -2));
+
+    CreateCube();
+
+    glfwSetWindowSizeCallback(ResizeFunction);
 }
 
 void InitWindow(void)
@@ -109,7 +149,8 @@ void InitWindow(void)
 
     glfwSetWindowTitle(WINDOW_TITLE_PREFIX);
 
-    glfwSetWindowSizeCallback(ResizeFunction);
+    // 1 for vsync on, 0 vsync off
+    glfwSwapInterval(0);
 }
 
 void GLFWCALL ResizeFunction(int width, int height)
@@ -118,15 +159,28 @@ void GLFWCALL ResizeFunction(int width, int height)
     CurrentHeight = height;
 
     glViewport(0, 0, CurrentWidth, CurrentHeight);
+
+    ProjectionMatrix =
+        glm::perspective(
+            60.0f,
+            (float)CurrentWidth / CurrentHeight,
+            1.0f,
+            100.0f
+        );
+
+    glUseProgram(ShaderIds[0]);
+    glUniformMatrix4fv(ProjectionMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(ProjectionMatrix));
+    glUseProgram(0);
 }
 
 void RenderFunction()
 {
     ++FrameCount;
-    // OpenGL rendering goes here...
+
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // Swap front and back rendering buffers
+    DrawCube();
+
     glfwSwapBuffers();
 }
 
@@ -152,3 +206,124 @@ void FramesTimer(void * arg)
     }
 }
 
+void CreateCube()
+{
+    const Vertex VERTICES[8] =
+    {
+        { { -.5f, -.5f,  .5f, 1 }, { 0, 0, 1, 1 } },
+        { { -.5f,  .5f,  .5f, 1 }, { 1, 0, 0, 1 } },
+        { {  .5f,  .5f,  .5f, 1 }, { 0, 1, 0, 1 } },
+        { {  .5f, -.5f,  .5f, 1 }, { 1, 1, 0, 1 } },
+        { { -.5f, -.5f, -.5f, 1 }, { 1, 1, 1, 1 } },
+        { { -.5f,  .5f, -.5f, 1 }, { 1, 0, 0, 1 } },
+        { {  .5f,  .5f, -.5f, 1 }, { 1, 0, 1, 1 } },
+        { {  .5f, -.5f, -.5f, 1 }, { 0, 0, 1, 1 } }
+    };
+
+    const GLuint INDICES[36] =
+    {
+        0,2,1,  0,3,2,
+        4,3,0,  4,7,3,
+        4,1,5,  4,0,1,
+        3,6,2,  3,7,6,
+        1,6,5,  1,2,6,
+        7,5,6,  7,4,5
+    };
+
+    ShaderIds[0] = glCreateProgram();
+    ExitOnGLError("ERROR: Could not create the shader program");
+    {
+        ShaderIds[1] = LoadShader("./simple.frag", GL_FRAGMENT_SHADER);
+        ShaderIds[2] = LoadShader("./simple.vert", GL_VERTEX_SHADER);
+        glAttachShader(ShaderIds[0], ShaderIds[1]);
+        glAttachShader(ShaderIds[0], ShaderIds[2]);
+    }
+    glLinkProgram(ShaderIds[0]);
+    ExitOnGLError("ERROR: Could not link the shader program");
+
+    ModelMatrixUniformLocation = glGetUniformLocation(ShaderIds[0], "ModelMatrix");
+    ViewMatrixUniformLocation = glGetUniformLocation(ShaderIds[0], "ViewMatrix");
+    ProjectionMatrixUniformLocation = glGetUniformLocation(ShaderIds[0], "ProjectionMatrix");
+    ExitOnGLError("ERROR: Could not get shader uniform locations");
+
+    glGenVertexArrays(1, &BufferIds[0]);
+    ExitOnGLError("ERROR: Could not generate the VAO");
+    glBindVertexArray(BufferIds[0]);
+    ExitOnGLError("ERROR: Could not bind the VAO");
+
+    glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(1);
+    ExitOnGLError("ERROR: Could not enable vertex attributes");
+
+    glGenBuffers(2, &BufferIds[1]);
+    ExitOnGLError("ERROR: Could not generate the buffer objects");
+
+    glBindBuffer(GL_ARRAY_BUFFER, BufferIds[1]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(VERTICES), VERTICES, GL_STATIC_DRAW);
+    ExitOnGLError("ERROR: Could not bind the VBO to the VAO");
+
+    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(VERTICES[0]), (GLvoid*)0);
+    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(VERTICES[0]), (GLvoid*)sizeof(VERTICES[0].Position));
+    ExitOnGLError("ERROR: Could not set VAO attributes");
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, BufferIds[2]);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(INDICES), INDICES, GL_STATIC_DRAW);
+    ExitOnGLError("ERROR: Could not bind the IBO to the VAO");
+
+    glBindVertexArray(0);
+}
+
+void DestroyCube()
+{
+    glDetachShader(ShaderIds[0], ShaderIds[1]);
+    glDetachShader(ShaderIds[0], ShaderIds[2]);
+    glDeleteShader(ShaderIds[1]);
+    glDeleteShader(ShaderIds[2]);
+    glDeleteProgram(ShaderIds[0]);
+    ExitOnGLError("ERROR: Could not destroy the shaders");
+
+    glDeleteBuffers(2, &BufferIds[1]);
+    glDeleteVertexArrays(1, &BufferIds[0]);
+    ExitOnGLError("ERROR: Could not destroy the buffer objects");
+}
+
+void DrawCube(void)
+{
+    float CubeAngle;
+    double Now = glfwGetTime();
+
+    if (LastTime == 0) {
+        LastTime = Now;
+    }
+
+    CubeRotation += 1000.0f * (Now - LastTime);
+    CubeAngle = glm::radians(CubeRotation);
+    LastTime = Now;
+
+    ModelMatrix = glm::mat4(1.0f);
+    ModelMatrix = glm::rotate(
+        glm::mat4(1.0f),
+        CubeAngle, glm::vec3(1.0f, 0, 0));
+    ModelMatrix = glm::rotate(
+        ModelMatrix,
+        CubeAngle, glm::vec3(0, 1.0f, 0));
+
+    // RotateAboutY(&ModelMatrix, CubeAngle);
+    // RotateAboutX(&ModelMatrix, CubeAngle);
+
+    glUseProgram(ShaderIds[0]);
+    ExitOnGLError("ERROR: Could not use the shader program");
+
+    glUniformMatrix4fv(ModelMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(ModelMatrix));
+    glUniformMatrix4fv(ViewMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(ViewMatrix));
+    ExitOnGLError("ERROR: Could not set the shader uniforms");
+
+    glBindVertexArray(BufferIds[0]);
+    ExitOnGLError("ERROR: Could not bind the VAO for drawing purposes");
+
+    glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, (GLvoid*)0);
+    ExitOnGLError("ERROR: Could not draw the cube");
+
+    glBindVertexArray(0);
+    glUseProgram(0);
+}

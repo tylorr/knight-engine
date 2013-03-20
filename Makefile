@@ -60,7 +60,7 @@
 MY_CFLAGS = -Iinclude -DGLFW_DLL
 
 # The linker options.
-MY_LIBS   = -Llib -lglew32 -lglfwdll -lopengl32
+MY_LIBS   = -Llib -lglfwdll -lglu32 -lopengl32
 
 # The pre-processor options used by the cpp (man cpp for more).
 CPPFLAGS  = -Wall
@@ -88,8 +88,8 @@ HDREXTS = .h .H .hh .hpp .HPP .h++ .hxx .hp
 
 # The pre-processor and compiler options.
 # Users can override those variables from the command line.
-CFLAGS  = -g -O2
-CXXFLAGS= -g -O2
+CFLAGS  = -g
+CXXFLAGS= -g
 
 # The C program compiler.
 #CC     = gcc

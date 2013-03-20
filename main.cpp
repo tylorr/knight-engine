@@ -3,6 +3,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <tinythread.h>
+
+using namespace tthread;
+
 #define WINDOW_TITLE_PREFIX "Chapter 1"
 
 int CurrentWidth = 800,
@@ -11,11 +15,16 @@ int CurrentWidth = 800,
 
 unsigned FrameCount = 0;
 
+bool runFrameTimer = true;
+bool TitleUpdated = false;
+
+char* TitleString;
+
 void Initialize();
 void InitWindow();
 void GLFWCALL ResizeFunction(int, int);
 void RenderFunction(void);
-void TimerFunction(int);
+void FramesTimer(void * arg);
 
 int main(void)
 {
@@ -23,15 +32,28 @@ int main(void)
 
     int running = GL_TRUE;
 
+    thread frameThread(FramesTimer, 0);
+
     // Main loop
     while (running)
     {
+        if (TitleUpdated) {
+            glfwSetWindowTitle(TitleString);
+            TitleUpdated = false;
+        }
+
         RenderFunction();
+
+
+        // UpdateTitle();
 
         // Check if ESC key was pressed or window was closed
         running = !glfwGetKey(GLFW_KEY_ESC) &&
                    glfwGetWindowParam(GLFW_OPENED);
     }
+
+    runFrameTimer = false;
+    frameThread.join();
 
     // Close window and terminate GLFW
     glfwTerminate();
@@ -103,10 +125,33 @@ void GLFWCALL ResizeFunction(int width, int height)
 
 void RenderFunction()
 {
+    ++FrameCount;
     // OpenGL rendering goes here...
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // Swap front and back rendering buffers
     glfwSwapBuffers();
+}
+
+void FramesTimer(void * arg)
+{
+    while(runFrameTimer) {
+        glfwSleep(0.25);
+
+        TitleString = (char*)
+            malloc(512 + strlen(WINDOW_TITLE_PREFIX));
+
+        sprintf(
+            TitleString,
+            "%s: %d Frames Per Second @ %d x %d",
+            WINDOW_TITLE_PREFIX,
+            FrameCount * 4,
+            CurrentWidth,
+            CurrentHeight
+        );
+
+        TitleUpdated = true;
+        FrameCount = 0;
+    }
 }
 

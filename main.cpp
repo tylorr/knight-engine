@@ -24,7 +24,7 @@ void Initialize();
 void InitWindow();
 void GLFWCALL ResizeFunction(int, int);
 void RenderFunction(void);
-void FramesTimer(void * arg);
+void FramesTimer(void* arg);
 
 int main(void)
 {
@@ -43,9 +43,6 @@ int main(void)
         }
 
         RenderFunction();
-
-
-        // UpdateTitle();
 
         // Check if ESC key was pressed or window was closed
         running = !glfwGetKey(GLFW_KEY_ESC) &&

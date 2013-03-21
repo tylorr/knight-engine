@@ -134,7 +134,7 @@ void Initialize(void)
     CreateCube();
 
     int x, y, n;
-    unsigned char *data = stbi_load("CenterPiece.png", &x, &y, &n, 0);
+    unsigned char *data = stbi_load("textures/CenterPiece.png", &x, &y, &n, 0);
 
     printf("%i\n", x);
     printf("%i\n", y);
@@ -143,12 +143,6 @@ void Initialize(void)
     glGenTextures(1, &textureID);
     glBindTexture(GL_TEXTURE_2D, textureID);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, x, y, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-
-    // n = -1;
-
-    // data = stbi_load("cell1.png", &x, &y, &n, 0);
-
-    // printf("%i\n", n);
 
     free(data);
 

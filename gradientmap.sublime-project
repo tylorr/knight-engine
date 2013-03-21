@@ -1,8 +1,13 @@
 {
-	"folders":
-	[
-		{
-			"path": "."
-		}
-	]
+    "folders":
+    [
+        {
+            "path": "."
+        }
+    ],
+    "settings":
+    {
+        "sublimegdb_workingdir": "${folder:${project_path:gradientmap.exe}}",
+        "sublimegdb_commandline": "gdb --interpreter=mi ./gradientmap.exe"
+    }
 }

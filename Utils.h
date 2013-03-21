@@ -14,7 +14,7 @@
 typedef struct Vertex
 {
     float Position[4];
-    float Color[4];
+    float UV[2];
 } Vertex;
 
 void ExitOnGLError(const char* error_message);

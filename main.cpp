@@ -1,10 +1,12 @@
+#include "Utils.h"
+
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
 #include <tinythread.h>
 
-#include "Utils.h"
+#include "stb_image.h"
 
 using namespace tthread;
 
@@ -20,6 +22,8 @@ bool runFrameTimer = true;
 bool TitleUpdated = false;
 
 char* TitleString;
+
+GLuint textureID;
 
 GLuint
     ProjectionMatrixUniformLocation,
@@ -41,6 +45,9 @@ void InitWindow();
 void GLFWCALL ResizeFunction(int, int);
 void RenderFunction(void);
 void FramesTimer(void* arg);
+void Cleanup(void);
+void CreateShader(void);
+void DestroyShader(void);
 void CreateCube(void);
 void DestroyCube(void);
 void DrawCube(void);
@@ -71,7 +78,7 @@ int main(void)
     runFrameTimer = false;
     frameThread.join();
 
-    DestroyCube();
+    Cleanup();
 
     // Close window and terminate GLFW
     glfwTerminate();
@@ -111,16 +118,57 @@ void Initialize(void)
     glDepthFunc(GL_LESS);
     ExitOnGLError("ERROR: Could not set OpenGL depth testing options");
 
-    glEnable(GL_CULL_FACE);
+    // glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
     ExitOnGLError("ERROR: Could not set OpenGL culling options");
+
+    // glEnable(GL_BLEND);
+    // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     ModelMatrix = glm::mat4(1.0f);
     ProjectionMatrix = glm::mat4(1.0f);
     ViewMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, -2));
 
+    CreateShader();
     CreateCube();
+
+    int x, y, n;
+    unsigned char *data = stbi_load("CenterPiece.png", &x, &y, &n, 0);
+
+    printf("%i\n", x);
+    printf("%i\n", y);
+    printf("%i\n", n);
+
+    glGenTextures(1, &textureID);
+    glBindTexture(GL_TEXTURE_2D, textureID);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, x, y, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+
+    // n = -1;
+
+    // data = stbi_load("cell1.png", &x, &y, &n, 0);
+
+    // printf("%i\n", n);
+
+    free(data);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    GLuint color1Location = glGetUniformLocation(ShaderIds[0], "color1");
+    GLuint color2Location = glGetUniformLocation(ShaderIds[0], "color2");
+    GLuint color3Location = glGetUniformLocation(ShaderIds[0], "color3");
+    GLuint color4Location = glGetUniformLocation(ShaderIds[0], "color4");
+
+    glUseProgram(ShaderIds[0]);
+    glUniform4f(color1Location, 0.0f, 0.0f, 0.0f, 0.0f);
+    glUniform4f(color2Location, 0.0f, 1.0f, 0.0f, 0.33f);
+    glUniform4f(color3Location, 0.0f, 0.0f, 1.0f, 0.66f);
+    glUniform4f(color4Location, 1.0f, 1.0f, 0.0f, 1.0f);
+    glUseProgram(0);
 
     glfwSetWindowSizeCallback(ResizeFunction);
 }
@@ -206,40 +254,55 @@ void FramesTimer(void * arg)
     }
 }
 
-void CreateCube()
+void Cleanup(void)
 {
-    const Vertex VERTICES[8] =
-    {
-        { { -.5f, -.5f,  .5f, 1 }, { 0, 0, 1, 1 } },
-        { { -.5f,  .5f,  .5f, 1 }, { 1, 0, 0, 1 } },
-        { {  .5f,  .5f,  .5f, 1 }, { 0, 1, 0, 1 } },
-        { {  .5f, -.5f,  .5f, 1 }, { 1, 1, 0, 1 } },
-        { { -.5f, -.5f, -.5f, 1 }, { 1, 1, 1, 1 } },
-        { { -.5f,  .5f, -.5f, 1 }, { 1, 0, 0, 1 } },
-        { {  .5f,  .5f, -.5f, 1 }, { 1, 0, 1, 1 } },
-        { {  .5f, -.5f, -.5f, 1 }, { 0, 0, 1, 1 } }
-    };
+    free(TitleString);
 
-    const GLuint INDICES[36] =
-    {
-        0,2,1,  0,3,2,
-        4,3,0,  4,7,3,
-        4,1,5,  4,0,1,
-        3,6,2,  3,7,6,
-        1,6,5,  1,2,6,
-        7,5,6,  7,4,5
-    };
+    glDeleteTextures(1, &textureID);
 
+    DestroyCube();
+    DestroyShader();
+
+}
+
+void CreateShader(void)
+{
     ShaderIds[0] = glCreateProgram();
     ExitOnGLError("ERROR: Could not create the shader program");
     {
-        ShaderIds[1] = LoadShader("./simple.frag", GL_FRAGMENT_SHADER);
-        ShaderIds[2] = LoadShader("./simple.vert", GL_VERTEX_SHADER);
+        ShaderIds[1] = LoadShader("./texture.frag", GL_FRAGMENT_SHADER);
+        ShaderIds[2] = LoadShader("./texture.vert", GL_VERTEX_SHADER);
         glAttachShader(ShaderIds[0], ShaderIds[1]);
         glAttachShader(ShaderIds[0], ShaderIds[2]);
     }
     glLinkProgram(ShaderIds[0]);
     ExitOnGLError("ERROR: Could not link the shader program");
+}
+
+void DestroyShader(void)
+{
+    glDetachShader(ShaderIds[0], ShaderIds[1]);
+    glDetachShader(ShaderIds[0], ShaderIds[2]);
+    glDeleteShader(ShaderIds[1]);
+    glDeleteShader(ShaderIds[2]);
+    glDeleteProgram(ShaderIds[0]);
+    ExitOnGLError("ERROR: Could not destroy the shaders");
+}
+
+void CreateCube(void)
+{
+    const Vertex VERTICES[8] =
+    {
+        { { -.5f, -.5f,  .5f, 1 }, { 0, 1 } }, // 0 bottom left
+        { { -.5f,  .5f,  .5f, 1 }, { 0, 0 } }, // 1 top left
+        { {  .5f,  .5f,  .5f, 1 }, { 1, 0 } }, // 2 top right
+        { {  .5f, -.5f,  .5f, 1 }, { 1, 1 } } // 3 bottom right
+    };
+
+    const GLuint INDICES[36] =
+    {
+        0,2,1,  0,3,2
+    };
 
     ModelMatrixUniformLocation = glGetUniformLocation(ShaderIds[0], "ModelMatrix");
     ViewMatrixUniformLocation = glGetUniformLocation(ShaderIds[0], "ViewMatrix");
@@ -275,13 +338,6 @@ void CreateCube()
 
 void DestroyCube()
 {
-    glDetachShader(ShaderIds[0], ShaderIds[1]);
-    glDetachShader(ShaderIds[0], ShaderIds[2]);
-    glDeleteShader(ShaderIds[1]);
-    glDeleteShader(ShaderIds[2]);
-    glDeleteProgram(ShaderIds[0]);
-    ExitOnGLError("ERROR: Could not destroy the shaders");
-
     glDeleteBuffers(2, &BufferIds[1]);
     glDeleteVertexArrays(1, &BufferIds[0]);
     ExitOnGLError("ERROR: Could not destroy the buffer objects");
@@ -289,7 +345,7 @@ void DestroyCube()
 
 void DrawCube(void)
 {
-    float CubeAngle;
+    // float CubeAngle;
     double Now = glfwGetTime();
 
     if (LastTime == 0) {
@@ -297,19 +353,16 @@ void DrawCube(void)
     }
 
     CubeRotation += 1000.0f * (Now - LastTime);
-    CubeAngle = glm::radians(CubeRotation);
+    // CubeAngle = glm::radians(CubeRotation);
     LastTime = Now;
 
     ModelMatrix = glm::mat4(1.0f);
-    ModelMatrix = glm::rotate(
-        glm::mat4(1.0f),
-        CubeAngle, glm::vec3(1.0f, 0, 0));
-    ModelMatrix = glm::rotate(
-        ModelMatrix,
-        CubeAngle, glm::vec3(0, 1.0f, 0));
-
-    // RotateAboutY(&ModelMatrix, CubeAngle);
-    // RotateAboutX(&ModelMatrix, CubeAngle);
+    // ModelMatrix = glm::rotate(
+    //     glm::mat4(1.0f),
+    //     CubeAngle, glm::vec3(1.0f, 0, 0));
+    // ModelMatrix = glm::rotate(
+    //     ModelMatrix,
+    //     CubeAngle, glm::vec3(0, 1.0f, 0));
 
     glUseProgram(ShaderIds[0]);
     ExitOnGLError("ERROR: Could not use the shader program");
@@ -321,7 +374,7 @@ void DrawCube(void)
     glBindVertexArray(BufferIds[0]);
     ExitOnGLError("ERROR: Could not bind the VAO for drawing purposes");
 
-    glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, (GLvoid*)0);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (GLvoid*)0);
     ExitOnGLError("ERROR: Could not draw the cube");
 
     glBindVertexArray(0);

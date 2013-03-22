@@ -1,12 +1,12 @@
-#include "Utils.h"
-
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
 #include <tinythread.h>
 
+#include "script.h"
 #include "stb_image.h"
+#include "utils.h"
 
 using namespace tthread;
 
@@ -165,6 +165,18 @@ void Initialize(void)
     glUseProgram(0);
 
     glfwSetWindowSizeCallback(ResizeFunction);
+
+    Script script;
+
+    if (!script.loadScript("scripts/test.lua")) {
+        fprintf(
+            stderr,
+            "Could not load script\n"
+        );
+    }
+
+    std::string name = script.getGlobalString("PROGRAM_NAME");
+    printf("Program name: %s\n", name.c_str());
 }
 
 void InitWindow(void)
@@ -264,8 +276,8 @@ void CreateShader(void)
     ShaderIds[0] = glCreateProgram();
     ExitOnGLError("ERROR: Could not create the shader program");
     {
-        ShaderIds[1] = LoadShader("./texture.frag", GL_FRAGMENT_SHADER);
-        ShaderIds[2] = LoadShader("./texture.vert", GL_VERTEX_SHADER);
+        ShaderIds[1] = LoadShader("shaders/texture.frag", GL_FRAGMENT_SHADER);
+        ShaderIds[2] = LoadShader("shaders/texture.vert", GL_VERTEX_SHADER);
         glAttachShader(ShaderIds[0], ShaderIds[1]);
         glAttachShader(ShaderIds[0], ShaderIds[2]);
     }

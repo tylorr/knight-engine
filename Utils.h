@@ -20,4 +20,4 @@ typedef struct Vertex
 void ExitOnGLError(const char* error_message);
 GLuint LoadShader(const char* filename, GLenum shader_type);
 
-#endif
+#endif // UTILS_H

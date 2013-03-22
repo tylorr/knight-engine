@@ -1,4 +1,4 @@
-#include "Utils.h"
+#include "utils.h"
 
 void ExitOnGLError(const char* error_message)
 {

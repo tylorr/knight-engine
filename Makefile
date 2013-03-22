@@ -60,7 +60,7 @@
 MY_CFLAGS = -Iinclude -DGLFW_DLL
 
 # The linker options.
-MY_LIBS   = -Llib -lglew32s -lglfwdll -lglu32 -lopengl32
+MY_LIBS   = -Llib -lglew32s -lglfwdll -lglu32 -lopengl32 -llua52
 
 # The pre-processor options used by the cpp (man cpp for more).
 CPPFLAGS  = -Wall

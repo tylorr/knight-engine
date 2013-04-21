@@ -5,6 +5,7 @@
 #include "stb_image.h"
 
 #include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
@@ -143,7 +144,8 @@ void Initialize(void)
 
     camera = new Camera();
     camera->position_ = vec3(0, 0, 2);
-    camera->rotation_ = vec3(0.5f, 0, 0);
+    // camera->rotation_ = glm::angleAxis(180.0f, vec3(0, 1, 0));
+    // camera->rotation_ = glm::quat(vec3(0, 20, 0));
 
     ModelMatrix = glm::mat4(1.0f);
     ProjectionMatrix = glm::mat4(1.0f);
@@ -157,9 +159,9 @@ void Initialize(void)
     int x, y, n;
     unsigned char *data = stbi_load("textures/CenterPiece.png", &x, &y, &n, 0);
 
-    printf("%i\n", x);
-    printf("%i\n", y);
-    printf("%i\n", n);
+    // printf("%i\n", x);
+    // printf("%i\n", y);
+    // printf("%i\n", n);
 
     glGenTextures(1, &textureID);
     glBindTexture(GL_TEXTURE_2D, textureID);
@@ -189,17 +191,17 @@ void Initialize(void)
 
 
 
-    Script script;
+    // Script script;
 
-    if (!script.loadScript("scripts/test.lua")) {
-        fprintf(
-            stderr,
-            "Could not load script\n"
-        );
-    }
+    // if (!script.loadScript("scripts/test.lua")) {
+    //     fprintf(
+    //         stderr,
+    //         "Could not load script\n"
+    //     );
+    // }
 
-    std::string name = script.getGlobalString("PROGRAM_NAME");
-    printf("Program name: %s\n", name.c_str());
+    // std::string name = script.getGlobalString("PROGRAM_NAME");
+    // printf("Program name: %s\n", name.c_str());
 }
 
 void InitWindow(void)
@@ -253,6 +255,10 @@ void GLFWCALL ResizeFunction(int width, int height)
 int mouse_x;
 int mouse_y;
 int old_mouse_x;
+int old_mouse_y;
+float rot_speed = 20;
+float translate_speed = 2;
+vec3 rot(0);
 
 void RenderFunction()
 {
@@ -263,31 +269,47 @@ void RenderFunction()
     glfwGetMousePos(&mouse_x, &mouse_y);
 
     if (glfwGetMouseButton(GLFW_MOUSE_BUTTON_RIGHT)) {
-        int diff = mouse_x - old_mouse_x;
+        int x_speed = (old_mouse_x - mouse_x) * rot_speed;
+        int y_speed = (old_mouse_y - mouse_y) * rot_speed;
 
-        camera->rotation_.x += -diff * 5 * (float)elapsed_time;
+        rot.x += y_speed * (float)elapsed_time;
+        rot.y += x_speed * (float)elapsed_time;
+        // camera->rotation_ = glm::rotate(camera->rotation_, x_speed * (float)elapsed_time, vec3(0, 1, 0));
+        camera->rotation_ = glm::quat(rot);
 
+        // camera->rotation_.x -= y_diff * rot_speed * (float)elapsed_time;
+        // camera->rotation_.y -= x_diff * rot_speed * (float)elapsed_time;
 
         if (glfwGetKey('W')) {
-            camera->position_ += camera->Forward() * (float)elapsed_time;
+            // camera->position_ += camera->Forward() * translate_speed * (float)elapsed_time;
+            camera->TranslateZ(translate_speed * (float)elapsed_time);
         }
 
         if (glfwGetKey('S')) {
-            camera->position_ -= camera->Forward() * (float)elapsed_time;
+            camera->TranslateZ(-translate_speed * (float)elapsed_time);
         }
 
         if (glfwGetKey('D')) {
-            camera->position_ += camera->Right() * (float)elapsed_time;
+            camera->TranslateX(translate_speed * (float)elapsed_time);
         }
 
         if (glfwGetKey('A')) {
-            camera->position_ -= camera->Right() * (float)elapsed_time;
+            camera->TranslateX(-translate_speed * (float)elapsed_time);
+        }
+
+        if (glfwGetKey('E')) {
+            camera->TranslateY(translate_speed * (float)elapsed_time);
+        }
+
+        if (glfwGetKey('Q')) {
+            camera->TranslateY(-translate_speed * (float)elapsed_time);
         }
     }
 
     DrawCube();
 
     old_mouse_x = mouse_x;
+    old_mouse_y = mouse_y;
 
     glfwSwapBuffers();
 }
@@ -419,6 +441,7 @@ void DrawCube(void)
     ExitOnGLError("ERROR: Could not use the shader program");
 
     glUniformMatrix4fv(ModelMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(ModelMatrix));
+
 
     ViewMatrix = camera->ViewMatrix();
     glUniformMatrix4fv(ViewMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(ViewMatrix));

@@ -1,14 +1,16 @@
 #include "camera.h"
 
 #include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtx/euler_angles.hpp>
 #include <glm/gtx/string_cast.hpp>
+#include <glm/gtx/euler_angles.hpp>
+#include <glm/gtx/quaternion.hpp>
 
 #include <iostream>
 
 using glm::mat4;
 using glm::mat3;
 using glm::vec3;
+using glm::quat;
 
 using std::cout;
 using std::endl;
@@ -16,29 +18,39 @@ using std::endl;
 Camera::Camera() {
   reference_ = glm::vec3(0, 0, -1);
   world_up_ = glm::vec3(0, 1, 0);
-
-  cout << glm::to_string(Up()) << endl;
 }
 
 Camera::~Camera() { }
 
-vec3 Camera::Forward() {
-  mat3 rot_mat = glm::orientate3(rotation_);
-  vec3 forward = rot_mat * reference_;
-  return forward;
-}
-
-vec3 Camera::Right() {
-  return glm::cross(Forward(), world_up_);
-}
-
-vec3 Camera::Up() {
-  return glm::cross(Right(), Forward());
+void Camera::UpdateMatrix()
+{
+  // matrix_ = glm::toMat4(rotation_);
+  matrix_ = mat4(1.0f);
+  matrix_ = glm::translate(matrix_, position_);
+  matrix_ = matrix_ * glm::toMat4(rotation_);
+  // matrix_ = glm::rotate(matrix_, rotation_);
 }
 
 mat4 Camera::ViewMatrix() {
-  // mat3 rot_mat = glm::orientate3(rotation_);
-  // vec3 trans_ref = rot_mat * reference_;
-  vec3 center = position_ + Forward();
-  return glm::lookAt(position_, center, world_up_);
+  UpdateMatrix();
+  return glm::inverse(matrix_);
+}
+
+void Camera::TranslateOnAxis(const glm::vec3 &axis, const float &distance)
+{
+  vec3 v1 = glm::rotate(rotation_, axis);
+
+  position_ += (v1 * distance);
+}
+
+void Camera::TranslateX(const float &distance) {
+  TranslateOnAxis(vec3(1, 0, 0), distance);
+}
+
+void Camera::TranslateY(const float &distance) {
+  TranslateOnAxis(vec3(0, 1, 0), distance);
+}
+
+void Camera::TranslateZ(const float &distance) {
+  TranslateOnAxis(vec3(0, 0, -1), distance);
 }

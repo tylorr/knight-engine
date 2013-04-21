@@ -1,14 +1,21 @@
+#include "script.h"
+#include "utils.h"
+#include "camera.h"
+
+#include "stb_image.h"
+
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
 #include <tinythread.h>
 
-#include "script.h"
-#include "stb_image.h"
-#include "utils.h"
+#include <iostream>
 
 using namespace tthread;
+using glm::vec3;
+using std::cout;
+using std::endl;
 
 #define WINDOW_TITLE_PREFIX "Chapter 1"
 
@@ -37,8 +44,11 @@ glm::mat4
     ViewMatrix,
     ModelMatrix;
 
+Camera *camera;
+
 float CubeRotation;
-double LastTime = 0;
+double last_time = 0;
+double elapsed_time = 0;
 
 void Initialize();
 void InitWindow();
@@ -56,6 +66,8 @@ int main(void)
 {
     Initialize();
 
+    last_time = glfwGetTime();
+
     int running = GL_TRUE;
 
     thread frameThread(FramesTimer, 0);
@@ -63,6 +75,9 @@ int main(void)
     // Main loop
     while (running)
     {
+        double current_time = glfwGetTime();
+        elapsed_time = current_time - last_time;
+        last_time = current_time;
         if (TitleUpdated) {
             glfwSetWindowTitle(TitleString);
             TitleUpdated = false;
@@ -126,9 +141,15 @@ void Initialize(void)
     // glEnable(GL_BLEND);
     // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+    camera = new Camera();
+    camera->position_ = vec3(0, 0, 2);
+    camera->rotation_ = vec3(0.5f, 0, 0);
+
     ModelMatrix = glm::mat4(1.0f);
     ProjectionMatrix = glm::mat4(1.0f);
-    ViewMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, -2));
+
+    // ViewMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, -2));
+
 
     CreateShader();
     CreateCube();
@@ -165,6 +186,8 @@ void Initialize(void)
     glUseProgram(0);
 
     glfwSetWindowSizeCallback(ResizeFunction);
+
+
 
     Script script;
 
@@ -218,7 +241,7 @@ void GLFWCALL ResizeFunction(int width, int height)
         glm::perspective(
             60.0f,
             (float)CurrentWidth / CurrentHeight,
-            1.0f,
+            0.1f,
             100.0f
         );
 
@@ -227,13 +250,44 @@ void GLFWCALL ResizeFunction(int width, int height)
     glUseProgram(0);
 }
 
+int mouse_x;
+int mouse_y;
+int old_mouse_x;
+
 void RenderFunction()
 {
     ++FrameCount;
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    glfwGetMousePos(&mouse_x, &mouse_y);
+
+    if (glfwGetMouseButton(GLFW_MOUSE_BUTTON_RIGHT)) {
+        int diff = mouse_x - old_mouse_x;
+
+        camera->rotation_.x += -diff * 5 * (float)elapsed_time;
+
+
+        if (glfwGetKey('W')) {
+            camera->position_ += camera->Forward() * (float)elapsed_time;
+        }
+
+        if (glfwGetKey('S')) {
+            camera->position_ -= camera->Forward() * (float)elapsed_time;
+        }
+
+        if (glfwGetKey('D')) {
+            camera->position_ += camera->Right() * (float)elapsed_time;
+        }
+
+        if (glfwGetKey('A')) {
+            camera->position_ -= camera->Right() * (float)elapsed_time;
+        }
+    }
+
     DrawCube();
+
+    old_mouse_x = mouse_x;
 
     glfwSwapBuffers();
 }
@@ -263,6 +317,7 @@ void FramesTimer(void * arg)
 void Cleanup(void)
 {
     free(TitleString);
+    delete camera;
 
     glDeleteTextures(1, &textureID);
 
@@ -351,16 +406,6 @@ void DestroyCube()
 
 void DrawCube(void)
 {
-    // float CubeAngle;
-    double Now = glfwGetTime();
-
-    if (LastTime == 0) {
-        LastTime = Now;
-    }
-
-    CubeRotation += 1000.0f * (Now - LastTime);
-    // CubeAngle = glm::radians(CubeRotation);
-    LastTime = Now;
 
     ModelMatrix = glm::mat4(1.0f);
     // ModelMatrix = glm::rotate(
@@ -374,6 +419,8 @@ void DrawCube(void)
     ExitOnGLError("ERROR: Could not use the shader program");
 
     glUniformMatrix4fv(ModelMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(ModelMatrix));
+
+    ViewMatrix = camera->ViewMatrix();
     glUniformMatrix4fv(ViewMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(ViewMatrix));
     ExitOnGLError("ERROR: Could not set the shader uniforms");
 

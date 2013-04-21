@@ -92,10 +92,10 @@ CFLAGS  = -g
 CXXFLAGS= -g
 
 # The C program compiler.
-#CC     = gcc
+CC     = clang
 
 # The C++ program compiler.
-#CXX    = g++
+CXX    = clang++
 
 # Un-comment the following line to compile C programs as C++ ones.
 #CC     = $(CXX)

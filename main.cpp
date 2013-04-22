@@ -252,7 +252,7 @@ int mouse_x;
 int mouse_y;
 int old_mouse_x;
 int old_mouse_y;
-float rot_speed = 20;
+float rot_speed = 10;
 float translate_speed = 2;
 vec3 rot(0);
 

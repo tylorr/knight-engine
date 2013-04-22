@@ -1,6 +1,7 @@
 #include "script.h"
 #include "utils.h"
 #include "camera.h"
+#include "transform.h"
 
 #include "stb_image.h"
 
@@ -45,7 +46,7 @@ glm::mat4
     ViewMatrix,
     ModelMatrix;
 
-Camera *camera;
+Transform *camera;
 
 float CubeRotation;
 double last_time = 0;
@@ -142,16 +143,11 @@ void Initialize(void)
     // glEnable(GL_BLEND);
     // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    camera = new Camera();
+    camera = new Transform();
     camera->position_ = vec3(0, 0, 2);
-    // camera->rotation_ = glm::angleAxis(180.0f, vec3(0, 1, 0));
-    // camera->rotation_ = glm::quat(vec3(0, 20, 0));
 
     ModelMatrix = glm::mat4(1.0f);
     ProjectionMatrix = glm::mat4(1.0f);
-
-    // ViewMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, -2));
-
 
     CreateShader();
     CreateCube();
@@ -274,39 +270,52 @@ void RenderFunction()
 
         rot.x += y_speed * (float)elapsed_time;
         rot.y += x_speed * (float)elapsed_time;
-        // camera->rotation_ = glm::rotate(camera->rotation_, x_speed * (float)elapsed_time, vec3(0, 1, 0));
         camera->rotation_ = glm::quat(rot);
 
-        // camera->rotation_.x -= y_diff * rot_speed * (float)elapsed_time;
-        // camera->rotation_.y -= x_diff * rot_speed * (float)elapsed_time;
+        float x_trans = 0;
+        float y_trans = 0;
+        float z_trans = 0;
 
         if (glfwGetKey('W')) {
-            // camera->position_ += camera->Forward() * translate_speed * (float)elapsed_time;
-            camera->TranslateZ(translate_speed * (float)elapsed_time);
+            z_trans = translate_speed;
         }
 
         if (glfwGetKey('S')) {
-            camera->TranslateZ(-translate_speed * (float)elapsed_time);
+            z_trans = -translate_speed;
         }
 
         if (glfwGetKey('D')) {
-            camera->TranslateX(translate_speed * (float)elapsed_time);
+            x_trans = translate_speed;
         }
 
         if (glfwGetKey('A')) {
-            camera->TranslateX(-translate_speed * (float)elapsed_time);
+            x_trans = -translate_speed;
         }
 
         if (glfwGetKey('E')) {
-            camera->TranslateY(translate_speed * (float)elapsed_time);
+            y_trans = translate_speed;
         }
 
         if (glfwGetKey('Q')) {
-            camera->TranslateY(-translate_speed * (float)elapsed_time);
+            y_trans = -translate_speed;
         }
+
+        camera->TranslateX(x_trans * (float)elapsed_time);
+        camera->TranslateY(y_trans * (float)elapsed_time);
+        camera->TranslateZ(z_trans * (float)elapsed_time);
     }
 
+    glUseProgram(ShaderIds[0]);
+    ExitOnGLError("ERROR: Could not use the shader program");
+
+    camera->UpdateMatrix();
+    ViewMatrix = glm::inverse(camera->matrix_);
+    glUniformMatrix4fv(ViewMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(ViewMatrix));
+    ExitOnGLError("ERROR: Could not set the shader uniforms");
+
     DrawCube();
+
+    glUseProgram(0);
 
     old_mouse_x = mouse_x;
     old_mouse_y = mouse_y;
@@ -428,24 +437,9 @@ void DestroyCube()
 
 void DrawCube(void)
 {
-
     ModelMatrix = glm::mat4(1.0f);
-    // ModelMatrix = glm::rotate(
-    //     glm::mat4(1.0f),
-    //     CubeAngle, glm::vec3(1.0f, 0, 0));
-    // ModelMatrix = glm::rotate(
-    //     ModelMatrix,
-    //     CubeAngle, glm::vec3(0, 1.0f, 0));
-
-    glUseProgram(ShaderIds[0]);
-    ExitOnGLError("ERROR: Could not use the shader program");
 
     glUniformMatrix4fv(ModelMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(ModelMatrix));
-
-
-    ViewMatrix = camera->ViewMatrix();
-    glUniformMatrix4fv(ViewMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(ViewMatrix));
-    ExitOnGLError("ERROR: Could not set the shader uniforms");
 
     glBindVertexArray(BufferIds[0]);
     ExitOnGLError("ERROR: Could not bind the VAO for drawing purposes");
@@ -454,5 +448,5 @@ void DrawCube(void)
     ExitOnGLError("ERROR: Could not draw the cube");
 
     glBindVertexArray(0);
-    glUseProgram(0);
+
 }

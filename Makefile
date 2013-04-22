@@ -92,7 +92,7 @@ CFLAGS  = -g
 CXXFLAGS= -g
 
 # The C program compiler.
-CC     = clang
+CC     = clang++
 
 # The C++ program compiler.
 CXX    = clang++

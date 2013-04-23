@@ -1,15 +1,5 @@
-#ifndef UTILS_H
-#define UTILS_H
-
-#define GLEW_STATIC
-
-#include <GL/glew.h>
-#include <GL/glfw.h>
-
-#include <time.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
+#ifndef UTILS_H_
+#define UTILS_H_
 
 typedef struct Vertex
 {
@@ -17,7 +7,6 @@ typedef struct Vertex
     float UV[2];
 } Vertex;
 
-void ExitOnGLError(const char* error_message);
-GLuint LoadShader(const char* filename, GLenum shader_type);
+void ExitOnGLError(const char *error_message);
 
-#endif // UTILS_H
+#endif // UTILS_H_

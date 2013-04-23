@@ -2,6 +2,7 @@
 #include "utils.h"
 #include "camera.h"
 #include "transform.h"
+#include "shader_cache.h"
 
 #include "stb_image.h"
 
@@ -11,6 +12,9 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include <tinythread.h>
+
+#include <GL/glew.h>
+#include <GL/glfw.h>
 
 #include <iostream>
 
@@ -359,25 +363,25 @@ void Cleanup(void)
 
 void CreateShader(void)
 {
-    ShaderIds[0] = glCreateProgram();
-    ExitOnGLError("ERROR: Could not create the shader program");
-    {
-        ShaderIds[1] = LoadShader("shaders/texture.frag", GL_FRAGMENT_SHADER);
-        ShaderIds[2] = LoadShader("shaders/texture.vert", GL_VERTEX_SHADER);
-        glAttachShader(ShaderIds[0], ShaderIds[1]);
-        glAttachShader(ShaderIds[0], ShaderIds[2]);
-    }
-    glLinkProgram(ShaderIds[0]);
+    ShaderCache::AddShader("gradient", "shaders/texture.vert", "shaders/texture.frag");
+
+    ShaderIds[0] = ShaderCache::GetShaderProgram("gradient");
+    // ShaderIds[0] = glCreateProgram();
+    // ExitOnGLError("ERROR: Could not create the shader program");
+    // {
+    //     ShaderIds[1] = LoadShader("shaders/texture.frag", GL_FRAGMENT_SHADER);
+    //     ShaderIds[2] = LoadShader("shaders/texture.vert", GL_VERTEX_SHADER);
+    //     glAttachShader(ShaderIds[0], ShaderIds[1]);
+    //     glAttachShader(ShaderIds[0], ShaderIds[2]);
+    // }
+    // glLinkProgram(ShaderIds[0]);
     ExitOnGLError("ERROR: Could not link the shader program");
 }
 
 void DestroyShader(void)
 {
-    glDetachShader(ShaderIds[0], ShaderIds[1]);
-    glDetachShader(ShaderIds[0], ShaderIds[2]);
-    glDeleteShader(ShaderIds[1]);
-    glDeleteShader(ShaderIds[2]);
-    glDeleteProgram(ShaderIds[0]);
+    // glDeleteProgram(ShaderIds[0]);
+    ShaderCache::Destroy();
     ExitOnGLError("ERROR: Could not destroy the shaders");
 }
 

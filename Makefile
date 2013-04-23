@@ -57,7 +57,7 @@
 ##==========================================================================
 
 # The pre-processor and compiler options.
-MY_CFLAGS = -Iinclude -DGLFW_DLL
+MY_CFLAGS = -Iinclude -DGLFW_DLL -DGLEW_STATIC
 
 # The linker options.
 MY_LIBS   = -Llib -lglew32s -lglfwdll -lglu32 -lopengl32 -llua52
@@ -92,7 +92,7 @@ CFLAGS  = -g
 CXXFLAGS= -g
 
 # The C program compiler.
-CC     = clang++
+CC     = clang
 
 # The C++ program compiler.
 CXX    = clang++

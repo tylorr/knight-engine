@@ -411,7 +411,7 @@ void CreateCube(void)
     ExitOnGLError("ERROR: Could not bind the VBO to the VAO");
 
     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(VERTICES[0]), (GLvoid*)0);
-    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(VERTICES[0]), (GLvoid*)sizeof(VERTICES[0].Position));
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(VERTICES[0]), (GLvoid*)sizeof(VERTICES[0].Position));
     ExitOnGLError("ERROR: Could not set VAO attributes");
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, BufferIds[2]);

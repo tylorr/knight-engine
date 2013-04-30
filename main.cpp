@@ -3,6 +3,7 @@
 #include "camera.h"
 #include "transform.h"
 #include "shader_cache.h"
+#include "geometry.h"
 
 #include "stb_image.h"
 
@@ -10,6 +11,7 @@
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/string_cast.hpp>
 
 #include <tinythread.h>
 
@@ -17,11 +19,14 @@
 #include <GL/glfw.h>
 
 #include <iostream>
+#include <vector>
 
 using namespace tthread;
 using glm::vec3;
+using glm::vec2;
 using std::cout;
 using std::endl;
+using std::vector;
 
 #define WINDOW_TITLE_PREFIX "Chapter 1"
 
@@ -42,7 +47,7 @@ GLuint
     ProjectionMatrixUniformLocation,
     ViewMatrixUniformLocation,
     ModelMatrixUniformLocation,
-    BufferIds[3] = { 0 },
+    BufferIds[5] = { 0 },
     ShaderIds[3] = { 0 };
 
 glm::mat4
@@ -155,6 +160,11 @@ void Initialize(void)
 
     CreateShader();
     CreateCube();
+
+    ModelMatrixUniformLocation = glGetUniformLocation(ShaderIds[0], "ModelMatrix");
+    ViewMatrixUniformLocation = glGetUniformLocation(ShaderIds[0], "ViewMatrix");
+    ProjectionMatrixUniformLocation = glGetUniformLocation(ShaderIds[0], "ProjectionMatrix");
+    ExitOnGLError("ERROR: Could not get shader uniform locations");
 
     int x, y, n;
     unsigned char *data = stbi_load("textures/CenterPiece.png", &x, &y, &n, 0);
@@ -351,7 +361,7 @@ void FramesTimer(void * arg)
 
 void Cleanup(void)
 {
-    free(TitleString);
+    delete TitleString;
     delete camera;
 
     glDeleteTextures(1, &textureID);
@@ -374,56 +384,79 @@ void DestroyShader(void)
     ExitOnGLError("ERROR: Could not destroy the shaders");
 }
 
-void CreateCube(void)
-{
-    const Vertex VERTICES[8] =
-    {
-        { { -.5f, -.5f,  .5f, 1 }, { 0, 1 } }, // 0 bottom left
-        { { -.5f,  .5f,  .5f, 1 }, { 0, 0 } }, // 1 top left
-        { {  .5f,  .5f,  .5f, 1 }, { 1, 0 } }, // 2 top right
-        { {  .5f, -.5f,  .5f, 1 }, { 1, 1 } } // 3 bottom right
-    };
+void BufferData(const Geometry &geometry) {
+    glGenBuffers(4, &BufferIds[1]);
+    ExitOnGLError("ERROR: Could not generate the buffer objects");
 
-    const GLuint INDICES[36] =
-    {
-        0,2,1,  0,3,2
-    };
+    glBindBuffer(GL_ARRAY_BUFFER, BufferIds[1]);
+    glBufferData(GL_ARRAY_BUFFER, geometry.vertices.size() * sizeof(vec3), &geometry.vertices[0], GL_STATIC_DRAW);
+    ExitOnGLError("ERROR: Could not bind vertices VBO");
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid *)0);
+    ExitOnGLError("ERROR: Could not set vertices attributes");
 
-    ModelMatrixUniformLocation = glGetUniformLocation(ShaderIds[0], "ModelMatrix");
-    ViewMatrixUniformLocation = glGetUniformLocation(ShaderIds[0], "ViewMatrix");
-    ProjectionMatrixUniformLocation = glGetUniformLocation(ShaderIds[0], "ProjectionMatrix");
-    ExitOnGLError("ERROR: Could not get shader uniform locations");
+    glBindBuffer(GL_ARRAY_BUFFER, BufferIds[2]);
+    glBufferData(GL_ARRAY_BUFFER, geometry.texture_coords.size() * sizeof(vec2), &geometry.texture_coords[0], GL_STATIC_DRAW);
+    ExitOnGLError("ERROR: Could not bind text_coord VBO");
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (GLvoid *)0);
+    ExitOnGLError("ERROR: Could not set text_coord attributes");
+
+    glBindBuffer(GL_ARRAY_BUFFER, BufferIds[3]);
+    glBufferData(GL_ARRAY_BUFFER, geometry.normals.size() * sizeof(vec3), &geometry.normals[0], GL_STATIC_DRAW);
+    ExitOnGLError("ERROR: Could not bind normal VBO");
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid *)0);
+    ExitOnGLError("ERROR: Could not set normal attributes");
+
+    // build index list
+    vector<GLuint> indices;
+    vector<vec3>::const_iterator it, end;
+    for (it = geometry.faces.begin(), end = geometry.faces.end(); it != end; ++it) {
+        indices.push_back((*it).x);
+        indices.push_back((*it).y);
+        indices.push_back((*it).z);
+    }
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, BufferIds[4]);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), &indices[0], GL_STATIC_DRAW);
+    ExitOnGLError("ERROR: Could not bind the IBO to the VAO");
+}
+
+void CreateCube() {
+    Geometry *geometry = new Geometry();
+
+    geometry->vertices.push_back(vec3(-.5f, -.5f,  .5f));
+    geometry->vertices.push_back(vec3(-.5f,  .5f,  .5f));
+    geometry->vertices.push_back(vec3( .5f,  .5f,  .5f));
+    geometry->vertices.push_back(vec3( .5f, -.5f,  .5f));
+
+    geometry->normals.push_back(vec3(0, 0, 1));
+    geometry->normals.push_back(vec3(0, 0, 1));
+    geometry->normals.push_back(vec3(0, 0, 1));
+    geometry->normals.push_back(vec3(0, 0, 1));
+
+    geometry->texture_coords.push_back(vec2(0, 1));
+    geometry->texture_coords.push_back(vec2(0, 0));
+    geometry->texture_coords.push_back(vec2(1, 0));
+    geometry->texture_coords.push_back(vec2(1, 1));
+
+    geometry->faces.push_back(vec3(0, 2, 1));
+    geometry->faces.push_back(vec3(0, 3, 2));
 
     glGenVertexArrays(1, &BufferIds[0]);
     ExitOnGLError("ERROR: Could not generate the VAO");
     glBindVertexArray(BufferIds[0]);
     ExitOnGLError("ERROR: Could not bind the VAO");
 
-    glEnableVertexAttribArray(0);
-    glEnableVertexAttribArray(1);
-    ExitOnGLError("ERROR: Could not enable vertex attributes");
-
-    glGenBuffers(2, &BufferIds[1]);
-    ExitOnGLError("ERROR: Could not generate the buffer objects");
-
-    glBindBuffer(GL_ARRAY_BUFFER, BufferIds[1]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(VERTICES), VERTICES, GL_STATIC_DRAW);
-    ExitOnGLError("ERROR: Could not bind the VBO to the VAO");
-
-    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(VERTICES[0]), (GLvoid*)0);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(VERTICES[0]), (GLvoid*)sizeof(VERTICES[0].Position));
-    ExitOnGLError("ERROR: Could not set VAO attributes");
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, BufferIds[2]);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(INDICES), INDICES, GL_STATIC_DRAW);
-    ExitOnGLError("ERROR: Could not bind the IBO to the VAO");
+    BufferData(*geometry);
 
     glBindVertexArray(0);
 }
 
 void DestroyCube()
 {
-    glDeleteBuffers(2, &BufferIds[1]);
+    glDeleteBuffers(4, &BufferIds[1]);
     glDeleteVertexArrays(1, &BufferIds[0]);
     ExitOnGLError("ERROR: Could not destroy the buffer objects");
 }

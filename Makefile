@@ -131,8 +131,7 @@ OBJS    = $(addsuffix .o, $(basename $(SOURCES)))
 DEPS    = $(OBJS:.o=.d)
 
 ## Define some useful variables.
-DEP_OPT = $(shell if `$(CC) --version | grep "GCC" >/dev/null`; then \
-                  echo "-MM -MP"; else echo "-M"; fi )
+DEP_OPT = -MM -MP
 DEPEND      = $(CC)  $(DEP_OPT)  $(MY_CFLAGS) $(CFLAGS) $(CPPFLAGS)
 DEPEND.d    = $(subst -g ,,$(DEPEND))
 COMPILE.c   = $(CC)  $(MY_CFLAGS) $(CFLAGS)   $(CPPFLAGS) -c

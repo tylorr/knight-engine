@@ -4,7 +4,7 @@
 #include <glm/glm.hpp>
 
 class Camera {
-public:
+ public:
   glm::mat4 projection_matrix_;
 
   Camera();

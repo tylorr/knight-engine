@@ -31,8 +31,8 @@ using std::vector;
 #define WINDOW_TITLE_PREFIX "Chapter 1"
 
 int CurrentWidth = 800,
-    CurrentHeight = 600,
-    WindowHandle = 0;
+  CurrentHeight = 600,
+  WindowHandle = 0;
 
 unsigned FrameCount = 0;
 
@@ -44,16 +44,16 @@ char* TitleString;
 GLuint textureID;
 
 GLuint
-    ProjectionMatrixUniformLocation,
-    ViewMatrixUniformLocation,
-    ModelMatrixUniformLocation,
-    BufferIds[5] = { 0 },
-    ShaderIds[3] = { 0 };
+  ProjectionMatrixUniformLocation,
+  ViewMatrixUniformLocation,
+  ModelMatrixUniformLocation,
+  BufferIds[5] = { 0 },
+  ShaderIds[3] = { 0 };
 
 glm::mat4
-    ProjectionMatrix,
-    ViewMatrix,
-    ModelMatrix;
+  ProjectionMatrix,
+  ViewMatrix,
+  ModelMatrix;
 
 Transform *camera;
 
@@ -75,191 +75,191 @@ void DrawCube(void);
 
 int main(void)
 {
-    Initialize();
+  Initialize();
 
-    last_time = glfwGetTime();
+  last_time = glfwGetTime();
 
-    int running = GL_TRUE;
+  int running = GL_TRUE;
 
-    thread frameThread(FramesTimer, 0);
+  thread frameThread(FramesTimer, 0);
 
-    // Main loop
-    while (running)
-    {
-        double current_time = glfwGetTime();
-        elapsed_time = current_time - last_time;
-        last_time = current_time;
-        if (TitleUpdated) {
-            glfwSetWindowTitle(TitleString);
-            TitleUpdated = false;
-        }
-
-        RenderFunction();
-
-        // Check if ESC key was pressed or window was closed
-        running = !glfwGetKey(GLFW_KEY_ESC) &&
-                   glfwGetWindowParam(GLFW_OPENED);
+  // Main loop
+  while (running)
+  {
+    double current_time = glfwGetTime();
+    elapsed_time = current_time - last_time;
+    last_time = current_time;
+    if (TitleUpdated) {
+      glfwSetWindowTitle(TitleString);
+      TitleUpdated = false;
     }
 
-    runFrameTimer = false;
-    frameThread.join();
+    RenderFunction();
 
-    Cleanup();
+    // Check if ESC key was pressed or window was closed
+    running = !glfwGetKey(GLFW_KEY_ESC) &&
+           glfwGetWindowParam(GLFW_OPENED);
+  }
 
-    // Close window and terminate GLFW
-    glfwTerminate();
+  runFrameTimer = false;
+  frameThread.join();
 
-    // Exit program
-    exit(EXIT_SUCCESS);
+  Cleanup();
+
+  // Close window and terminate GLFW
+  glfwTerminate();
+
+  // Exit program
+  exit(EXIT_SUCCESS);
 }
 
 void Initialize(void)
 {
-    GLenum GlewInitResult;
+  GLenum GlewInitResult;
 
-    InitWindow();
+  InitWindow();
 
-    glewExperimental = GL_TRUE;
-    GlewInitResult = glewInit();
+  glewExperimental = GL_TRUE;
+  GlewInitResult = glewInit();
 
-    if (GLEW_OK != GlewInitResult) {
-        fprintf(
-            stderr,
-            "ERROR: %s\n",
-            glewGetErrorString(GlewInitResult)
-        );
-        exit(EXIT_FAILURE);
-    }
-
+  if (GLEW_OK != GlewInitResult) {
     fprintf(
-        stdout,
-        "INFO: OpenGL Version: %s\n",
-        glGetString(GL_VERSION)
+      stderr,
+      "ERROR: %s\n",
+      glewGetErrorString(GlewInitResult)
     );
+    exit(EXIT_FAILURE);
+  }
 
-    glGetError();
-    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+  fprintf(
+    stdout,
+    "INFO: OpenGL Version: %s\n",
+    glGetString(GL_VERSION)
+  );
 
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);
-    ExitOnGLError("ERROR: Could not set OpenGL depth testing options");
+  glGetError();
+  glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
-    // glEnable(GL_CULL_FACE);
-    glCullFace(GL_BACK);
-    glFrontFace(GL_CCW);
-    ExitOnGLError("ERROR: Could not set OpenGL culling options");
+  glEnable(GL_DEPTH_TEST);
+  glDepthFunc(GL_LESS);
+  ExitOnGLError("ERROR: Could not set OpenGL depth testing options");
 
-    // glEnable(GL_BLEND);
-    // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  // glEnable(GL_CULL_FACE);
+  glCullFace(GL_BACK);
+  glFrontFace(GL_CCW);
+  ExitOnGLError("ERROR: Could not set OpenGL culling options");
 
-    camera = new Transform();
-    camera->position_ = vec3(0, 0, 2);
+  // glEnable(GL_BLEND);
+  // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    ModelMatrix = glm::mat4(1.0f);
-    ProjectionMatrix = glm::mat4(1.0f);
+  camera = new Transform();
+  camera->position_ = vec3(0, 0, 2);
 
-    CreateShader();
-    CreateCube();
+  ModelMatrix = glm::mat4(1.0f);
+  ProjectionMatrix = glm::mat4(1.0f);
 
-    ModelMatrixUniformLocation = glGetUniformLocation(ShaderIds[0], "ModelMatrix");
-    ViewMatrixUniformLocation = glGetUniformLocation(ShaderIds[0], "ViewMatrix");
-    ProjectionMatrixUniformLocation = glGetUniformLocation(ShaderIds[0], "ProjectionMatrix");
-    ExitOnGLError("ERROR: Could not get shader uniform locations");
+  CreateShader();
+  CreateCube();
 
-    int x, y, n;
-    unsigned char *data = stbi_load("textures/CenterPiece.png", &x, &y, &n, 0);
+  ModelMatrixUniformLocation = glGetUniformLocation(ShaderIds[0], "ModelMatrix");
+  ViewMatrixUniformLocation = glGetUniformLocation(ShaderIds[0], "ViewMatrix");
+  ProjectionMatrixUniformLocation = glGetUniformLocation(ShaderIds[0], "ProjectionMatrix");
+  ExitOnGLError("ERROR: Could not get shader uniform locations");
 
-    // printf("%i\n", x);
-    // printf("%i\n", y);
-    // printf("%i\n", n);
+  int x, y, n;
+  unsigned char *data = stbi_load("textures/CenterPiece.png", &x, &y, &n, 0);
 
-    glGenTextures(1, &textureID);
-    glBindTexture(GL_TEXTURE_2D, textureID);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, x, y, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+  // printf("%i\n", x);
+  // printf("%i\n", y);
+  // printf("%i\n", n);
 
-    free(data);
+  glGenTextures(1, &textureID);
+  glBindTexture(GL_TEXTURE_2D, textureID);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, x, y, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glGenerateMipmap(GL_TEXTURE_2D);
+  free(data);
 
-    GLuint color1Location = glGetUniformLocation(ShaderIds[0], "color1");
-    GLuint color2Location = glGetUniformLocation(ShaderIds[0], "color2");
-    GLuint color3Location = glGetUniformLocation(ShaderIds[0], "color3");
-    GLuint color4Location = glGetUniformLocation(ShaderIds[0], "color4");
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+  glGenerateMipmap(GL_TEXTURE_2D);
 
-    glUseProgram(ShaderIds[0]);
-    glUniform4f(color1Location, 0.0f, 0.0f, 0.0f, 0.0f);
-    glUniform4f(color2Location, 0.0f, 1.0f, 0.0f, 0.33f);
-    glUniform4f(color3Location, 0.0f, 0.0f, 1.0f, 0.66f);
-    glUniform4f(color4Location, 1.0f, 1.0f, 0.0f, 1.0f);
-    glUseProgram(0);
+  GLuint color1Location = glGetUniformLocation(ShaderIds[0], "color1");
+  GLuint color2Location = glGetUniformLocation(ShaderIds[0], "color2");
+  GLuint color3Location = glGetUniformLocation(ShaderIds[0], "color3");
+  GLuint color4Location = glGetUniformLocation(ShaderIds[0], "color4");
 
-    glfwSetWindowSizeCallback(ResizeFunction);
+  glUseProgram(ShaderIds[0]);
+  glUniform4f(color1Location, 0.0f, 0.0f, 0.0f, 0.0f);
+  glUniform4f(color2Location, 0.0f, 1.0f, 0.0f, 0.33f);
+  glUniform4f(color3Location, 0.0f, 0.0f, 1.0f, 0.66f);
+  glUniform4f(color4Location, 1.0f, 1.0f, 0.0f, 1.0f);
+  glUseProgram(0);
+
+  glfwSetWindowSizeCallback(ResizeFunction);
 
 
 
-    // Script script;
+  // Script script;
 
-    // if (!script.loadScript("scripts/test.lua")) {
-    //     fprintf(
-    //         stderr,
-    //         "Could not load script\n"
-    //     );
-    // }
+  // if (!script.loadScript("scripts/test.lua")) {
+  //     fprintf(
+  //         stderr,
+  //         "Could not load script\n"
+  //     );
+  // }
 
-    // std::string name = script.getGlobalString("PROGRAM_NAME");
-    // printf("Program name: %s\n", name.c_str());
+  // std::string name = script.getGlobalString("PROGRAM_NAME");
+  // printf("Program name: %s\n", name.c_str());
 }
 
 void InitWindow(void)
 {
-    if (!glfwInit())
-    {
-        exit(EXIT_FAILURE);
-    }
+  if (!glfwInit())
+  {
+    exit(EXIT_FAILURE);
+  }
 
-    glfwOpenWindowHint(GLFW_OPENGL_VERSION_MAJOR, 3);
-    glfwOpenWindowHint(GLFW_OPENGL_VERSION_MINOR, 3);
-    glfwOpenWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-    glfwOpenWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+  glfwOpenWindowHint(GLFW_OPENGL_VERSION_MAJOR, 3);
+  glfwOpenWindowHint(GLFW_OPENGL_VERSION_MINOR, 3);
+  glfwOpenWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+  glfwOpenWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    if (!glfwOpenWindow(CurrentWidth, CurrentHeight, 0, 0, 0, 0, 24, 0, GLFW_WINDOW))
-    {
-        fprintf(
-            stderr,
-            "ERROR: Could not create a new rendering window.\n"
-        );
-        glfwTerminate();
-        exit(EXIT_FAILURE);
-    }
+  if (!glfwOpenWindow(CurrentWidth, CurrentHeight, 0, 0, 0, 0, 24, 0, GLFW_WINDOW))
+  {
+    fprintf(
+      stderr,
+      "ERROR: Could not create a new rendering window.\n"
+    );
+    glfwTerminate();
+    exit(EXIT_FAILURE);
+  }
 
-    glfwSetWindowTitle(WINDOW_TITLE_PREFIX);
+  glfwSetWindowTitle(WINDOW_TITLE_PREFIX);
 
-    // 1 for vsync on, 0 vsync off
-    glfwSwapInterval(0);
+  // 1 for vsync on, 0 vsync off
+  glfwSwapInterval(0);
 }
 
 void GLFWCALL ResizeFunction(int width, int height)
 {
-    CurrentWidth = width;
-    CurrentHeight = height;
+  CurrentWidth = width;
+  CurrentHeight = height;
 
-    glViewport(0, 0, CurrentWidth, CurrentHeight);
+  glViewport(0, 0, CurrentWidth, CurrentHeight);
 
-    ProjectionMatrix =
-        glm::perspective(
-            60.0f,
-            (float)CurrentWidth / CurrentHeight,
-            0.1f,
-            100.0f
-        );
+  ProjectionMatrix =
+    glm::perspective(
+      60.0f,
+      (float)CurrentWidth / CurrentHeight,
+      0.1f,
+      100.0f
+    );
 
-    glUseProgram(ShaderIds[0]);
-    glUniformMatrix4fv(ProjectionMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(ProjectionMatrix));
-    glUseProgram(0);
+  glUseProgram(ShaderIds[0]);
+  glUniformMatrix4fv(ProjectionMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(ProjectionMatrix));
+  glUseProgram(0);
 }
 
 int mouse_x;
@@ -272,207 +272,215 @@ vec3 rot(0);
 
 void RenderFunction()
 {
-    ++FrameCount;
+  ++FrameCount;
 
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glfwGetMousePos(&mouse_x, &mouse_y);
+  glfwGetMousePos(&mouse_x, &mouse_y);
 
-    if (glfwGetMouseButton(GLFW_MOUSE_BUTTON_RIGHT)) {
-        int x_speed = (old_mouse_x - mouse_x) * rot_speed;
-        int y_speed = (old_mouse_y - mouse_y) * rot_speed;
+  if (glfwGetMouseButton(GLFW_MOUSE_BUTTON_RIGHT)) {
+    int x_speed = (old_mouse_x - mouse_x) * rot_speed;
+    int y_speed = (old_mouse_y - mouse_y) * rot_speed;
 
-        rot.x += y_speed * (float)elapsed_time;
-        rot.y += x_speed * (float)elapsed_time;
-        camera->rotation_ = glm::quat(rot);
+    rot.x += y_speed * (float)elapsed_time;
+    rot.y += x_speed * (float)elapsed_time;
+    camera->rotation_ = glm::quat(rot);
 
-        float x_trans = 0;
-        float y_trans = 0;
-        float z_trans = 0;
+    float x_trans = 0;
+    float y_trans = 0;
+    float z_trans = 0;
 
-        if (glfwGetKey('W')) {
-            z_trans = translate_speed;
-        }
-
-        if (glfwGetKey('S')) {
-            z_trans = -translate_speed;
-        }
-
-        if (glfwGetKey('D')) {
-            x_trans = translate_speed;
-        }
-
-        if (glfwGetKey('A')) {
-            x_trans = -translate_speed;
-        }
-
-        if (glfwGetKey('E')) {
-            y_trans = translate_speed;
-        }
-
-        if (glfwGetKey('Q')) {
-            y_trans = -translate_speed;
-        }
-
-        camera->TranslateX(x_trans * (float)elapsed_time);
-        camera->TranslateY(y_trans * (float)elapsed_time);
-        camera->TranslateZ(z_trans * (float)elapsed_time);
+    if (glfwGetKey('W')) {
+      z_trans = translate_speed;
     }
 
-    glUseProgram(ShaderIds[0]);
-    ExitOnGLError("ERROR: Could not use the shader program");
+    if (glfwGetKey('S')) {
+      z_trans = -translate_speed;
+    }
 
-    camera->UpdateMatrix();
-    ViewMatrix = glm::inverse(camera->matrix_);
-    glUniformMatrix4fv(ViewMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(ViewMatrix));
-    ExitOnGLError("ERROR: Could not set the shader uniforms");
+    if (glfwGetKey('D')) {
+      x_trans = translate_speed;
+    }
 
-    DrawCube();
+    if (glfwGetKey('A')) {
+      x_trans = -translate_speed;
+    }
 
-    glUseProgram(0);
+    if (glfwGetKey('E')) {
+      y_trans = translate_speed;
+    }
 
-    old_mouse_x = mouse_x;
-    old_mouse_y = mouse_y;
+    if (glfwGetKey('Q')) {
+      y_trans = -translate_speed;
+    }
 
-    glfwSwapBuffers();
+    camera->TranslateX(x_trans * (float)elapsed_time);
+    camera->TranslateY(y_trans * (float)elapsed_time);
+    camera->TranslateZ(z_trans * (float)elapsed_time);
+  }
+
+  glUseProgram(ShaderIds[0]);
+  ExitOnGLError("ERROR: Could not use the shader program");
+
+  camera->UpdateMatrix();
+  ViewMatrix = glm::inverse(camera->matrix_);
+  glUniformMatrix4fv(ViewMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(ViewMatrix));
+  ExitOnGLError("ERROR: Could not set the shader uniforms");
+
+  DrawCube();
+
+  glUseProgram(0);
+
+  old_mouse_x = mouse_x;
+  old_mouse_y = mouse_y;
+
+  glfwSwapBuffers();
 }
 
 void FramesTimer(void * arg)
 {
-    while(runFrameTimer) {
-        glfwSleep(0.25);
+  while(runFrameTimer) {
+    glfwSleep(0.25);
 
-        TitleString = (char*)
-            malloc(512 + strlen(WINDOW_TITLE_PREFIX));
+    TitleString = (char*)
+      malloc(512 + strlen(WINDOW_TITLE_PREFIX));
 
-        sprintf(
-            TitleString,
-            "%s: %d Frames Per Second @ %d x %d",
-            WINDOW_TITLE_PREFIX,
-            FrameCount * 4,
-            CurrentWidth,
-            CurrentHeight
-        );
+    sprintf(
+      TitleString,
+      "%s: %d Frames Per Second @ %d x %d",
+      WINDOW_TITLE_PREFIX,
+      FrameCount * 4,
+      CurrentWidth,
+      CurrentHeight
+    );
 
-        TitleUpdated = true;
-        FrameCount = 0;
-    }
+    TitleUpdated = true;
+    FrameCount = 0;
+  }
 }
 
 void Cleanup(void)
 {
-    delete TitleString;
-    delete camera;
+  delete TitleString;
+  delete camera;
 
-    glDeleteTextures(1, &textureID);
+  glDeleteTextures(1, &textureID);
 
-    DestroyCube();
-    DestroyShader();
+  DestroyCube();
+  DestroyShader();
 
 }
 
 void CreateShader(void)
 {
-    ShaderCache::AddShader("gradient", "shaders/texture.vert", "shaders/texture.frag");
+  ShaderCache::AddShader("gradient", "shaders/texture.vert", "shaders/texture.frag");
 
-    ShaderIds[0] = ShaderCache::GetShaderProgram("gradient");
+  ShaderIds[0] = ShaderCache::GetShaderProgram("gradient");
 }
 
 void DestroyShader(void)
 {
-    ShaderCache::Destroy();
-    ExitOnGLError("ERROR: Could not destroy the shaders");
+  ShaderCache::Destroy();
+  ExitOnGLError("ERROR: Could not destroy the shaders");
 }
 
 void BufferData(const Geometry &geometry) {
-    glGenBuffers(4, &BufferIds[1]);
-    ExitOnGLError("ERROR: Could not generate the buffer objects");
+  glGenBuffers(4, &BufferIds[1]);
+  ExitOnGLError("ERROR: Could not generate the buffer objects");
 
-    glBindBuffer(GL_ARRAY_BUFFER, BufferIds[1]);
-    glBufferData(GL_ARRAY_BUFFER, geometry.vertices.size() * sizeof(vec3), &geometry.vertices[0], GL_STATIC_DRAW);
-    ExitOnGLError("ERROR: Could not bind vertices VBO");
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid *)0);
-    ExitOnGLError("ERROR: Could not set vertices attributes");
+  glBindBuffer(GL_ARRAY_BUFFER, BufferIds[1]);
+  glBufferData(GL_ARRAY_BUFFER, geometry.vertices().size() * sizeof(vec3), &geometry.vertices()[0], GL_STATIC_DRAW);
+  ExitOnGLError("ERROR: Could not bind vertices VBO");
+  glEnableVertexAttribArray(0);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid *)0);
+  ExitOnGLError("ERROR: Could not set vertices attributes");
 
-    glBindBuffer(GL_ARRAY_BUFFER, BufferIds[2]);
-    glBufferData(GL_ARRAY_BUFFER, geometry.texture_coords.size() * sizeof(vec2), &geometry.texture_coords[0], GL_STATIC_DRAW);
-    ExitOnGLError("ERROR: Could not bind text_coord VBO");
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (GLvoid *)0);
-    ExitOnGLError("ERROR: Could not set text_coord attributes");
+  glBindBuffer(GL_ARRAY_BUFFER, BufferIds[2]);
+  glBufferData(GL_ARRAY_BUFFER, geometry.texture_coords().size() * sizeof(vec2), &geometry.texture_coords()[0], GL_STATIC_DRAW);
+  ExitOnGLError("ERROR: Could not bind text_coord VBO");
+  glEnableVertexAttribArray(1);
+  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (GLvoid *)0);
+  ExitOnGLError("ERROR: Could not set text_coord attributes");
 
-    glBindBuffer(GL_ARRAY_BUFFER, BufferIds[3]);
-    glBufferData(GL_ARRAY_BUFFER, geometry.normals.size() * sizeof(vec3), &geometry.normals[0], GL_STATIC_DRAW);
-    ExitOnGLError("ERROR: Could not bind normal VBO");
-    glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid *)0);
-    ExitOnGLError("ERROR: Could not set normal attributes");
+  glBindBuffer(GL_ARRAY_BUFFER, BufferIds[3]);
+  glBufferData(GL_ARRAY_BUFFER, geometry.normals().size() * sizeof(vec3), &geometry.normals()[0], GL_STATIC_DRAW);
+  ExitOnGLError("ERROR: Could not bind normal VBO");
+  glEnableVertexAttribArray(2);
+  glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid *)0);
+  ExitOnGLError("ERROR: Could not set normal attributes");
 
-    // build index list
-    vector<GLuint> indices;
-    vector<vec3>::const_iterator it, end;
-    for (it = geometry.faces.begin(), end = geometry.faces.end(); it != end; ++it) {
-        indices.push_back((*it).x);
-        indices.push_back((*it).y);
-        indices.push_back((*it).z);
-    }
+  // build index list
+  vector<GLuint> indices;
+  vector<vec3>::const_iterator it, end;
+  for (it = geometry.faces().begin(), end = geometry.faces().end(); it != end; ++it) {
+    indices.push_back((*it).x);
+    indices.push_back((*it).y);
+    indices.push_back((*it).z);
+  }
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, BufferIds[4]);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), &indices[0], GL_STATIC_DRAW);
-    ExitOnGLError("ERROR: Could not bind the IBO to the VAO");
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, BufferIds[4]);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), &indices[0], GL_STATIC_DRAW);
+  ExitOnGLError("ERROR: Could not bind the IBO to the VAO");
 }
 
 void CreateCube() {
-    Geometry *geometry = new Geometry();
+  Geometry *geometry = new Geometry();
 
-    geometry->vertices.push_back(vec3(-.5f, -.5f,  .5f));
-    geometry->vertices.push_back(vec3(-.5f,  .5f,  .5f));
-    geometry->vertices.push_back(vec3( .5f,  .5f,  .5f));
-    geometry->vertices.push_back(vec3( .5f, -.5f,  .5f));
+  vector<vec3> vertices;
+  vertices.push_back(vec3(-.5f, -.5f,  .5f));
+  vertices.push_back(vec3(-.5f,  .5f,  .5f));
+  vertices.push_back(vec3( .5f,  .5f,  .5f));
+  vertices.push_back(vec3( .5f, -.5f,  .5f));
+  geometry->set_vertices(vertices);
 
-    geometry->normals.push_back(vec3(0, 0, 1));
-    geometry->normals.push_back(vec3(0, 0, 1));
-    geometry->normals.push_back(vec3(0, 0, 1));
-    geometry->normals.push_back(vec3(0, 0, 1));
+  vector<vec3> normals;
+  normals.push_back(vec3(0, 0, 1));
+  normals.push_back(vec3(0, 0, 1));
+  normals.push_back(vec3(0, 0, 1));
+  normals.push_back(vec3(0, 0, 1));
+  geometry->set_normals(normals);
 
-    geometry->texture_coords.push_back(vec2(0, 1));
-    geometry->texture_coords.push_back(vec2(0, 0));
-    geometry->texture_coords.push_back(vec2(1, 0));
-    geometry->texture_coords.push_back(vec2(1, 1));
+  vector<vec2> texture_coords;
+  texture_coords.push_back(vec2(0, 1));
+  texture_coords.push_back(vec2(0, 0));
+  texture_coords.push_back(vec2(1, 0));
+  texture_coords.push_back(vec2(1, 1));
+  geometry->set_texture_coords(texture_coords);
 
-    geometry->faces.push_back(vec3(0, 2, 1));
-    geometry->faces.push_back(vec3(0, 3, 2));
+  vector<vec3> faces;
+  faces.push_back(vec3(0, 2, 1));
+  faces.push_back(vec3(0, 3, 2));
+  geometry->set_faces(faces);
 
-    glGenVertexArrays(1, &BufferIds[0]);
-    ExitOnGLError("ERROR: Could not generate the VAO");
-    glBindVertexArray(BufferIds[0]);
-    ExitOnGLError("ERROR: Could not bind the VAO");
+  glGenVertexArrays(1, &BufferIds[0]);
+  ExitOnGLError("ERROR: Could not generate the VAO");
+  glBindVertexArray(BufferIds[0]);
+  ExitOnGLError("ERROR: Could not bind the VAO");
 
-    BufferData(*geometry);
+  BufferData(*geometry);
 
-    glBindVertexArray(0);
+  glBindVertexArray(0);
 }
 
 void DestroyCube()
 {
-    glDeleteBuffers(4, &BufferIds[1]);
-    glDeleteVertexArrays(1, &BufferIds[0]);
-    ExitOnGLError("ERROR: Could not destroy the buffer objects");
+  glDeleteBuffers(4, &BufferIds[1]);
+  glDeleteVertexArrays(1, &BufferIds[0]);
+  ExitOnGLError("ERROR: Could not destroy the buffer objects");
 }
 
 void DrawCube(void)
 {
-    ModelMatrix = glm::mat4(1.0f);
+  ModelMatrix = glm::mat4(1.0f);
 
-    glUniformMatrix4fv(ModelMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(ModelMatrix));
+  glUniformMatrix4fv(ModelMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(ModelMatrix));
 
-    glBindVertexArray(BufferIds[0]);
-    ExitOnGLError("ERROR: Could not bind the VAO for drawing purposes");
+  glBindVertexArray(BufferIds[0]);
+  ExitOnGLError("ERROR: Could not bind the VAO for drawing purposes");
 
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (GLvoid*)0);
-    ExitOnGLError("ERROR: Could not draw the cube");
+  glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (GLvoid*)0);
+  ExitOnGLError("ERROR: Could not draw the cube");
 
-    glBindVertexArray(0);
+  glBindVertexArray(0);
 
 }

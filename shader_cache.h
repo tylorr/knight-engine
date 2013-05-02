@@ -38,6 +38,6 @@ GLuint GetShaderProgram(const std::string &key);
 // Delete all of the compiled shaders and clear the cache
 void Destroy();
 
-}; // namespace render
+}; // namespace ShaderCache
 
 #endif // SHADER_CAHCE_H_

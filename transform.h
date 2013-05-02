@@ -1,11 +1,13 @@
 #ifndef TRANSFORM_H_
 #define TRANSFORM_H_
 
+#include "utils.h"
+
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 
 class Transform {
-public:
+ public:
   glm::vec3 position_;
   glm::vec3 up_;
   glm::quat rotation_;
@@ -13,7 +15,7 @@ public:
   glm::mat4 matrix_;
 
   Transform();
-  virtual ~Transform();
+  ~Transform();
 
   void TranslateOnAxis(const glm::vec3 &axis, const float &distance);
   void TranslateX(const float &distance);
@@ -21,6 +23,9 @@ public:
   void TranslateZ(const float &distance);
 
   void UpdateMatrix();
+
+ private:
+  DISALLOW_COPY_AND_ASSIGN(Transform);
 };
 
 #endif // TRANSFORM_H_

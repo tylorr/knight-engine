@@ -1,31 +1,33 @@
-#ifndef SCRIPT_H
-#define SCRIPT_H
+#ifndef SCRIPT_H_
+#define SCRIPT_H_
 
-#include <string>
 #include "lua.hpp"
 
-class Script
-{
-    public:
-        Script();
-        // Script(std::string scriptfile);
-        virtual ~Script();
+#include "utils.h"
 
-        bool loadScript(std::string scriptfile);
+#include <string>
 
-        std::string getGlobalString(std::string name);
-        void setGlobalString(std::string name, std::string value);
+class Script {
+ public:
+  Script();
+  ~Script();
 
-        double getGlobalNumber(std::string name);
-        void setGlobalNumber(std::string name, double value);
+  bool loadScript(const std::string &scriptfile);
 
-        bool getGlobalBoolean(std::string name);
-        void setGlobalBoolean(std::string name, bool value);
+  std::string getGlobalString(const std::string &name);
+  void setGlobalString(const std::string &name, const std::string &value);
 
-        void runFunction(std::string name);
+  double getGlobalNumber(const std::string &name);
+  void setGlobalNumber(const std::string &name, const double &value);
 
-    private:
-        lua_State *luaState;
+  bool getGlobalBoolean(const std::string &name);
+  void setGlobalBoolean(const std::string &name, const bool &value);
+
+  void runFunction(const std::string &name);
+
+ private:
+  lua_State *lua_state_;
+  DISALLOW_COPY_AND_ASSIGN(Script);
 };
 
-#endif // SCRIPT_H
+#endif // SCRIPT_H_

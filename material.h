@@ -9,25 +9,29 @@
 #include <GL/glfw.h>
 
 #include <string>
+#include <map>
 
 class Material {
  public:
+  typedef std::map<std::string, GLint> UniformMap;
+
   explicit Material(const std::string &shader_key);
   ~Material() { }
 
-  void UpdateUniforms() const;
+  const GLuint &shader_program() const { return shader_program_; }
 
-  void PushMatrices(const glm::mat4 &model_view,
-                    const glm::mat4 &projection,
-                    const glm::mat4 &mvp,
-                    const glm::mat3 &normal) const;
+  bool HasProperty(const std::string &name);
+
+  const GLint &GetLocation(const std::string &name);
+
+  void SetMatrix(const std::string &name, const glm::mat4 &matrix);
+  void SetVector(const std::string &name, const glm::vec4 &vector);
+  void SetFloat(const std::string &name, const float &value);
+
  private:
   GLuint shader_program_;
 
-  GLint model_view_uniform_;
-  GLint projection_uniform_;
-  GLint mvp_uniform_;
-  GLint normal_uniform_;
+  UniformMap uniform_map_;
 
   DISALLOW_COPY_AND_ASSIGN(Material);
 };

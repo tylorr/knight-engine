@@ -4,6 +4,7 @@
 #include "transform.h"
 #include "shader_cache.h"
 #include "geometry.h"
+#include "material.h"
 
 #include "stb_image.h"
 
@@ -22,6 +23,7 @@
 #include <vector>
 
 using namespace tthread;
+using glm::vec4;
 using glm::vec3;
 using glm::vec2;
 using std::cout;
@@ -43,12 +45,7 @@ char* TitleString;
 
 GLuint textureID;
 
-GLuint
-  ProjectionMatrixUniformLocation,
-  ViewMatrixUniformLocation,
-  ModelMatrixUniformLocation,
-  BufferIds[5] = { 0 },
-  ShaderIds[3] = { 0 };
+GLuint BufferIds[5] = { 0 };
 
 glm::mat4
   ProjectionMatrix,
@@ -56,6 +53,7 @@ glm::mat4
   ModelMatrix;
 
 Transform *camera;
+Material *material;
 
 float CubeRotation;
 double last_time = 0;
@@ -161,11 +159,6 @@ void Initialize(void)
   CreateShader();
   CreateCube();
 
-  ModelMatrixUniformLocation = glGetUniformLocation(ShaderIds[0], "ModelMatrix");
-  ViewMatrixUniformLocation = glGetUniformLocation(ShaderIds[0], "ViewMatrix");
-  ProjectionMatrixUniformLocation = glGetUniformLocation(ShaderIds[0], "ProjectionMatrix");
-  ExitOnGLError("ERROR: Could not get shader uniform locations");
-
   int x, y, n;
   unsigned char *data = stbi_load("textures/CenterPiece.png", &x, &y, &n, 0);
 
@@ -185,19 +178,26 @@ void Initialize(void)
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
   glGenerateMipmap(GL_TEXTURE_2D);
 
-  GLuint color1Location = glGetUniformLocation(ShaderIds[0], "color1");
-  GLuint color2Location = glGetUniformLocation(ShaderIds[0], "color2");
-  GLuint color3Location = glGetUniformLocation(ShaderIds[0], "color3");
-  GLuint color4Location = glGetUniformLocation(ShaderIds[0], "color4");
+  material = new Material("gradient");
 
-  glUseProgram(ShaderIds[0]);
-  glUniform4f(color1Location, 0.0f, 0.0f, 0.0f, 0.0f);
-  glUniform4f(color2Location, 0.0f, 1.0f, 0.0f, 0.33f);
-  glUniform4f(color3Location, 0.0f, 0.0f, 1.0f, 0.66f);
-  glUniform4f(color4Location, 1.0f, 1.0f, 0.0f, 1.0f);
+  glUseProgram(material->shader_program());
+  ExitOnGLError("ERROR: Could not use the shader program for color");
+
+  material->SetVector("color1", vec4(0.0f, 0.0f, 0.0f, 0.0f));
+  ExitOnGLError("ERROR: Could not set color 1");
+  material->SetVector("color2", vec4(0.0f, 1.0f, 0.0f, 0.33f));
+  ExitOnGLError("ERROR: Could not set color 2");
+  material->SetVector("color3", vec4(0.0f, 0.0f, 1.0f, 0.66f));
+  ExitOnGLError("ERROR: Could not set color 3");
+  material->SetVector("color4", vec4(1.0f, 1.0f, 0.0f, 1.0f));
+  ExitOnGLError("ERROR: Could not set color 4");
+
   glUseProgram(0);
+  ExitOnGLError("ERROR: Could not foo");
 
   glfwSetWindowSizeCallback(ResizeFunction);
+
+  ExitOnGLError("ERROR: Could not end");
 
 
 
@@ -249,16 +249,16 @@ void GLFWCALL ResizeFunction(int width, int height)
 
   glViewport(0, 0, CurrentWidth, CurrentHeight);
 
-  ProjectionMatrix =
-    glm::perspective(
-      60.0f,
-      (float)CurrentWidth / CurrentHeight,
-      0.1f,
-      100.0f
-    );
+  ProjectionMatrix = glm::perspective(
+    60.0f,
+    (float)CurrentWidth / CurrentHeight,
+    0.1f,
+    100.0f
+  );
 
-  glUseProgram(ShaderIds[0]);
-  glUniformMatrix4fv(ProjectionMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(ProjectionMatrix));
+  // TODO: move this to render step
+  glUseProgram(material->shader_program());
+  material->SetMatrix("ProjectionMatrix", ProjectionMatrix);
   glUseProgram(0);
 }
 
@@ -319,13 +319,15 @@ void RenderFunction()
     camera->TranslateZ(z_trans * (float)elapsed_time);
   }
 
-  glUseProgram(ShaderIds[0]);
+  glUseProgram(material->shader_program());
+
   ExitOnGLError("ERROR: Could not use the shader program");
 
   camera->UpdateMatrix();
   ViewMatrix = glm::inverse(camera->matrix_);
-  glUniformMatrix4fv(ViewMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(ViewMatrix));
+  material->SetMatrix("ViewMatrix", ViewMatrix);
   ExitOnGLError("ERROR: Could not set the shader uniforms");
+
 
   DrawCube();
 
@@ -374,8 +376,6 @@ void Cleanup(void)
 void CreateShader(void)
 {
   ShaderCache::AddShader("gradient", "shaders/texture.vert", "shaders/texture.frag");
-
-  ShaderIds[0] = ShaderCache::GetShaderProgram("gradient");
 }
 
 void DestroyShader(void)
@@ -473,7 +473,8 @@ void DrawCube(void)
 {
   ModelMatrix = glm::mat4(1.0f);
 
-  glUniformMatrix4fv(ModelMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(ModelMatrix));
+  // glUniformMatrix4fv(ModelMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(ModelMatrix));
+  material->SetMatrix("ModelMatrix", ModelMatrix);
 
   glBindVertexArray(BufferIds[0]);
   ExitOnGLError("ERROR: Could not bind the VAO for drawing purposes");

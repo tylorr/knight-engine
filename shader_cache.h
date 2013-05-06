@@ -33,7 +33,7 @@ struct ShaderInfo {
 void AddShader(const std::string &key, const std::string &vertex_file, const std::string &fragment_file);
 
 // Get shader program store with specified key
-GLuint GetShaderProgram(const std::string &key);
+const GLuint &GetShaderProgram(const std::string &key);
 
 // Delete all of the compiled shaders and clear the cache
 void Destroy();

@@ -11,9 +11,9 @@ using std::string;
 using glm::mat4;
 using glm::vec4;
 
-Material::Material(const string &shader_key) {
-  shader_program_ = ShaderCache::GetShaderProgram(shader_key);
-}
+Material::Material(const GLuint &shader_program) :
+  shader_program_(shader_program),
+  transparent_(false) { }
 
 bool Material::HasProperty(const string &name) {
   return GetLocation(name) >= 0;

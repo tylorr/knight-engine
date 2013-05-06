@@ -178,7 +178,7 @@ void Initialize(void)
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
   glGenerateMipmap(GL_TEXTURE_2D);
 
-  material = new Material("gradient");
+  material = new Material(ShaderCache::GetShaderProgram("gradient"));
 
   glUseProgram(material->shader_program());
   ExitOnGLError("ERROR: Could not use the shader program for color");

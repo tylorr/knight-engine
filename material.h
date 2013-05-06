@@ -15,7 +15,7 @@ class Material {
  public:
   typedef std::map<std::string, GLint> UniformMap;
 
-  explicit Material(const std::string &shader_key);
+  explicit Material(const GLuint &shader_program);
   ~Material() { }
 
   // Get the location of uniform from the shader associated with this material
@@ -45,7 +45,7 @@ class Material {
 
  private:
   // Shader program id
-  GLuint shader_program_;
+  const GLuint &shader_program_;
 
   // Uniform location cache
   UniformMap uniform_map_;

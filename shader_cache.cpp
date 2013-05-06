@@ -47,9 +47,8 @@ void AddShader(const std::string &key, const string &vertex_file, const string &
   shader_map[key] = ShaderInfo(program, vertex, fragment);
 }
 
-GLuint GetShaderProgram(const std::string &key) {
-  ShaderInfo si = shader_map.at(key);
-  return si.program;
+const GLuint &GetShaderProgram(const std::string &key) {
+  return shader_map.at(key).program;
 }
 
 void Destroy() {

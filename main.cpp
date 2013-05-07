@@ -180,7 +180,7 @@ void Initialize(void)
 
   material = new Material(ShaderCache::GetShaderProgram("gradient"));
 
-  glUseProgram(material->shader_program());
+  material->Bind(true);
   ExitOnGLError("ERROR: Could not use the shader program for color");
 
   material->SetVector("color1", vec4(0.0f, 0.0f, 0.0f, 0.0f));
@@ -192,7 +192,7 @@ void Initialize(void)
   material->SetVector("color4", vec4(1.0f, 1.0f, 0.0f, 1.0f));
   ExitOnGLError("ERROR: Could not set color 4");
 
-  glUseProgram(0);
+  material->Bind(false);
   ExitOnGLError("ERROR: Could not foo");
 
   glfwSetWindowSizeCallback(ResizeFunction);
@@ -257,9 +257,9 @@ void GLFWCALL ResizeFunction(int width, int height)
   );
 
   // TODO: move this to render step
-  glUseProgram(material->shader_program());
+  material->Bind(true);
   material->SetMatrix("ProjectionMatrix", ProjectionMatrix);
-  glUseProgram(0);
+  material->Bind(false);
 }
 
 int mouse_x;
@@ -319,7 +319,7 @@ void RenderFunction()
     camera->TranslateZ(z_trans * (float)elapsed_time);
   }
 
-  glUseProgram(material->shader_program());
+  material->Bind(true);
 
   ExitOnGLError("ERROR: Could not use the shader program");
 
@@ -331,7 +331,7 @@ void RenderFunction()
 
   DrawCube();
 
-  glUseProgram(0);
+  material->Bind(false);
 
   old_mouse_x = mouse_x;
   old_mouse_y = mouse_y;

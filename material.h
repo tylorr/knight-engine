@@ -25,6 +25,8 @@ class Material {
   // Checks to see if the the uniform with this name exists
   bool HasProperty(const std::string &name);
 
+  void Bind(const bool &bind) const;
+
   // ---------------------------------------------------------------
   // Pass values to the shader at the specified name. If the name
   // does not exist on the shader then it is silently ignored.
@@ -37,8 +39,6 @@ class Material {
   // --------------------------------------------------------------
   // Getters and setters
   // --------------------------------------------------------------
-
-  const GLuint &shader_program() const { return shader_program_; }
 
   void set_transparent(const bool &transparent) { transparent_ = transparent; }
   const bool &transparent() const { return transparent_; }

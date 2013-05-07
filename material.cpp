@@ -19,6 +19,10 @@ bool Material::HasProperty(const string &name) {
   return GetLocation(name) >= 0;
 }
 
+void Material::Bind(const bool &bind) const {
+  glUseProgram(bind ? shader_program_ : 0);
+}
+
 const GLint &Material::GetLocation(const string &name) {
   UniformMap::const_iterator it = uniform_map_.find(name);
   if (it != uniform_map_.end()) {

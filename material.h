@@ -16,7 +16,9 @@ class Material {
   typedef std::map<std::string, GLint> UniformMap;
 
   explicit Material(const GLuint &shader_program);
-  ~Material() { }
+  virtual ~Material() { }
+
+  virtual void UpdateUniforms() = 0;
 
   // Get the location of uniform from the shader associated with this material
   // and cache it. If the location is -1 that means the uniform does not exist

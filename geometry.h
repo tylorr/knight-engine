@@ -1,7 +1,12 @@
 #ifndef GEOMETRY_H_
 #define GEOMETRY_H_
 
+#include "utils.h"
+
 #include <glm/glm.hpp>
+
+#include <GL/glew.h>
+#include <GL/glfw.h>
 
 #include <vector>
 
@@ -9,6 +14,11 @@ class Geometry {
  public:
   Geometry() { }
   ~Geometry() { }
+
+  void Bind(const bool &bind) const;
+
+  void InitBuffers();
+  void DestroyBuffers();
 
   void set_faces(const std::vector<glm::vec3> &faces) { faces_ = faces; }
   const std::vector<glm::vec3> &faces() const { return faces_; }
@@ -30,11 +40,17 @@ class Geometry {
     return texture_coords_;
   }
 
+  unsigned int index_count() const {
+    return faces_.size() * 3;
+  }
+
  private:
   std::vector<glm::vec3> faces_;
   std::vector<glm::vec3> vertices_;
   std::vector<glm::vec3> normals_;
   std::vector<glm::vec2> texture_coords_;
+
+  GLuint buffer_ids_[5];
 
   DISALLOW_COPY_AND_ASSIGN(Geometry);
 };

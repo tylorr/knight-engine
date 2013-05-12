@@ -5,6 +5,7 @@
 #include "shader_cache.h"
 #include "geometry.h"
 #include "material.h"
+#include "gradient_map_material.h"
 
 #include "stb_image.h"
 
@@ -23,6 +24,7 @@
 #include <vector>
 
 using namespace tthread;
+
 using glm::vec4;
 using glm::vec3;
 using glm::vec2;
@@ -45,15 +47,14 @@ char* TitleString;
 
 GLuint textureID;
 
-GLuint BufferIds[5] = { 0 };
-
 glm::mat4
   ProjectionMatrix,
   ViewMatrix,
   ModelMatrix;
 
 Transform *camera;
-Material *material;
+GradientMapMaterial *material;
+Geometry *geometry;
 
 float CubeRotation;
 double last_time = 0;
@@ -178,28 +179,16 @@ void Initialize(void)
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
   glGenerateMipmap(GL_TEXTURE_2D);
 
-  material = new Material(ShaderCache::GetShaderProgram("gradient"));
+  material = new GradientMapMaterial(ShaderCache::GetShaderProgram("gradient"));
 
-  material->Bind(true);
-  ExitOnGLError("ERROR: Could not use the shader program for color");
-
-  material->SetVector("color1", vec4(0.0f, 0.0f, 0.0f, 0.0f));
-  ExitOnGLError("ERROR: Could not set color 1");
-  material->SetVector("color2", vec4(0.0f, 1.0f, 0.0f, 0.33f));
-  ExitOnGLError("ERROR: Could not set color 2");
-  material->SetVector("color3", vec4(0.0f, 0.0f, 1.0f, 0.66f));
-  ExitOnGLError("ERROR: Could not set color 3");
-  material->SetVector("color4", vec4(1.0f, 1.0f, 0.0f, 1.0f));
-  ExitOnGLError("ERROR: Could not set color 4");
-
-  material->Bind(false);
-  ExitOnGLError("ERROR: Could not foo");
+  material->set_color1(vec4(0.0f, 0.0f, 0.0f, 0.0f));
+  material->set_color2(vec4(0.0f, 1.0f, 0.0f, 0.33f));
+  material->set_color3(vec4(0.0f, 0.0f, 1.0f, 0.66f));
+  material->set_color4(vec4(1.0f, 1.0f, 0.0f, 1.0f));
 
   glfwSetWindowSizeCallback(ResizeFunction);
 
   ExitOnGLError("ERROR: Could not end");
-
-
 
   // Script script;
 
@@ -321,6 +310,8 @@ void RenderFunction()
 
   material->Bind(true);
 
+  material->UpdateUniforms();
+
   ExitOnGLError("ERROR: Could not use the shader program");
 
   camera->UpdateMatrix();
@@ -384,47 +375,8 @@ void DestroyShader(void)
   ExitOnGLError("ERROR: Could not destroy the shaders");
 }
 
-void BufferData(const Geometry &geometry) {
-  glGenBuffers(4, &BufferIds[1]);
-  ExitOnGLError("ERROR: Could not generate the buffer objects");
-
-  glBindBuffer(GL_ARRAY_BUFFER, BufferIds[1]);
-  glBufferData(GL_ARRAY_BUFFER, geometry.vertices().size() * sizeof(vec3), &geometry.vertices()[0], GL_STATIC_DRAW);
-  ExitOnGLError("ERROR: Could not bind vertices VBO");
-  glEnableVertexAttribArray(0);
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid *)0);
-  ExitOnGLError("ERROR: Could not set vertices attributes");
-
-  glBindBuffer(GL_ARRAY_BUFFER, BufferIds[2]);
-  glBufferData(GL_ARRAY_BUFFER, geometry.texture_coords().size() * sizeof(vec2), &geometry.texture_coords()[0], GL_STATIC_DRAW);
-  ExitOnGLError("ERROR: Could not bind text_coord VBO");
-  glEnableVertexAttribArray(1);
-  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (GLvoid *)0);
-  ExitOnGLError("ERROR: Could not set text_coord attributes");
-
-  glBindBuffer(GL_ARRAY_BUFFER, BufferIds[3]);
-  glBufferData(GL_ARRAY_BUFFER, geometry.normals().size() * sizeof(vec3), &geometry.normals()[0], GL_STATIC_DRAW);
-  ExitOnGLError("ERROR: Could not bind normal VBO");
-  glEnableVertexAttribArray(2);
-  glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid *)0);
-  ExitOnGLError("ERROR: Could not set normal attributes");
-
-  // build index list
-  vector<GLuint> indices;
-  vector<vec3>::const_iterator it, end;
-  for (it = geometry.faces().begin(), end = geometry.faces().end(); it != end; ++it) {
-    indices.push_back((*it).x);
-    indices.push_back((*it).y);
-    indices.push_back((*it).z);
-  }
-
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, BufferIds[4]);
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), &indices[0], GL_STATIC_DRAW);
-  ExitOnGLError("ERROR: Could not bind the IBO to the VAO");
-}
-
 void CreateCube() {
-  Geometry *geometry = new Geometry();
+  geometry = new Geometry();
 
   vector<vec3> vertices;
   vertices.push_back(vec3(-.5f, -.5f,  .5f));
@@ -452,20 +404,11 @@ void CreateCube() {
   faces.push_back(vec3(0, 3, 2));
   geometry->set_faces(faces);
 
-  glGenVertexArrays(1, &BufferIds[0]);
-  ExitOnGLError("ERROR: Could not generate the VAO");
-  glBindVertexArray(BufferIds[0]);
-  ExitOnGLError("ERROR: Could not bind the VAO");
-
-  BufferData(*geometry);
-
-  glBindVertexArray(0);
+  geometry->InitBuffers();
 }
 
 void DestroyCube()
 {
-  glDeleteBuffers(4, &BufferIds[1]);
-  glDeleteVertexArrays(1, &BufferIds[0]);
   ExitOnGLError("ERROR: Could not destroy the buffer objects");
 }
 
@@ -476,12 +419,11 @@ void DrawCube(void)
   // glUniformMatrix4fv(ModelMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(ModelMatrix));
   material->SetMatrix("ModelMatrix", ModelMatrix);
 
-  glBindVertexArray(BufferIds[0]);
-  ExitOnGLError("ERROR: Could not bind the VAO for drawing purposes");
 
-  glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (GLvoid*)0);
+  geometry->Bind(true);
+
+  glDrawElements(GL_TRIANGLES, geometry->index_count(), GL_UNSIGNED_INT, (GLvoid*)0);
   ExitOnGLError("ERROR: Could not draw the cube");
 
-  glBindVertexArray(0);
-
+  geometry->Bind(false);
 }

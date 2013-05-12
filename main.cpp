@@ -372,7 +372,7 @@ void CreateShader(void)
 void DestroyShader(void)
 {
   ShaderCache::Destroy();
-  ExitOnGLError("ERROR: Could not destroy the shaders");
+  // ExitOnGLError("ERROR: Could not destroy the shaders");
 }
 
 void CreateCube() {
@@ -409,7 +409,7 @@ void CreateCube() {
 
 void DestroyCube()
 {
-  ExitOnGLError("ERROR: Could not destroy the buffer objects");
+  geometry->DestroyBuffers();
 }
 
 void DrawCube(void)

@@ -65,7 +65,7 @@ void Destroy() {
     glDeleteShader(vertex);
     glDeleteShader(fragment);
     glDeleteProgram(program);
-    ExitOnGLError("ERROR: Could not destroy the shaders");
+    // ExitOnGLError("ERROR: Could not destroy the shaders");
   }
 
   shader_map.clear();

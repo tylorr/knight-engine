@@ -11,6 +11,7 @@ set(SOURCES
     uniform.cpp
     program.cpp
     uniform_factory.cpp
+    shader.cpp
     # material.cpp
     # script.cpp
     # shader_cache.cpp

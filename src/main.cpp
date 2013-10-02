@@ -1,6 +1,6 @@
-#include "uniform.h"
-
-#include <stb_image.h>
+// #include <stb_image.h>
+#include "shader.h"
+#include "program.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
@@ -71,7 +71,12 @@ int main(void)
 {
   Initialize();
 
-  
+  Shader vert(ShaderType::Vertex, "#version 130\nin vec2 position; void main() { gl_Position = vec4(position, 0.0, 1.0); }");
+  Shader frag(ShaderType::Fragment, "#version 130\nout vec4 outColor; void main() { outColor = vec4(1.0, 0.0, 0.0, 1.0); }");
+  Program program(vert, frag);
+
+  // glUseProgram(program.handle());
+  program.Bind();
 
   // last_time = glfwGetTime();
 

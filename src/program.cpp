@@ -1,27 +1,79 @@
 #include "program.h"
+#include "shader.h"
 #include "uniform.h"
 #include "uniform_factory.h"
 
-#include <GL/glew.h>
+GC Program::gc;
+
+Program::Program() {
+  Init();
+}
+
+Program::Program(const GLuint &vertex, const GLuint &fragment) {
+  Init();
+  Attach(vertex);
+  Attach(fragment);
+  Link();
+}
+
+Program::~Program() {
+  Program::gc.Destroy(handle_);
+}
+
+void Program::Init() {
+  handle_ = Program::gc.Create(glCreateProgram(), glDeleteProgram);
+}
+
+void Program::Attach(const GLuint &shader) {
+  glAttachShader(handle_, shader);
+}
+
+void Program::Link() {
+  GLint res;
+
+  glLinkProgram(handle_);
+  glGetProgramiv(handle_, GL_LINK_STATUS, &res);
+
+  if (res == GL_FALSE) {
+    throw LinkException(GetInfoLog());
+  }
+}
+
+void Program::Bind() const {
+  glUseProgram(handle_);
+}
+
+std::string Program::GetInfoLog() const {
+  GLint res;
+  glGetProgramiv(handle_, GL_INFO_LOG_LENGTH, &res);
+
+  if (res > 0) {
+    std::string infoLog(res, 0);
+    glGetProgramInfoLog(handle_, res, &res, &infoLog[0]);
+    return infoLog;
+  } else {
+    return "";
+  }
+}
 
 void Program::ExtractShaderUniforms() {
   GLint maxLen, count;
-  glGetProgramiv(program_handle_, GL_ACTIVE_UNIFORM_MAX_LENGTH, &maxLen);
-  glGetProgramiv(program_handle_, GL_ACTIVE_UNIFORMS, &count);
+  glGetProgramiv(handle_, GL_ACTIVE_UNIFORM_MAX_LENGTH, &maxLen);
+  glGetProgramiv(handle_, GL_ACTIVE_UNIFORMS, &count);
 
   GLchar name[maxLen];
   GLint size, location;
   GLsizei length;
   GLenum type;
   for (int i = 0; i < count; ++i) {
-    glGetActiveUniform(program_handle_, i, maxLen, &length, &size, &type, name);
-    location = glGetUniformLocation(program_handle_, name);
+    glGetActiveUniform(handle_, i, maxLen, &length, &size, &type, name);
+    location = glGetUniformLocation(handle_, name);
 
     printf(" %-8d | %s\n", location, name);
   }
 }
 
-void Program::NotifyDirty(Uniform *uniform, unsigned int location) {
+void Program::NotifyDirty(Uniform *uniform, GLuint location) {
   dirty_uniforms_.push(UniformLocPair(uniform, location));
 }
 
@@ -35,7 +87,7 @@ void Program::UpdateProgram() {
   }
 }
 
-void Program::UpdateUniform(Uniform *uniform) {
+void Program::UpdateUniform(Uniform *uniform) const {
   switch(uniform->type()) {
     case UniformType::FLOAT_: {
       UniformFloat *unfiformFloat = static_cast<UniformFloat *>(uniform);

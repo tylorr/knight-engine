@@ -1,10 +1,8 @@
-#ifndef UTILS_H_
-#define UTILS_H_
+#ifndef COMMON_H_
+#define COMMON_H_
 
 #define DISALLOW_COPY_AND_ASSIGN(TypeName) \
   TypeName(const TypeName&);               \
   void operator=(const TypeName&)
 
-void ExitOnGLError(const char *error_message);
-
-#endif // UTILS_H_
+#endif // COMMON_H_

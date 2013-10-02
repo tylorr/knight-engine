@@ -47,45 +47,45 @@ class GC {
  public:   
   void Create(GLuint &obj, CreateFunc createFunc, DeleteFunc deleteFunc) {
     createFunc(1, &obj);
-    refs.insert( std::pair<GLuint, uint>( obj, 1 ) );
+    refs_.insert( std::pair<GLuint, uint>( obj, 1 ) );
     
-    this->deleteFunc = deleteFunc;
-    this->deleteFunc2 = nullptr;
+    delete_func_ = deleteFunc;
+    delete_func_2_ = nullptr;
   }
 
   int Create(const GLuint& obj, DeleteFunc2 deleteFunc2) {
-    refs.insert(std::pair<GLuint, uint>(obj, 1));
+    refs_.insert(std::pair<GLuint, uint>(obj, 1));
 
-    this->deleteFunc = nullptr;
-    this->deleteFunc2 = deleteFunc2;
+    delete_func_ = nullptr;
+    delete_func_2_ = deleteFunc2;
     
     return obj;
   }
 
   void Copy(const GLuint &from, GLuint &to, bool destructive = false) {
-    to = from;
-    refs[from]++;
-
     if (destructive) {
       Destroy(to);
     }
+
+    to = from;
+    refs_[from]++;
   }
 
   void Destroy(GLuint &obj) {
-    if (--refs[obj] == 0) {
-      if (deleteFunc) {
-        deleteFunc(1, &obj);
+    if (--refs_[obj] == 0) {
+      if (delete_func_) {
+        delete_func_(1, &obj);
       } else { 
-        deleteFunc2(obj);
+        delete_func_2_(obj);
       }
-      refs.erase(obj);
+      refs_.erase(obj);
     }
   }
 
  private:
-  std::map<GLuint, unsigned int> refs;
-  DeleteFunc deleteFunc;
-  DeleteFunc2 deleteFunc2;
+  std::map<GLuint, unsigned int> refs_;
+  DeleteFunc delete_func_;
+  DeleteFunc2 delete_func_2_;
 };
 
 #endif // GL_H_

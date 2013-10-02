@@ -1,4 +1,4 @@
-
+#include "uniform.h"
 
 #include <stb_image.h>
 
@@ -15,6 +15,7 @@
 
 #include <iostream>
 #include <vector>
+#include <functional>
 
 // using namespace tthread;
 
@@ -69,6 +70,8 @@ void DrawCube(void);
 int main(void)
 {
   Initialize();
+
+  
 
   // last_time = glfwGetTime();
 
@@ -133,15 +136,15 @@ void Initialize(void)
   );
 
   // glGetError();
-  // glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+  glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
-  // glEnable(GL_DEPTH_TEST);
-  // glDepthFunc(GL_LESS);
+  glEnable(GL_DEPTH_TEST);
+  glDepthFunc(GL_LESS);
   // ExitOnGLError("ERROR: Could not set OpenGL depth testing options");
 
   // // glEnable(GL_CULL_FACE);
-  // glCullFace(GL_BACK);
-  // glFrontFace(GL_CCW);
+  glCullFace(GL_BACK);
+  glFrontFace(GL_CCW);
   // ExitOnGLError("ERROR: Could not set OpenGL culling options");
 
   // // glEnable(GL_BLEND);
@@ -150,8 +153,8 @@ void Initialize(void)
   // camera = new Transform();
   // camera->position_ = vec3(0, 0, 2);
 
-  // ModelMatrix = glm::mat4(1.0f);
-  // ProjectionMatrix = glm::mat4(1.0f);
+  ModelMatrix = glm::mat4(1.0f);
+  ProjectionMatrix = glm::mat4(1.0f);
 
   // CreateShader();
   // CreateCube();
@@ -205,11 +208,6 @@ void InitWindow(void) {
     exit(EXIT_FAILURE);
   }
 
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-  glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
   window = glfwCreateWindow(CurrentWidth, CurrentHeight, "Hello World", NULL, NULL);
 
   if (!window) {
@@ -220,11 +218,6 @@ void InitWindow(void) {
     glfwTerminate();
     exit(EXIT_FAILURE);
   }
-
-  // glfwSetWindowTitle(WINDOW_TITLE_PREFIX);
-
-  // 1 for vsync on, 0 vsync off
-  // glfwSwapInterval(0);
 
   glfwMakeContextCurrent(window);
 }

@@ -1,4 +1,5 @@
-
+set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
+set(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
 
 add_definitions(-Wall -g -fcolor-diagnostics -std=c++11)
 
@@ -7,6 +8,9 @@ set(SOURCES
     # geometry.cpp
     # gradient_map_material.cpp
     main.cpp
+    uniform.cpp
+    program.cpp
+    uniform_factory.cpp
     # material.cpp
     # script.cpp
     # shader_cache.cpp

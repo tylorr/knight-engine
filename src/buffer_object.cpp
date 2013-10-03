@@ -19,50 +19,36 @@
   CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE
 */
 
-#include "shader.h"
+#include "buffer_object.h"
 
-GC Shader::gc;
+GC BufferObject::gc;
 
-
-Shader::Shader(ShaderType::shader_type_t shader) {
-  handle_ = Shader::gc.Create(glCreateShader(shader), glDeleteShader);
+BufferObject::BufferObject(GLenum target) 
+    : target_(target) {
+  BufferObject::gc.Create(handle_, glGenBuffers, glDeleteBuffers);
 }
 
-Shader::Shader(ShaderType::shader_type_t shader, const std::string &code) {
-  handle_ = Shader::gc.Create(glCreateShader(shader), glDeleteShader);
-  Source(code);
-  Compile();
+BufferObject::BufferObject(GLenum target, const GLsizeiptr &size, const GLvoid *data, const GLenum &usage)
+    : target_(target) {
+  BufferObject::gc.Create(handle_, glGenBuffers, glDeleteBuffers);
+  Data(size, data, usage);
 }
 
-Shader::~Shader() {
-  Shader::gc.Destroy(handle_);
+BufferObject::~BufferObject() {
+  BufferObject::gc.Destroy(handle_);
 }
 
-void Shader::Source(const std::string& code) {
-  const char *c = code.c_str();
-  glShaderSource(handle_, 1, &c, nullptr);
+void BufferObject::Data(const GLsizeiptr &size, const GLvoid *data, const GLenum &usage) {
+  glBindBuffer(target_, handle_);
+  glBufferData(target_, size, data, usage);
 }
 
-void Shader::Compile() {
-  GLint res;
-
-  glCompileShader(handle_);
-  glGetShaderiv(handle_, GL_COMPILE_STATUS, &res);
-
-  if (res == GL_FALSE) {
-    throw CompileException(GetInfoLog());
-  }
+void BufferObject::SubData(const GLintptr &offset, const GLsizeiptr &size, const GLvoid *data) {
+  glBindBuffer(target_, handle_);
+  glBufferSubData(target_, offset, size, data);
 }
 
-std::string Shader::GetInfoLog() {
-  GLint res;
-  glGetShaderiv(handle_, GL_INFO_LOG_LENGTH, &res);
-
-  if (res > 0) {
-    std::string infoLog(res, 0);
-    glGetShaderInfoLog(handle_, res, &res, &infoLog[0]);
-    return infoLog;
-  } else {
-    return "";
-  }
+void BufferObject::GetSubData(const GLintptr &offset, const GLsizeiptr &size, GLvoid *data) {
+  glBindBuffer(target_, handle_);
+  glGetBufferSubData(target_, offset, size, data);
 }

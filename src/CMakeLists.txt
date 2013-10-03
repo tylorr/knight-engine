@@ -12,6 +12,8 @@ set(SOURCES
     program.cpp
     uniform_factory.cpp
     shader.cpp
+    buffer_object.cpp
+    vertex_array.cpp
     # material.cpp
     # script.cpp
     # shader_cache.cpp

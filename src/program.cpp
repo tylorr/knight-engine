@@ -1,16 +1,15 @@
 #include "program.h"
-#include "shader.h"
 #include "uniform.h"
 #include "uniform_factory.h"
 
 GC Program::gc;
 
 Program::Program() {
-  Init();
+  handle_ = Program::gc.Create(glCreateProgram(), glDeleteProgram);
 }
 
-Program::Program(const GLuint &vertex, const GLuint &fragment) {
-  Init();
+Program::Program(const Shader &vertex, const Shader &fragment) {
+  handle_ = Program::gc.Create(glCreateProgram(), glDeleteProgram);
   Attach(vertex);
   Attach(fragment);
   Link();
@@ -20,12 +19,8 @@ Program::~Program() {
   Program::gc.Destroy(handle_);
 }
 
-void Program::Init() {
-  handle_ = Program::gc.Create(glCreateProgram(), glDeleteProgram);
-}
-
-void Program::Attach(const GLuint &shader) {
-  glAttachShader(handle_, shader);
+void Program::Attach(const Shader &shader) {
+  glAttachShader(handle_, shader.handle());
 }
 
 void Program::Link() {
@@ -73,7 +68,7 @@ void Program::ExtractShaderUniforms() {
   }
 }
 
-void Program::NotifyDirty(Uniform *uniform, GLuint location) {
+void Program::NotifyDirty(Uniform *uniform, const GLuint &location) {
   dirty_uniforms_.push(UniformLocPair(uniform, location));
 }
 
@@ -116,4 +111,8 @@ void Program::UpdateUniform(Uniform *uniform) const {
     }
 
   }
+}
+
+GLint Program::GetAttribute(const GLchar *name) {
+  return glGetAttribLocation(handle_, name);
 }

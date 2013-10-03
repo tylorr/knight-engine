@@ -19,50 +19,35 @@
   CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE
 */
 
-#include "shader.h"
+#ifndef BUFFER_OBJECT_H
+#define BUFFER_OBJECT_H
 
-GC Shader::gc;
+#include "gc.h"
+#include "common.h"
 
+#include <GL/glew.h>
 
-Shader::Shader(ShaderType::shader_type_t shader) {
-  handle_ = Shader::gc.Create(glCreateShader(shader), glDeleteShader);
-}
+class BufferObject {
+ public:
+  BufferObject(GLenum target);
+  BufferObject(GLenum target, const GLsizeiptr &size, const GLvoid *data, const GLenum &usage);
 
-Shader::Shader(ShaderType::shader_type_t shader, const std::string &code) {
-  handle_ = Shader::gc.Create(glCreateShader(shader), glDeleteShader);
-  Source(code);
-  Compile();
-}
+  ~BufferObject();
 
-Shader::~Shader() {
-  Shader::gc.Destroy(handle_);
-}
+  GLuint handle() const { return handle_; }
+  GLenum target() const { return target_; }
 
-void Shader::Source(const std::string& code) {
-  const char *c = code.c_str();
-  glShaderSource(handle_, 1, &c, nullptr);
-}
+  void Data(const GLsizeiptr &size, const GLvoid *data, const GLenum &usage);
+  void SubData(const GLintptr &offset, const GLsizeiptr &size, const GLvoid *data);
 
-void Shader::Compile() {
-  GLint res;
+  void GetSubData(const GLintptr &offset, const GLsizeiptr &size, GLvoid *data);
 
-  glCompileShader(handle_);
-  glGetShaderiv(handle_, GL_COMPILE_STATUS, &res);
+ private:
+  DISALLOW_COPY_AND_ASSIGN(BufferObject);
 
-  if (res == GL_FALSE) {
-    throw CompileException(GetInfoLog());
-  }
-}
+  static GC gc;
+  GLuint handle_;
+  GLenum target_;
+};
 
-std::string Shader::GetInfoLog() {
-  GLint res;
-  glGetShaderiv(handle_, GL_INFO_LOG_LENGTH, &res);
-
-  if (res > 0) {
-    std::string infoLog(res, 0);
-    glGetShaderInfoLog(handle_, res, &res, &infoLog[0]);
-    return infoLog;
-  } else {
-    return "";
-  }
-}
+#endif // BUFFER_OBJECT_H

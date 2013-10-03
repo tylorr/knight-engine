@@ -3,6 +3,7 @@
 
 #include "common.h"
 #include "gc.h"
+#include "shader.h"
 
 #include <GL/glew.h>
 
@@ -29,12 +30,12 @@ class LinkException : public std::exception {
 class Program {
  public:
   Program();
-  Program(const GLuint &vertex, const GLuint &fragment);
+  Program(const Shader &vertex, const Shader &fragment);
   ~Program();
 
   GLuint handle() const { return handle_; }
 
-  void Attach(const GLuint &shader);
+  void Attach(const Shader &shader);
   void Link();
   void Bind() const;
 
@@ -42,15 +43,15 @@ class Program {
 
   void ExtractShaderUniforms();
 
-  void NotifyDirty(Uniform *, GLuint);
+  void NotifyDirty(Uniform *, const GLuint &);
   void UpdateProgram();
+
+  GLint GetAttribute(const GLchar *name);
   
  private:
   typedef std::pair<Uniform *, GLuint> UniformLocPair;
 
   DISALLOW_COPY_AND_ASSIGN(Program);
-
-  void Init();
 
   void UpdateUniform(Uniform *) const;
 

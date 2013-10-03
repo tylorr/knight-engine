@@ -21,9 +21,9 @@ class Uniform {
 
   void AddOwner(Program *, unsigned int);
 
-  const std::string &name() { return name_; }
+  const std::string &name() const { return name_; }
 
-  const UniformType &type() { return type_; }
+  const UniformType &type() const { return type_; }
 
  protected:
   void NotifyOwners();

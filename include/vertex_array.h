@@ -19,50 +19,34 @@
   CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE
 */
 
-#include "shader.h"
+#ifndef VERTEX_ARRAY_H_
+#define VERTEX_ARRAY_H_
 
-GC Shader::gc;
+#include "buffer_object.h"
 
+/*
+  Vertex Array Object
+*/
+class VertexArray
+{
+public:
+  VertexArray();
+  ~VertexArray();
 
-Shader::Shader(ShaderType::shader_type_t shader) {
-  handle_ = Shader::gc.Create(glCreateShader(shader), glDeleteShader);
-}
+  GLuint handle() const { return handle_; }
 
-Shader::Shader(ShaderType::shader_type_t shader, const std::string &code) {
-  handle_ = Shader::gc.Create(glCreateShader(shader), glDeleteShader);
-  Source(code);
-  Compile();
-}
+  void Bind() const;
 
-Shader::~Shader() {
-  Shader::gc.Destroy(handle_);
-}
+  void BindBuffer(const BufferObject& buffer);
 
-void Shader::Source(const std::string& code) {
-  const char *c = code.c_str();
-  glShaderSource(handle_, 1, &c, nullptr);
-}
+  void BindAttribute(const BufferObject& buffer, const GLint& attribute, 
+                     const GLint &size, const GLenum &type, 
+                     const GLboolean &normalized, const GLsizei &stride, 
+                     const GLvoid *pointer);
 
-void Shader::Compile() {
-  GLint res;
+private:
+  static GC gc;
+  GLuint handle_;
+};
 
-  glCompileShader(handle_);
-  glGetShaderiv(handle_, GL_COMPILE_STATUS, &res);
-
-  if (res == GL_FALSE) {
-    throw CompileException(GetInfoLog());
-  }
-}
-
-std::string Shader::GetInfoLog() {
-  GLint res;
-  glGetShaderiv(handle_, GL_INFO_LOG_LENGTH, &res);
-
-  if (res > 0) {
-    std::string infoLog(res, 0);
-    glGetShaderInfoLog(handle_, res, &res, &infoLog[0]);
-    return infoLog;
-  } else {
-    return "";
-  }
-}
+#endif

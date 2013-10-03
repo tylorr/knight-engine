@@ -23,6 +23,7 @@
 #define SHADER_H_
 
 #include "gc.h"
+#include "common.h"
 
 #include <GL/glew.h>
   
@@ -63,14 +64,16 @@ class CompileException : public std::exception {
 */
 class Shader {
  public:
-  Shader(const Shader &other);
+  // Shader(const Shader &other);
   Shader(ShaderType::shader_type_t type);
   Shader(ShaderType::shader_type_t type, const std::string &code);
 
   ~Shader();
 
-  operator GLuint() const;
-  const Shader &operator=(const Shader &other);
+  // operator GLuint() const;
+  // const Shader &operator=(const Shader &other);
+
+  GLuint handle() const { return handle_; }
 
   void Source(const std::string &code);
   void Compile();
@@ -78,7 +81,9 @@ class Shader {
   std::string GetInfoLog();
 
  private:
-  static GC gc_;
+  DISALLOW_COPY_AND_ASSIGN(Shader);
+
+  static GC gc;
   GLuint handle_;
 };
 

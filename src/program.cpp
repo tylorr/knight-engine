@@ -2,21 +2,19 @@
 #include "uniform.h"
 #include "uniform_factory.h"
 
-GC Program::gc;
-
 Program::Program() {
-  handle_ = Program::gc.Create(glCreateProgram(), glDeleteProgram);
+  handle_ = glCreateProgram();
 }
 
 Program::Program(const Shader &vertex, const Shader &fragment) {
-  handle_ = Program::gc.Create(glCreateProgram(), glDeleteProgram);
+  handle_ = glCreateProgram();
   Attach(vertex);
   Attach(fragment);
   Link();
 }
 
 Program::~Program() {
-  Program::gc.Destroy(handle_);
+  glDeleteProgram(handle_);
 }
 
 void Program::Attach(const Shader &shader) {

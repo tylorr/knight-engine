@@ -21,14 +21,13 @@
 
 #include "vertex_array.h"
 
-GC VertexArray::gc;
 
 VertexArray::VertexArray() {
-  VertexArray::gc.Create(handle_, glGenVertexArrays, glDeleteVertexArrays);
+  glGenVertexArrays(1, &handle_);
 }
 
 VertexArray::~VertexArray() {
-  VertexArray::gc.Destroy(handle_);
+  glDeleteVertexArrays(1, &handle_);
 }
 
 void VertexArray::Bind() const {
@@ -40,9 +39,9 @@ void VertexArray::BindBuffer(const BufferObject &buffer) {
   glBindBuffer(buffer.target(), buffer.handle());
 }
 
-void VertexArray::BindAttribute(const BufferObject& buffer, 
-                                const GLint& attribute, const GLint &size, 
-                                const GLenum &type, const GLboolean &normalized, 
+void VertexArray::BindAttribute(const BufferObject& buffer,
+                                const GLint& attribute, const GLint &size,
+                                const GLenum &type, const GLboolean &normalized,
                                 const GLsizei &stride, const GLvoid *pointer) {
   BindBuffer(buffer);
   glEnableVertexAttribArray(attribute);

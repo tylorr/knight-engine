@@ -39,13 +39,12 @@ public:
 
   void BindBuffer(const BufferObject& buffer);
 
-  void BindAttribute(const BufferObject& buffer, const GLint& attribute, 
-                     const GLint &size, const GLenum &type, 
-                     const GLboolean &normalized, const GLsizei &stride, 
+  void BindAttribute(const BufferObject& buffer, const GLint& attribute,
+                     const GLint &size, const GLenum &type,
+                     const GLboolean &normalized, const GLsizei &stride,
                      const GLvoid *pointer);
 
 private:
-  static GC gc;
   GLuint handle_;
 };
 

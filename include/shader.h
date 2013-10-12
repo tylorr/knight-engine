@@ -22,11 +22,10 @@
 #ifndef SHADER_H_
 #define SHADER_H_
 
-#include "gc.h"
 #include "common.h"
 
 #include <GL/glew.h>
-  
+
 #include <exception>
 #include <string>
 
@@ -35,7 +34,7 @@
 */
 namespace ShaderType
 {
-  enum shader_type_t 
+  enum shader_type_t
   {
     Vertex = GL_VERTEX_SHADER,
     Fragment = GL_FRAGMENT_SHADER,
@@ -83,7 +82,6 @@ class Shader {
  private:
   DISALLOW_COPY_AND_ASSIGN(Shader);
 
-  static GC gc;
   GLuint handle_;
 };
 

@@ -21,21 +21,21 @@
 
 #include "shader.h"
 
-GC Shader::gc;
-
 
 Shader::Shader(ShaderType::shader_type_t shader) {
-  handle_ = Shader::gc.Create(glCreateShader(shader), glDeleteShader);
+  // handle_ = Shader::gc.Create(glCreateShader(shader), glDeleteShader);
+  handle_ = glCreateShader(shader);
 }
 
 Shader::Shader(ShaderType::shader_type_t shader, const std::string &code) {
-  handle_ = Shader::gc.Create(glCreateShader(shader), glDeleteShader);
+  handle_ = glCreateShader(shader);
   Source(code);
   Compile();
 }
 
 Shader::~Shader() {
-  Shader::gc.Destroy(handle_);
+  // Shader::gc.Destroy(handle_);
+  glDeleteShader(handle_);
 }
 
 void Shader::Source(const std::string& code) {

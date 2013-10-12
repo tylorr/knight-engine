@@ -21,21 +21,19 @@
 
 #include "buffer_object.h"
 
-GC BufferObject::gc;
-
-BufferObject::BufferObject(GLenum target) 
+BufferObject::BufferObject(GLenum target)
     : target_(target) {
-  BufferObject::gc.Create(handle_, glGenBuffers, glDeleteBuffers);
+  glGenBuffers(1, &handle_);
 }
 
 BufferObject::BufferObject(GLenum target, const GLsizeiptr &size, const GLvoid *data, const GLenum &usage)
     : target_(target) {
-  BufferObject::gc.Create(handle_, glGenBuffers, glDeleteBuffers);
+  glGenBuffers(1, &handle_);
   Data(size, data, usage);
 }
 
 BufferObject::~BufferObject() {
-  BufferObject::gc.Destroy(handle_);
+  glDeleteBuffers(1, &handle_);
 }
 
 void BufferObject::Data(const GLsizeiptr &size, const GLvoid *data, const GLenum &usage) {

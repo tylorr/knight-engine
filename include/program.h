@@ -2,7 +2,6 @@
 #define PROGRAM_H_
 
 #include "common.h"
-#include "gc.h"
 #include "shader.h"
 
 #include <GL/glew.h>
@@ -47,7 +46,7 @@ class Program {
   void UpdateProgram();
 
   GLint GetAttribute(const GLchar *name);
-  
+
  private:
   typedef std::pair<Uniform *, GLuint> UniformLocPair;
 
@@ -55,7 +54,6 @@ class Program {
 
   void UpdateUniform(Uniform *) const;
 
-  static GC gc;
 
   GLuint handle_;
   std::queue<UniformLocPair> dirty_uniforms_;

@@ -22,7 +22,6 @@
 #ifndef BUFFER_OBJECT_H
 #define BUFFER_OBJECT_H
 
-#include "gc.h"
 #include "common.h"
 
 #include <GL/glew.h>
@@ -45,7 +44,6 @@ class BufferObject {
  private:
   DISALLOW_COPY_AND_ASSIGN(BufferObject);
 
-  static GC gc;
   GLuint handle_;
   GLenum target_;
 };

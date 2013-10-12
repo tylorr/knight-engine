@@ -22,6 +22,7 @@
 #include <iostream>
 #include <vector>
 #include <functional>
+#include <fstream>
 
 // using namespace tthread;
 
@@ -31,6 +32,8 @@ using glm::vec2;
 using std::cout;
 using std::endl;
 using std::vector;
+
+using namespace knight;
 
 #define WINDOW_TITLE_PREFIX "Chapter 1"
 
@@ -73,8 +76,7 @@ void CreateCube(void);
 void DestroyCube(void);
 void DrawCube(void);
 
-int main(void)
-{
+int main(int argc, char *argv[]) {
   LOGOG_INITIALIZE();
 
   {
@@ -82,22 +84,22 @@ int main(void)
     logog::Cout out;
 
     if (Initialize()) {
-      Shader vert(ShaderType::VERTEX, "#version 330\nin vec2 position; void main() { gl_Position = vec4(position, 0.0, 1.0); }");
-      Shader frag(ShaderType::FRAGMENT, "#version 330\nout vec4 outColor; void main() { outColor = vec4(1.0, 0.0, 0.0, 1.0); }");
+      Shader vert(ShaderType::VERTEX, Shader::ReadSource("../shaders/simple.vert"));
+      Shader frag(ShaderType::FRAGMENT, Shader::ReadSource("../shaders/simple.frag"));
       Program program(vert, frag);
       program.Bind();
 
       float vertices[] = {
-        -0.5f,  0.5f,
-         0.5f,  0.5f,
-         0.5f, -0.5f
+        -0.5f,  0.5f, 0.0f,
+         0.5f,  0.5f, 0.0f,
+         0.5f, -0.5f, 0.0f
       };
 
       BufferObject vbo(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
       VertexArray vao;
-      vao.BindAttribute(vbo, program.GetAttribute("position"),
-                        2, GL_FLOAT, GL_FALSE, 0, (const GLvoid *)0);
+      vao.BindAttribute(vbo, program.GetAttribute("in_Position"),
+                        3, GL_FLOAT, GL_FALSE, 0, (const GLvoid *)0);
       // Main loop
       while (!glfwWindowShouldClose(window)) {
 

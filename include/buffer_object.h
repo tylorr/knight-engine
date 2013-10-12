@@ -5,6 +5,8 @@
 
 #include <GL/glew.h>
 
+namespace knight {
+
 class BufferObject {
  public:
   BufferObject(GLenum target);
@@ -26,5 +28,7 @@ class BufferObject {
   GLuint handle_;
   GLenum target_;
 };
+
+}; // namespace knight
 
 #endif // BUFFER_OBJECT_H

@@ -3,8 +3,9 @@
 
 #include "buffer_object.h"
 
-class VertexArray
-{
+namespace knight {
+
+class VertexArray {
 public:
   VertexArray();
   ~VertexArray();
@@ -23,5 +24,7 @@ public:
 private:
   GLuint handle_;
 };
+
+}; // namespace knight
 
 #endif

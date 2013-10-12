@@ -2,7 +2,14 @@
 
 #include <logog.hpp>
 
+#include <fstream>
+#include <streambuf>
+
 using std::string;
+using std::ifstream;
+using std::istreambuf_iterator;
+
+namespace knight {
 
 Shader::Shader(ShaderType type) {
   handle_ = glCreateShader(static_cast<GLenum>(type));
@@ -16,6 +23,20 @@ Shader::Shader(ShaderType type, const std::string &code) {
 
 Shader::~Shader() {
   glDeleteShader(handle_);
+}
+
+string Shader::ReadSource(const char *filename) {
+  ifstream fileStream(filename);
+  string source;
+
+  fileStream.seekg(0, std::ios::end);
+  source.reserve(fileStream.tellg());
+  fileStream.seekg(0, std::ios::beg);
+
+  source.assign((istreambuf_iterator<char>(fileStream)),
+                istreambuf_iterator<char>());
+
+  return source;
 }
 
 void Shader::Source(const std::string &code) {
@@ -46,3 +67,5 @@ string Shader::GetInfoLog() const {
     return "";
   }
 }
+
+}; // namespace knight

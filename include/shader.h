@@ -7,6 +7,8 @@
 
 #include <string>
 
+namespace knight {
+
 enum class ShaderType : GLenum {
   VERTEX = GL_VERTEX_SHADER,
   FRAGMENT = GL_FRAGMENT_SHADER,
@@ -20,6 +22,8 @@ class Shader {
 
   ~Shader();
 
+  static std::string ReadSource(const char *filename);
+
   GLuint handle() const { return handle_; }
 
   void Source(const std::string &code);
@@ -32,5 +36,7 @@ class Shader {
 
   GLuint handle_;
 };
+
+}; // namespace knight
 
 #endif // SHADER_H_

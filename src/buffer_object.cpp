@@ -1,5 +1,7 @@
 #include "buffer_object.h"
 
+namespace knight {
+
 BufferObject::BufferObject(GLenum target)
     : target_(target) {
   glGenBuffers(1, &handle_);
@@ -29,3 +31,5 @@ void BufferObject::GetSubData(const GLintptr &offset, const GLsizeiptr &size, GL
   glBindBuffer(target_, handle_);
   glGetBufferSubData(target_, offset, size, data);
 }
+
+}; // namespace knight

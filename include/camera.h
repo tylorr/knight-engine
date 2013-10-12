@@ -5,6 +5,8 @@
 
 #include <glm/glm.hpp>
 
+namespace knight {
+
 class Camera {
  public:
   glm::mat4 projection_matrix_;
@@ -15,5 +17,7 @@ class Camera {
  private:
   DISALLOW_COPY_AND_ASSIGN(Camera);
 };
+
+}; // namespace knight
 
 #endif // CAMERA_H_

@@ -9,6 +9,8 @@ using std::string;
 using glm::mat4;
 using glm::vec4;
 
+namespace knight {
+
 Material::Material(const GLuint &shader_program) :
   shader_program_(shader_program),
   transparent_(false) { }
@@ -41,4 +43,6 @@ void Material::SetVector(const string &name, const vec4 &vector) {
 void Material::SetFloat(const string &name, const float &value) {
   glUniform1f(GetLocation(name), value);
 }
+
+}; // namespace knight
 

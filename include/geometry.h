@@ -10,6 +10,8 @@
 
 #include <vector>
 
+namespace knight {
+
 class Geometry {
  public:
   Geometry() { }
@@ -22,7 +24,7 @@ class Geometry {
 
   void set_faces(const std::vector<glm::vec3> &faces) { faces_ = faces; }
   const std::vector<glm::vec3> &faces() const { return faces_; }
-
+s
   void set_vertices(const std::vector<glm::vec3> &vertices) {
     vertices_ = vertices;
   }
@@ -54,5 +56,7 @@ class Geometry {
 
   DISALLOW_COPY_AND_ASSIGN(Geometry);
 };
+
+}; // namespace knight
 
 #endif // GEOMETRY_H_

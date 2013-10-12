@@ -4,6 +4,8 @@ using glm::vec2;
 using glm::vec3;
 using std::vector;
 
+namespace knight {
+
 void Geometry::Bind(const bool &bind) const {
   glBindVertexArray(bind ? buffer_ids_[0] : 0);
 }

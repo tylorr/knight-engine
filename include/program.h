@@ -6,7 +6,9 @@
 
 #include <GL/glew.h>
 
-class Uniform;
+namespace knight {
+
+// class Uniform;
 
 class Program {
  public:
@@ -24,8 +26,8 @@ class Program {
 
   void ExtractShaderUniforms();
 
-  void NotifyDirty(Uniform *, const GLuint &);
-  void UpdateProgram();
+  // void NotifyDirty(Uniform *, const GLuint &);
+  // void UpdateProgram();
 
   GLint GetAttribute(const GLchar *name);
 
@@ -39,5 +41,7 @@ class Program {
   GLuint handle_;
   // std::queue<UniformLocPair> dirty_uniforms_;
 };
+
+}; // namespace knight
 
 #endif // PROGRAM_H_

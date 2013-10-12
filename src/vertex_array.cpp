@@ -1,5 +1,7 @@
 #include "vertex_array.h"
 
+namespace knight {
+
 VertexArray::VertexArray() {
   glGenVertexArrays(1, &handle_);
 }
@@ -25,3 +27,5 @@ void VertexArray::BindAttribute(const BufferObject& buffer,
   glEnableVertexAttribArray(attribute);
   glVertexAttribPointer(attribute, size, type, normalized, stride, pointer);
 }
+
+}; // namespace knight

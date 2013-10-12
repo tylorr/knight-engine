@@ -11,6 +11,8 @@
 #include <string>
 #include <map>
 
+namespace knight {
+
 class Material {
  public:
   typedef std::map<std::string, GLint> UniformMap;
@@ -56,5 +58,7 @@ class Material {
 
   DISALLOW_COPY_AND_ASSIGN(Material);
 };
+
+}; // namespace knight
 
 #endif // MATERIAL_H_

@@ -4,6 +4,8 @@
 
 using std::string;
 
+namespace knight {
+
 Program::Program() {
   handle_ = glCreateProgram();
 }
@@ -117,4 +119,4 @@ GLint Program::GetAttribute(const GLchar *name) {
 //   }
 // }
 
-
+}; // namespace knight

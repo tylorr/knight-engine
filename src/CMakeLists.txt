@@ -5,9 +5,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fcolor-diagnostics -std=c++11")
 
 set(SOURCES
     main.cpp
-    uniform.cpp
     program.cpp
-    uniform_factory.cpp
     shader.cpp
     buffer_object.cpp
     vertex_array.cpp

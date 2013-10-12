@@ -44,21 +44,21 @@ typedef void (*DeleteFunc2) (GLuint);
   OpenGL object garbage collector
 */
 class GC {
- public:   
+ public:
   void Create(GLuint &obj, CreateFunc createFunc, DeleteFunc deleteFunc) {
     createFunc(1, &obj);
-    refs_.insert( std::pair<GLuint, uint>( obj, 1 ) );
-    
+    refs_.insert( std::pair<GLuint, unsigned int>( obj, 1 ) );
+
     delete_func_ = deleteFunc;
     delete_func_2_ = nullptr;
   }
 
   int Create(const GLuint& obj, DeleteFunc2 deleteFunc2) {
-    refs_.insert(std::pair<GLuint, uint>(obj, 1));
+    refs_.insert(std::pair<GLuint, unsigned int>(obj, 1));
 
     delete_func_ = nullptr;
     delete_func_2_ = deleteFunc2;
-    
+
     return obj;
   }
 
@@ -75,7 +75,7 @@ class GC {
     if (--refs_[obj] == 0) {
       if (delete_func_) {
         delete_func_(1, &obj);
-      } else { 
+      } else {
         delete_func_2_(obj);
       }
       refs_.erase(obj);

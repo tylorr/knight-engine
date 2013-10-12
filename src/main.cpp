@@ -1,3 +1,5 @@
+#define LOGOG_LEVEL LOGOG_LEVEL_ALL
+
 // #include <stb_image.h>
 #include "shader.h"
 #include "program.h"
@@ -14,6 +16,8 @@
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+
+#include <logog.hpp>
 
 #include <iostream>
 #include <vector>
@@ -57,8 +61,8 @@ float CubeRotation;
 double last_time = 0;
 double elapsed_time = 0;
 
-void Initialize();
-void InitWindow();
+bool Initialize();
+bool InitWindow();
 void ResizeFunction(int, int);
 void RenderFunction(void);
 void FramesTimer(void* arg);
@@ -71,90 +75,53 @@ void DrawCube(void);
 
 int main(void)
 {
-  Initialize();
+  LOGOG_INITIALIZE();
 
-  Shader vert(ShaderType::Vertex, "#version 130\nin vec2 position; void main() { gl_Position = vec4(position, 0.0, 1.0); }");
-  Shader frag(ShaderType::Fragment, "#version 130\nout vec4 outColor; void main() { outColor = vec4(1.0, 0.0, 0.0, 1.0); }");
-  Program program(vert, frag);
-  program.Bind();
+  {
+    // out must lose scope before LOGOG_SHUTDOWN()
+    logog::Cout out;
 
-  float vertices[] = {
-    -0.5f,  0.5f,
-     0.5f,  0.5f,
-     0.5f, -0.5f
-  };
+    if (Initialize()) {
+      // Main loop
+      while (!glfwWindowShouldClose(window)) {
 
-  BufferObject vbo(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-  VertexArray vao;
-  vao.BindAttribute(vbo, program.GetAttribute("position"), 
-                    2, GL_FLOAT, GL_FALSE, 0, (const GLvoid *)0);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+        // RenderFunction();
 
-  // last_time = glfwGetTime();
-
-  // int running = GL_TRUE;
-
-  // thread frameThread(FramesTimer, 0);
-
-  // Main loop
-  while (!glfwWindowShouldClose(window)) {
-
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    glDrawArrays(GL_TRIANGLES, 0, 3);
-
-    glfwSwapBuffers(window);
-    glfwPollEvents();
-    // double current_time = glfwGetTime();
-    // elapsed_time = current_time - last_time;
-    // last_time = current_time;
-    // if (TitleUpdated) {
-    //   glfwSetWindowTitle(TitleString);
-    //   TitleUpdated = false;
-    // }
-
-    // RenderFunction();
-
-    // // Check if ESC key was pressed or window was closed
-    // running = !glfwGetKey(GLFW_KEY_ESC) &&
-    //        glfwGetWindowParam(GLFW_OPENED);
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+      }
+    }
   }
-
-  // runFrameTimer = false;
-  // // frameThread.join();
-
-  // Cleanup();
 
   // Close window and terminate GLFW
   glfwTerminate();
+
+  LOGOG_SHUTDOWN();
 
   // Exit program
   exit(EXIT_SUCCESS);
 }
 
-void Initialize(void)
+bool Initialize()
 {
   GLenum GlewInitResult;
 
-  InitWindow();
+  if (!InitWindow()) {
+    return false;
+  }
 
   glewExperimental = GL_TRUE;
   GlewInitResult = glewInit();
 
   if (GLEW_OK != GlewInitResult) {
-    fprintf(
-      stderr,
-      "ERROR: %s\n",
-      glewGetErrorString(GlewInitResult)
-    );
-    exit(EXIT_FAILURE);
+    ERR("%s", glewGetErrorString(GlewInitResult));
+    return false;
   }
 
-  fprintf(
-    stdout,
-    "INFO: OpenGL Version: %s\n",
-    glGetString(GL_VERSION)
-  );
+  INFO("OpenGL Version: %s", glGetString(GL_VERSION));
 
   // glGetError();
   glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
@@ -174,6 +141,25 @@ void Initialize(void)
 
   ModelMatrix = glm::mat4(1.0f);
   ProjectionMatrix = glm::mat4(1.0f);
+
+  Shader vert(ShaderType::Vertex, "#version 130\nin vec2 position; void main() { gl_Position = vec4(position, 0.0, 1.0); }");
+  Shader frag(ShaderType::Fragment, "#version 130\nout vec4 outColor; void main() { outColor = vec4(1.0, 0.0, 0.0, 1.0); }");
+  Program program(vert, frag);
+  program.Bind();
+
+  float vertices[] = {
+    -0.5f,  0.5f,
+     0.5f,  0.5f,
+     0.5f, -0.5f
+  };
+
+  BufferObject vbo(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+  VertexArray vao;
+  vao.BindAttribute(vbo, program.GetAttribute("position"),
+                    2, GL_FLOAT, GL_FALSE, 0, (const GLvoid *)0);
+
+  return true;
 
   // CreateShader();
   // CreateCube();
@@ -220,24 +206,22 @@ void Initialize(void)
   // printf("Program name: %s\n", name.c_str());
 }
 
-void InitWindow(void) {
-  if (!glfwInit())
-  {
-    exit(EXIT_FAILURE);
+bool InitWindow(void) {
+  if (!glfwInit()) {
+    EMERGENCY("Unable to initialize GLFW library");
+    return false;
   }
 
   window = glfwCreateWindow(CurrentWidth, CurrentHeight, "Hello World", NULL, NULL);
 
   if (!window) {
-    fprintf(
-      stderr,
-      "ERROR: Could not create a new rendering window.\n"
-    );
-    glfwTerminate();
-    exit(EXIT_FAILURE);
+    EMERGENCY("Could not create a new rendering window");
+    return false;
   }
 
   glfwMakeContextCurrent(window);
+
+  return true;
 }
 
 /*

@@ -2,10 +2,10 @@
 #include "program.h"
 
 void Uniform::NotifyOwners() {
-  int len = owner_.size();
-  for (int i = 0; i < len; ++i) {
-    owner_[i]->NotifyDirty(this, loc_[i]);
-  }
+  // int len = owner_.size();
+  // for (int i = 0; i < len; ++i) {
+  //   owner_[i]->NotifyDirty(this, loc_[i]);
+  // }
 }
 
 template<>
@@ -30,5 +30,5 @@ void UniformVec4::UpdateImpl() {
 
 template<>
 void UniformInt::UpdateImpl() {
-  
+
 }

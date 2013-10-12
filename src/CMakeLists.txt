@@ -1,12 +1,9 @@
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
 
-add_definitions(-Wall -g -fcolor-diagnostics -std=c++11)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fcolor-diagnostics -std=c++11")
 
 set(SOURCES
-    # camera.cpp
-    # geometry.cpp
-    # gradient_map_material.cpp
     main.cpp
     uniform.cpp
     program.cpp
@@ -14,11 +11,6 @@ set(SOURCES
     shader.cpp
     buffer_object.cpp
     vertex_array.cpp
-    # material.cpp
-    # script.cpp
-    # shader_cache.cpp
-    # transform.cpp
-    # utils.cpp
 )
 
 add_executable(game-engine ${SOURCES})
@@ -31,9 +23,11 @@ include_directories(${GLEW_INCLUDE_DIRS})
 include_directories(${PROJECT_SOURCE_DIR}/third-party/glm)
 include_directories(${LUA_INCLUDE_DIR})
 include_directories(${PROJECT_SOURCE_DIR}/third-party/stb_image)
+include_directories(${PROJECT_SOURCE_DIR}/third-party/logog/include)
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
 target_link_libraries(game-engine glfw ${GLFW_LIBRARIES})
 target_link_libraries(game-engine ${GLEW_LIBRARIES})
 target_link_libraries(game-engine stb_image)
+target_link_libraries(game-engine logog)
 target_link_libraries(game-engine ${LUA_LIBRARIES})

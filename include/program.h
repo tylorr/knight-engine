@@ -6,25 +6,7 @@
 
 #include <GL/glew.h>
 
-#include <utility>
-#include <queue>
-#include <exception>
-#include <string>
-
 class Uniform;
-
-class LinkException : public std::exception {
- public:
-  LinkException(const std::string &str) throw() : info_log_(str) {}
-  ~LinkException() throw() {}
-
-  virtual const char *what() const throw() {
-    return info_log_.c_str();
-  }
-
- private:
-  std::string info_log_;
-};
 
 class Program {
  public:
@@ -48,15 +30,14 @@ class Program {
   GLint GetAttribute(const GLchar *name);
 
  private:
-  typedef std::pair<Uniform *, GLuint> UniformLocPair;
+  // typedef std::pair<Uniform *, GLuint> UniformLocPair;
 
   DISALLOW_COPY_AND_ASSIGN(Program);
 
-  void UpdateUniform(Uniform *) const;
-
+  // void UpdateUniform(Uniform *) const;
 
   GLuint handle_;
-  std::queue<UniformLocPair> dirty_uniforms_;
+  // std::queue<UniformLocPair> dirty_uniforms_;
 };
 
 #endif // PROGRAM_H_

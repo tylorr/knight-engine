@@ -1,6 +1,8 @@
 #include "program.h"
-#include "uniform.h"
-#include "uniform_factory.h"
+
+#include <logog.hpp>
+
+using std::string;
 
 Program::Program() {
   handle_ = glCreateProgram();
@@ -28,7 +30,7 @@ void Program::Link() {
   glGetProgramiv(handle_, GL_LINK_STATUS, &res);
 
   if (res == GL_FALSE) {
-    throw LinkException(GetInfoLog());
+    ERR("Failed to link program:\n%s", GetInfoLog().c_str());
   }
 }
 
@@ -36,13 +38,13 @@ void Program::Bind() const {
   glUseProgram(handle_);
 }
 
-std::string Program::GetInfoLog() const {
-  GLint res;
-  glGetProgramiv(handle_, GL_INFO_LOG_LENGTH, &res);
+string Program::GetInfoLog() const {
+  GLint length;
+  glGetProgramiv(handle_, GL_INFO_LOG_LENGTH, &length);
 
-  if (res > 0) {
-    std::string infoLog(res, 0);
-    glGetProgramInfoLog(handle_, res, &res, &infoLog[0]);
+  if (length) {
+    string infoLog(length, 0);
+    glGetProgramInfoLog(handle_, length, nullptr, &infoLog[0]);
     return infoLog;
   } else {
     return "";

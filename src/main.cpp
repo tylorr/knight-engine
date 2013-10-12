@@ -82,6 +82,22 @@ int main(void)
     logog::Cout out;
 
     if (Initialize()) {
+      Shader vert(ShaderType::VERTEX, "#version 330\nin vec2 position; void main() { gl_Position = vec4(position, 0.0, 1.0); }");
+      Shader frag(ShaderType::FRAGMENT, "#version 330\nout vec4 outColor; void main() { outColor = vec4(1.0, 0.0, 0.0, 1.0); }");
+      Program program(vert, frag);
+      program.Bind();
+
+      float vertices[] = {
+        -0.5f,  0.5f,
+         0.5f,  0.5f,
+         0.5f, -0.5f
+      };
+
+      BufferObject vbo(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+      VertexArray vao;
+      vao.BindAttribute(vbo, program.GetAttribute("position"),
+                        2, GL_FLOAT, GL_FALSE, 0, (const GLvoid *)0);
       // Main loop
       while (!glfwWindowShouldClose(window)) {
 
@@ -142,22 +158,7 @@ bool Initialize()
   ModelMatrix = glm::mat4(1.0f);
   ProjectionMatrix = glm::mat4(1.0f);
 
-  Shader vert(ShaderType::Vertex, "#version 130\nin vec2 position; void main() { gl_Position = vec4(position, 0.0, 1.0); }");
-  Shader frag(ShaderType::Fragment, "#version 130\nout vec4 outColor; void main() { outColor = vec4(1.0, 0.0, 0.0, 1.0); }");
-  Program program(vert, frag);
-  program.Bind();
 
-  float vertices[] = {
-    -0.5f,  0.5f,
-     0.5f,  0.5f,
-     0.5f, -0.5f
-  };
-
-  BufferObject vbo(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-  VertexArray vao;
-  vao.BindAttribute(vbo, program.GetAttribute("position"),
-                    2, GL_FLOAT, GL_FALSE, 0, (const GLvoid *)0);
 
   return true;
 

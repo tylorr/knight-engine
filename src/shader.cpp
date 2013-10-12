@@ -1,44 +1,24 @@
-/*
-  Copyright (C) 2012 Alexander Overvoorde
-
-  Permission is hereby granted, free of charge, to any person obtaining a copy of
-  this software and associated documentation files (the "Software"), to deal in
-  the Software without restriction, including without limitation the rights to
-  use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
-  the Software, and to permit persons to whom the Software is furnished to do so,
-  subject to the following conditions:
-
-  The above copyright notice and this permission notice shall be included in all
-  copies or substantial portions of the Software.
-
-  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
-  FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
-  COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
-  IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-  CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE
-*/
-
 #include "shader.h"
 
+#include <logog.hpp>
 
-Shader::Shader(ShaderType::shader_type_t shader) {
-  // handle_ = Shader::gc.Create(glCreateShader(shader), glDeleteShader);
-  handle_ = glCreateShader(shader);
+using std::string;
+
+Shader::Shader(ShaderType type) {
+  handle_ = glCreateShader(static_cast<GLenum>(type));
 }
 
-Shader::Shader(ShaderType::shader_type_t shader, const std::string &code) {
-  handle_ = glCreateShader(shader);
+Shader::Shader(ShaderType type, const std::string &code) {
+  handle_ = glCreateShader(static_cast<GLenum>(type));
   Source(code);
   Compile();
 }
 
 Shader::~Shader() {
-  // Shader::gc.Destroy(handle_);
   glDeleteShader(handle_);
 }
 
-void Shader::Source(const std::string& code) {
+void Shader::Source(const std::string &code) {
   const char *c = code.c_str();
   glShaderSource(handle_, 1, &c, nullptr);
 }
@@ -50,17 +30,17 @@ void Shader::Compile() {
   glGetShaderiv(handle_, GL_COMPILE_STATUS, &res);
 
   if (res == GL_FALSE) {
-    throw CompileException(GetInfoLog());
+    ERR("Could not compile shader:\n%s", GetInfoLog().c_str());
   }
 }
 
-std::string Shader::GetInfoLog() {
-  GLint res;
-  glGetShaderiv(handle_, GL_INFO_LOG_LENGTH, &res);
+string Shader::GetInfoLog() const {
+  GLint length;
+  glGetShaderiv(handle_, GL_INFO_LOG_LENGTH, &length);
 
-  if (res > 0) {
-    std::string infoLog(res, 0);
-    glGetShaderInfoLog(handle_, res, &res, &infoLog[0]);
+  if (length) {
+    string infoLog(length, 0);
+    glGetShaderInfoLog(handle_, length, nullptr, &infoLog[0]);
     return infoLog;
   } else {
     return "";

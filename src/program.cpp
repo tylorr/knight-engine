@@ -32,7 +32,7 @@ void Program::Link() {
   glGetProgramiv(handle_, GL_LINK_STATUS, &res);
 
   if (res == GL_FALSE) {
-    ERR("Failed to link program:\n%s", GetInfoLog().c_str());
+    ERR("Failed to link program: %s", GetInfoLog().c_str());
   }
 }
 

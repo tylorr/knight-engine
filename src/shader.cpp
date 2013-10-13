@@ -51,7 +51,7 @@ void Shader::Compile() {
   glGetShaderiv(handle_, GL_COMPILE_STATUS, &res);
 
   if (res == GL_FALSE) {
-    ERR("Could not compile shader:\n%s", GetInfoLog().c_str());
+    ERR("Failed to compile shader: %s", GetInfoLog().c_str());
   }
 }
 

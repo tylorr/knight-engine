@@ -89,22 +89,22 @@ int main(int argc, char *argv[]) {
 
 
     if (Initialize()) {
-      Shader vert(ShaderType::VERTEX, Shader::ReadSource("../shaders/simple.vert"));
-      Shader frag(ShaderType::FRAGMENT, Shader::ReadSource("../shaders/simple.frag"));
+      Shader vert(ShaderType::VERTEX, "#version 130\nin vec2 position; void main() { gl_Position = vec4(position, 0.0, 1.0); }");
+      Shader frag(ShaderType::FRAGMENT, "#version 130\nout vec4 outColor; void main() { outColor = vec4(1.0, 0.0, 0.0, 1.0); }");
       Program program(vert, frag);
       program.Bind();
 
       float vertices[] = {
-        -0.5f,  0.5f, 0.0f,
-         0.5f,  0.5f, 0.0f,
-         0.5f, -0.5f, 0.0f
+        -0.5f,  0.5f,
+         0.5f,  0.5f,
+         0.5f, -0.5f
       };
 
       BufferObject vbo(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
       VertexArray vao;
-      vao.BindAttribute(vbo, program.GetAttribute("in_Position"),
-                        3, GL_FLOAT, GL_FALSE, 0, (const GLvoid *)0);
+      vao.BindAttribute(vbo, program.GetAttribute("position"),
+                        2, GL_FLOAT, GL_FALSE, 0, (const GLvoid *)0);
       // Main loop
       while (!glfwWindowShouldClose(window)) {
 

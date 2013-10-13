@@ -37,22 +37,31 @@ EntityID EntityManager::CreateEntity() {
 }
 
 Entity *EntityManager::GetEntity(const EntityID &id) const {
-  Entity *entity = entity_table_[id.index / kChunkSize] + (id.index % kChunkSize);
+  uint32_t chunkIndex = id.index / kChunkSize;
 
-  // return null if ids do not match (aka versions do not match)
-  return entity->id() != id ? nullptr : entity;
+  // Does the chunk exist?
+  if (chunkIndex < entity_table_.size()) {
+    Entity *entity = entity_table_[chunkIndex] + (id.index % kChunkSize);
+
+    // If there versions match return entity else NULL
+    return entity->id() != id ? nullptr : entity;
+  } else {
+
+    // Chunk doesn't exist return NULL
+    return nullptr;
+  }
 }
 
 void EntityManager::DestroyEntity(EntityID id) {
   Entity *entity = GetEntity(id);
 
-  if (entity) {
-    // DBUG("Got to here");
+  if (entity != nullptr) {
+    // Increment version to generate unique id
     id.version++;
     entity->set_id(id);
     free_list_.push_back(id.index);
   } else {
-    WARN("Trying to delete entity that does not exist using ID: %lu", id.id);
+    ERR("Trying to delete non-existent entity: %lu", id.id);
   }
 }
 

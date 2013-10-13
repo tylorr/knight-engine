@@ -5,6 +5,7 @@
 #include "program.h"
 #include "buffer_object.h"
 #include "vertex_array.h"
+#include "entity_manager.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
@@ -23,6 +24,7 @@
 #include <vector>
 #include <functional>
 #include <fstream>
+
 
 // using namespace tthread;
 
@@ -76,6 +78,8 @@ void CreateCube(void);
 void DestroyCube(void);
 void DrawCube(void);
 
+
+
 int main(int argc, char *argv[]) {
   LOGOG_INITIALIZE();
 
@@ -83,35 +87,99 @@ int main(int argc, char *argv[]) {
     // out must lose scope before LOGOG_SHUTDOWN()
     logog::Cout out;
 
-    if (Initialize()) {
-      Shader vert(ShaderType::VERTEX, Shader::ReadSource("../shaders/simple.vert"));
-      Shader frag(ShaderType::FRAGMENT, Shader::ReadSource("../shaders/simple.frag"));
-      Program program(vert, frag);
-      program.Bind();
+    EntityManager entityManager;
 
-      float vertices[] = {
-        -0.5f,  0.5f, 0.0f,
-         0.5f,  0.5f, 0.0f,
-         0.5f, -0.5f, 0.0f
-      };
+    EntityID id = entityManager.CreateEntity();
 
-      BufferObject vbo(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    EntityID fake;
+    // fake.id = 1;
+    fake.index = 1;
 
-      VertexArray vao;
-      vao.BindAttribute(vbo, program.GetAttribute("in_Position"),
-                        3, GL_FLOAT, GL_FALSE, 0, (const GLvoid *)0);
-      // Main loop
-      while (!glfwWindowShouldClose(window)) {
+    entityManager.DestroyEntity(fake);
 
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    // id = entityManager.CreateEntity();
 
-        glDrawArrays(GL_TRIANGLES, 0, 3);
-        // RenderFunction();
 
-        glfwSwapBuffers(window);
-        glfwPollEvents();
-      }
-    }
+
+    // ID id = create_object();
+
+    // object *obj = get_object(id);
+    // obj->name = "theFirst";
+
+    // id = create_object();
+
+    // obj = get_object(id);
+    // obj->name = "theSecond";
+
+    // destroy_object(id);
+
+    // id = create_object();
+
+    // obj = get_object(id);
+    // // obj->name = "theThird";
+
+    printf("id:      %lu\n", id.id);
+    printf("index:   %u\n", id.index);
+    printf("version: %u\n", id.version);
+    // printf("name:    %s\n", obj->name.c_str());
+
+    // obj = get_object(id);
+
+    // if (!obj) {
+    //   printf("null\n");
+    // }
+
+    // long long id = 3;
+
+    // union ID {
+    //   long long id;
+    //   struct {
+    //     long index;
+    //     long version;
+    //   } s;
+    // };
+
+    // slot_map::ID id;
+
+    // // id.index = 20;
+    // // id.id = 30;
+    // // id.version = 1;
+    // id.version = 1;
+
+    // printf("id: %lu\n", id);
+    // printf("id: %ld\n", id.version);
+
+    // printf("number: %lld\n", id);
+
+    // if (Initialize()) {
+    //   Shader vert(ShaderType::VERTEX, Shader::ReadSource("../shaders/simple.vert"));
+    //   Shader frag(ShaderType::FRAGMENT, Shader::ReadSource("../shaders/simple.frag"));
+    //   Program program(vert, frag);
+    //   program.Bind();
+
+    //   float vertices[] = {
+    //     -0.5f,  0.5f, 0.0f,
+    //      0.5f,  0.5f, 0.0f,
+    //      0.5f, -0.5f, 0.0f
+    //   };
+
+    //   BufferObject vbo(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    //   VertexArray vao;
+    //   vao.BindAttribute(vbo, program.GetAttribute("in_Position"),
+    //                     3, GL_FLOAT, GL_FALSE, 0, (const GLvoid *)0);
+    //   // Main loop
+    //   while (!glfwWindowShouldClose(window)) {
+
+    //     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    //     glDrawArrays(GL_TRIANGLES, 0, 3);
+    //     // RenderFunction();
+
+    //     glfwSwapBuffers(window);
+    //     glfwPollEvents();
+    //   }
+    // }
   }
 
   // Close window and terminate GLFW

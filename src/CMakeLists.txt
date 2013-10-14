@@ -1,8 +1,6 @@
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
 
-# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fcolor-diagnostics -std=c++11")
-
 set(SOURCES
     program.cpp
     shader.cpp
@@ -12,7 +10,6 @@ set(SOURCES
 )
 
 add_library(knight-engine ${SOURCES})
-# add_executable(game-engine ${SOURCES})
 
 find_package(GLEW REQUIRED)
 # find_package(Lua REQUIRED)

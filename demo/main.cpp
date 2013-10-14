@@ -87,6 +87,10 @@ int main(int argc, char *argv[]) {
     // out must lose scope before LOGOG_SHUTDOWN()
     logog::Cout out;
 
+    ERR("This is a test error");
+    WARN("This is a test warning");
+    DBUG("This is a test debug");
+    asdf
 
     if (Initialize()) {
       Shader vert(ShaderType::VERTEX, "#version 130\nin vec2 position; void main() { gl_Position = vec4(position, 0.0, 1.0); }");
@@ -103,7 +107,7 @@ int main(int argc, char *argv[]) {
       BufferObject vbo(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
       VertexArray vao;
-      vao.BindAttribute(vbo, program.GetAttribute("position"), 2, GL_FLOAT, 
+      vao.BindAttribute(vbo, program.GetAttribute("position"), 2, GL_FLOAT,
                         GL_FALSE, 0, (const GLvoid *)0);
       // Main loop
       while (!glfwWindowShouldClose(window)) {

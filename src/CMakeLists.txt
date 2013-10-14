@@ -14,13 +14,22 @@ set(SOURCES
 add_library(knight-engine ${SOURCES})
 # add_executable(game-engine ${SOURCES})
 
-# find_package(GLEW REQUIRED)
+find_package(GLEW REQUIRED)
 # find_package(Lua REQUIRED)
 
-# include_directories(${PROJECT_SOURCE_DIR}/third-party/glfw/include)
-# include_directories(${GLEW_INCLUDE_DIRS})
-# include_directories(${PROJECT_SOURCE_DIR}/third-party/glm)
+include_directories(${PROJECT_SOURCE_DIR}/include)
+
+include_directories(${PROJECT_SOURCE_DIR}/third-party/glfw/include)
+include_directories(${GLEW_INCLUDE_DIRS})
+include_directories(${PROJECT_SOURCE_DIR}/third-party/glm)
+include_directories(${PROJECT_SOURCE_DIR}/third-party/logog/include)
 # include_directories(${LUA_INCLUDE_DIR})
 # include_directories(${PROJECT_SOURCE_DIR}/third-party/stb_image)
-include_directories(${PROJECT_SOURCE_DIR}/third-party/logog/include)
-include_directories(${PROJECT_SOURCE_DIR}/include)
+
+
+target_link_libraries(knight-engine glfw ${GLFW_LIBRARIES})
+target_link_libraries(knight-engine ${GLEW_LIBRARIES})
+target_link_libraries(knight-engine logog)
+# target_link_libraries(demo stb_image)
+# target_link_libraries(demo ${LUA_LIBRARIES})
+

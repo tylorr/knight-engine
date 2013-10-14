@@ -8,8 +8,6 @@
 
 namespace knight {
 
-// class Uniform;
-
 class Program {
  public:
   Program();

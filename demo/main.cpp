@@ -103,8 +103,8 @@ int main(int argc, char *argv[]) {
       BufferObject vbo(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
       VertexArray vao;
-      vao.BindAttribute(vbo, program.GetAttribute("position"),
-                        2, GL_FLOAT, GL_FALSE, 0, (const GLvoid *)0);
+      vao.BindAttribute(vbo, program.GetAttribute("position"), 2, GL_FLOAT, 
+                        GL_FALSE, 0, (const GLvoid *)0);
       // Main loop
       while (!glfwWindowShouldClose(window)) {
 

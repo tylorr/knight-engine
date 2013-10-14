@@ -12,7 +12,7 @@ add_executable(demo ${SOURCES})
 find_package(GLEW REQUIRED)
 
 include_directories(${PROJECT_SOURCE_DIR}/third-party/glfw/include)
-include_directories(${GLEW_INCLUDE_DIRS})
+# include_directories(${GLEW_INCLUDE_DIRS})
 include_directories(${PROJECT_SOURCE_DIR}/third-party/glm)
 # include_directories(${LUA_INCLUDE_DIR})
 # include_directories(${PROJECT_SOURCE_DIR}/third-party/stb_image)

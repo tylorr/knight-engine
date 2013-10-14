@@ -1,5 +1,5 @@
-
-/*
+ 
+/* 
  * \file formatter.cpp
  */
 
@@ -32,34 +32,34 @@ namespace logog {
 			return LOGOG_CONST_STRING("none");
 
 		if ( level <= LOGOG_LEVEL_EMERGENCY )
-			return LOGOG_CONST_STRING("\x1b[31m" "emergency");
+			return LOGOG_CONST_STRING("emergency");
 
 		if ( level <= LOGOG_LEVEL_ALERT )
-			return LOGOG_CONST_STRING("\x1b[31m" "alert");
+			return LOGOG_CONST_STRING("alert");
 
 		if ( level <= LOGOG_LEVEL_CRITICAL )
-			return LOGOG_CONST_STRING("\x1b[31m" "critical");
+			return LOGOG_CONST_STRING("critical");
 
 		if ( level <= LOGOG_LEVEL_ERROR )
-			return LOGOG_CONST_STRING("\x1b[31m" "error");
+			return LOGOG_CONST_STRING("error");
 
 		if ( level <= LOGOG_LEVEL_WARN )
-			return LOGOG_CONST_STRING("\x1b[36m" "warning");
+			return LOGOG_CONST_STRING("warning");
 
 		if ( level <= LOGOG_LEVEL_WARN1 )
-			return LOGOG_CONST_STRING("\x1b[36m" "warning1");
+			return LOGOG_CONST_STRING("warning1");
 
 		if ( level <= LOGOG_LEVEL_WARN2 )
-			return LOGOG_CONST_STRING("\x1b[36m" "warning2");
+			return LOGOG_CONST_STRING("warning2");
 
 		if ( level <= LOGOG_LEVEL_WARN3 )
-			return LOGOG_CONST_STRING("\x1b[36m" "warning3");
+			return LOGOG_CONST_STRING("warning3");
 
 		if ( level <= LOGOG_LEVEL_INFO )
-			return LOGOG_CONST_STRING("\x1b[30m" "info");
+			return LOGOG_CONST_STRING("info");
 
 		if ( level <= LOGOG_LEVEL_DEBUG )
-			return LOGOG_CONST_STRING("\x1b[32m" "debug");
+			return LOGOG_CONST_STRING("debug");
 
 		return LOGOG_CONST_STRING("unknown");
 	}
@@ -86,9 +86,6 @@ namespace logog {
 
 		m_sMessageBuffer.clear();
 
-    // Bold message
-    m_sMessageBuffer.append("\x1b[0;1m");
-
 		if ( flags & TOPIC_FILE_NAME_FLAG )
 		{
 			m_sMessageBuffer.append( topic.FileName() );
@@ -110,9 +107,6 @@ namespace logog {
 			m_sMessageBuffer.append( ErrorDescription( topic.Level()));
 			m_sMessageBuffer.append( LOGOG_CONST_STRING(": "));
 		}
-
-    // Clear bold and color
-    m_sMessageBuffer.append("\x1b[0m");
 
 		if ( flags & TOPIC_GROUP_FLAG )
 		{
@@ -136,8 +130,6 @@ namespace logog {
 
 		if ( target.GetNullTerminatesStrings() )
 			m_sMessageBuffer.append( (LOGOG_CHAR)NULL );
-
-
 
 		return m_sMessageBuffer;
 	}

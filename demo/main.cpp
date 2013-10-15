@@ -6,6 +6,7 @@
 #include "vertex_array.h"
 #include "slot_map.h"
 #include "work_queue.h"
+#include "thread_pool.h"
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -27,6 +28,28 @@ int main(int argc, char *argv[]) {
   {
     // 'out' must lose scope before LOGOG_SHUTDOWN()
     logog::Cout out;
+
+    // ThreadPool pool(3);
+
+    // pool.Init();
+
+    // pool.AddTask([] {
+    //   printf("First task.\n");
+    // });
+
+    // pool.AddTask([] {
+    //   printf("Second task.\n");
+    // });
+
+    // pool.AddTask([] {
+    //   printf("Third task.\n");
+    // });
+
+    // pool.AddTask([] {
+    //   printf("Fourth task.\n");
+    // });
+
+    // pool.WaitAll();
 
     if (Initialize()) {
       Shader vert(ShaderType::VERTEX, "#version 130\nin vec2 position; void main() { gl_Position = vec4(position, 0.0, 1.0); }");

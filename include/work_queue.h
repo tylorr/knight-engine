@@ -6,6 +6,8 @@
 #include <mutex>
 #include <condition_variable>
 
+namespace knight {
+
 template<typename T>
 class WorkQueue {
  public:
@@ -36,5 +38,7 @@ class WorkQueue {
   std::mutex mutex_;
   std::condition_variable condition_;
 };
+
+}; // namespace knight
 
 #endif // WORK_QUEUE_H_

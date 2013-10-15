@@ -6,6 +6,7 @@ set(SOURCES
     shader.cpp
     buffer_object.cpp
     vertex_array.cpp
+    thread_pool.cpp
 )
 
 add_library(knight-engine ${SOURCES})

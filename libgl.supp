@@ -1,0 +1,6 @@
+{
+  leaks_in_nvidia
+  Memcheck:Leak
+  fun:calloc
+  obj:/usr/lib/nvidia/libGL.so.325.15
+}

@@ -5,6 +5,7 @@
 #include "buffer_object.h"
 #include "vertex_array.h"
 #include "slot_map.h"
+#include "work_queue.h"
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>

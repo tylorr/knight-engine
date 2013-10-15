@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 #include "slot_map.h"
 #include "entity.h"
+#include "common.h"
 
 using knight::SlotMap;
 using knight::Entity;

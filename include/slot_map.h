@@ -11,9 +11,12 @@
 
 namespace knight {
 
+
 template<typename T>
 class SlotMap {
  public:
+  typedef std::unique_ptr<T[]> Chunk;
+
   const size_t kChunkSize = 256;
 
   SlotMap() { }
@@ -27,7 +30,7 @@ class SlotMap {
       }
 
       // Add new chunk to table
-      slot_table_.push_back(std::unique_ptr<T[]>(new T[kChunkSize]));
+      slot_table_.push_back(Chunk(new T[kChunkSize]));
     }
 
     uint32_t freeId = free_list_.back();
@@ -78,7 +81,7 @@ class SlotMap {
  private:
   DISALLOW_COPY_AND_ASSIGN(SlotMap);
 
-  std::vector<std::unique_ptr<T[]>> slot_table_;
+  std::vector<Chunk> slot_table_;
   std::vector<uint32_t> free_list_;
 };
 

@@ -19,23 +19,39 @@ class ThreadPool {
   const unsigned int kThreadCount;
 
   ThreadPool(unsigned int count)
-      : kThreadCount(count),
-        completed_count_(0) {}
+      : kThreadCount(count) {}
 
-  void Init();
+  ~ThreadPool() {
+    Stop();
+  }
+
+  // Start all threads
+  void Start();
+
+  // Add task to job queue
   void AddTask(Task);
+
+  // Wait for all tasks to be finished
   void WaitAll();
 
+  // Join all threads
+  void Stop();
+
+  size_t task_count() const { return queue_.Size(); }
+
  private:
+  typedef std::vector<std::thread> Pool;
+
   DISALLOW_COPY_AND_ASSIGN(ThreadPool);
 
   void Run();
 
   WorkQueue<Task> queue_;
-  std::vector<std::thread> threads_;
+  Pool pool_;
   std::mutex mutex_;
-  std::condition_variable join_condition_;
-  std::atomic_uint completed_count_;
+  std::condition_variable sync_condition_;
+
+  std::atomic_bool running_;
 };
 
 }; // namespace knight;

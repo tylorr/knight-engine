@@ -27,14 +27,15 @@ TEST_F(ThreadPoolTest, AddTask) {
 TEST_F(ThreadPoolTest, StartAndWait) {
   std::atomic_uint result(0);
 
+  int numTasks = 4;
+
   pool_.Start();
 
-  pool_.AddTask([&]{ result++; });
-  pool_.AddTask([&]{ result++; });
-  pool_.AddTask([&]{ result++; });
-  pool_.AddTask([&]{ result++; });
+  for (int i = 0; i < numTasks; ++i) {
+    pool_.AddTask([&]{ result++; });
+  }
 
   pool_.WaitAll();
 
-  EXPECT_EQ(4, result.load());
+  EXPECT_EQ(numTasks, result.load());
 }

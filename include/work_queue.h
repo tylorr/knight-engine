@@ -32,7 +32,7 @@ class WorkQueue {
       queue_.pop();
       return item;
     } else {
-      // printf("Getting here...\n");
+      // TODO: find better way to handle Stopping queue
       return T();
     }
   }

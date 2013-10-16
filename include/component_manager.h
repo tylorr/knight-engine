@@ -25,11 +25,21 @@ class ComponentManager {
   void AddComponent(const Entity &entity, const ComponentPtr &component) {
     unsigned int componentType = component->type();
     component_map_[componentType][entity.id()] = component;
+
+    // TODO: add type to entity list
   }
 
   template<typename T>
   std::shared_ptr<T> GetComponent(const Entity &entity) {
     return std::static_pointer_cast<T>(component_map_[Component::TypeFor<T>()][entity.id()]);
+  }
+
+  template<typename T>
+  void RemoveComponent(const Entity &entity) {
+    unsigned int componentType = Component::TypeFor<T>();
+    component_map_[componentType][entity.id()] = nullptr;
+
+    // TODO: remove type from entity list
   }
 
  private:

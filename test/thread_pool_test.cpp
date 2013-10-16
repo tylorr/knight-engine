@@ -27,7 +27,7 @@ TEST_F(ThreadPoolTest, AddTask) {
 TEST_F(ThreadPoolTest, StartAndWait) {
   std::atomic_uint result(0);
 
-  int numTasks = 4;
+  int numTasks = 10;
 
   pool_.Start();
 

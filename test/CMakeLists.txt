@@ -1,8 +1,8 @@
 set(SOURCES
+    test_main.cpp
     slot_map_test.cpp
     work_queue_test.cpp
     thread_pool_test.cpp
-    test_main.cpp
 )
 
 add_executable(knight-test ${SOURCES})

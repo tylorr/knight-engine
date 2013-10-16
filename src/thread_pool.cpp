@@ -18,7 +18,9 @@ void ThreadPool::AddTask(Task task) {
 
 void ThreadPool::WaitAll() {
   std::unique_lock<std::mutex> lk(mutex_);
-  sync_condition_.wait(lk, [this]{ return queue_.Size() == 0 || running_; });
+
+  // wait until queue is empty or Stop() has been triggered
+  sync_condition_.wait(lk, [this]{ return queue_.Size() == 0 || !running_; });
 }
 
 void ThreadPool::Stop() {

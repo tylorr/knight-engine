@@ -15,9 +15,9 @@ class Entity {
   void set_id(ID id) { id_ = id; }
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(Entity);
-
   ID id_;
+
+  KNIGHT_DISALLOW_COPY_AND_ASSIGN(Entity);
 };
 
 }; // namespace knight

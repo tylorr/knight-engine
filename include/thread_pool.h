@@ -42,8 +42,6 @@ class ThreadPool {
  private:
   typedef std::vector<std::thread> Pool;
 
-  DISALLOW_COPY_AND_ASSIGN(ThreadPool);
-
   void Run();
 
   WorkQueue<Task> queue_;
@@ -52,6 +50,8 @@ class ThreadPool {
   std::condition_variable sync_condition_;
 
   std::atomic_bool running_;
+
+  KNIGHT_DISALLOW_COPY_AND_ASSIGN(ThreadPool);
 };
 
 }; // namespace knight;

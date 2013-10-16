@@ -32,9 +32,9 @@ class Shader {
   std::string GetInfoLog() const;
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(Shader);
-
   GLuint handle_;
+
+  KNIGHT_DISALLOW_COPY_AND_ASSIGN(Shader);
 };
 
 }; // namespace knight

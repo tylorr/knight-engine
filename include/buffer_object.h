@@ -23,10 +23,10 @@ class BufferObject {
   void GetSubData(const GLintptr &offset, const GLsizeiptr &size, GLvoid *data);
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(BufferObject);
-
   GLuint handle_;
   GLenum target_;
+
+  KNIGHT_DISALLOW_COPY_AND_ASSIGN(BufferObject);
 };
 
 }; // namespace knight

@@ -25,8 +25,9 @@ class Program {
   GLint GetAttribute(const GLchar *name);
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(Program);
   GLuint handle_;
+
+  KNIGHT_DISALLOW_COPY_AND_ASSIGN(Program);
 };
 
 }; // namespace knight

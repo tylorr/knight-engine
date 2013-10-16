@@ -79,10 +79,10 @@ class SlotMap {
   }
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(SlotMap);
-
   std::vector<Chunk> slot_table_;
   std::vector<uint32_t> free_list_;
+
+  KNIGHT_DISALLOW_COPY_AND_ASSIGN(SlotMap);
 };
 
 }; // namespace knight

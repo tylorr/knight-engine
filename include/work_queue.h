@@ -49,13 +49,13 @@ class WorkQueue {
   }
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(WorkQueue);
-
   std::queue<T> queue_;
   mutable std::mutex mutex_;
   std::condition_variable condition_;
 
   bool should_stop_;
+
+  KNIGHT_DISALLOW_COPY_AND_ASSIGN(WorkQueue);
 };
 
 }; // namespace knight

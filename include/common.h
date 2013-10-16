@@ -3,7 +3,7 @@
 
 #include <cstdint>
 
-#define DISALLOW_COPY_AND_ASSIGN(TypeName) \
+#define KNIGHT_DISALLOW_COPY_AND_ASSIGN(TypeName) \
   TypeName(const TypeName&);               \
   void operator=(const TypeName&)
 
@@ -16,8 +16,20 @@ union ID {
     uint32_t version;
   };
 
+  ID() : id(0) { }
+  ID(const uint64_t &val) : id(val) { }
+  ID(uint64_t &&val) : id(val) { }
+
   operator uint64_t() const { return id; }
-  ID &operator=(const uint64_t &val) { id = val; return *this; }
+  ID &operator=(const uint64_t &val) {
+    id = val;
+    return *this;
+  }
+
+  ID &operator=(uint64_t &&val) {
+    id = val;
+    return *this;
+  }
 };
 
 }; // namespace knight

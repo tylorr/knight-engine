@@ -16,17 +16,17 @@ class ComponentManager {
   ComponentManager() { }
 
   template<typename T>
-  std::shared_ptr<T> AddComponent(const Entity &entity) {
+  std::shared_ptr<T> AddComponent(Entity &entity) {
     std::shared_ptr<T> component(Component::Create<T>());
     AddComponent(entity, component);
     return component;
   }
 
-  void AddComponent(const Entity &entity, const ComponentPtr &component) {
-    unsigned int componentType = component->type();
-    component_map_[componentType][entity.id()] = component;
-
-    // TODO: add type to entity list
+  void AddComponent(Entity &entity, const ComponentPtr &component) {
+    if (component != nullptr) {
+      component_map_[component->type()][entity.id()] = component;
+      entity.AddComponent(component);
+    }
   }
 
   template<typename T>
@@ -35,11 +35,16 @@ class ComponentManager {
   }
 
   template<typename T>
-  void RemoveComponent(const Entity &entity) {
-    unsigned int componentType = Component::TypeFor<T>();
-    component_map_[componentType][entity.id()] = nullptr;
+  void RemoveComponent(Entity &entity) {
+    auto component = component_map_[Component::TypeFor<T>()][entity.id()];
+    RemoveComponent(entity, component);
+  }
 
-    // TODO: remove type from entity list
+  void RemoveComponent(Entity &entity, const ComponentPtr &component) {
+    if (component != nullptr) {
+      entity.RemoveComponent(component);
+      component_map_[component->type()][entity.id()] = nullptr;
+    }
   }
 
  private:

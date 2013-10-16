@@ -22,6 +22,7 @@ class Component {
   }
 
   unsigned int type() const { return type_; }
+  unsigned int flag() const { return 1 << type_; }
 
  protected:
   explicit Component(unsigned int type) : type_(type) { }

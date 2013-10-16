@@ -3,6 +3,7 @@ set(SOURCES
     slot_map_test.cpp
     work_queue_test.cpp
     thread_pool_test.cpp
+    component_manager_test.cpp
 )
 
 add_executable(knight-test ${SOURCES})

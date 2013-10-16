@@ -16,26 +16,26 @@ class Component {
 
   // Generate and remember type for class T
   template<typename T>
-  static int TypeFor() {
-    static int type(Component::NextType());
+  static unsigned int TypeFor() {
+    static unsigned int type(Component::NextType());
     return type;
   }
 
-  int type() const { return type_; }
+  unsigned int type() const { return type_; }
 
  protected:
-  explicit Component(int type) : type_(type) { }
+  explicit Component(unsigned int type) : type_(type) { }
 
  private:
   Component();
 
   // Return an incremented type for each call
-  static int NextType() {
-    static int type(0);
+  static unsigned int NextType() {
+    static unsigned int type(0);
     return type++;
   }
 
-  int type_;
+  unsigned int type_;
 };
 
 }; // namespace knight

@@ -2,6 +2,7 @@
 #define COMMON_H_
 
 #include <cstdint>
+#include <functional>
 
 #define KNIGHT_DISALLOW_COPY_AND_ASSIGN(TypeName) \
   TypeName(const TypeName&);               \
@@ -33,5 +34,17 @@ union ID {
 };
 
 }; // namespace knight
+
+namespace std {
+
+// specialize std::hash for ID
+template<>
+struct hash<knight::ID> {
+  size_t operator()(const knight::ID &id) const {
+    return hash<uint64_t>()(id.id);
+  }
+};
+
+}; // namespace std
 
 #endif // COMMON_H_

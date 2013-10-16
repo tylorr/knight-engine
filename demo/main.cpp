@@ -7,6 +7,7 @@
 #include "slot_map.h"
 #include "work_queue.h"
 #include "thread_pool.h"
+#include "component.h"
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>

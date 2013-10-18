@@ -12,23 +12,22 @@ void ThreadPool::Start() {
   }
 }
 
-void ThreadPool::AddTask(Task task) {
-  queue_.Add(task);
+void ThreadPool::Add(Task task) {
+  queue_.push(task);
 }
 
-void ThreadPool::WaitAll() {
-  std::unique_lock<std::mutex> lk(mutex_);
-
+void ThreadPool::Sync() const {
   // wait until queue is empty or Stop() has been triggered
-  sync_condition_.wait(lk, [this]{ return queue_.Size() == 0 || !running_; });
+  std::unique_lock<std::mutex> lk(mutex_);
+  sync_condition_.wait(lk, [this]{ return queue_.size() == 0 || !running_; });
 }
 
 void ThreadPool::Stop() {
   // signal all threads to break loop
   running_ = false;
 
-  // signal job queue to stop waiting for new tasks
-  queue_.Stop();
+  // Add noop so that waiting threads can do a task and exit loop
+  Add([]{});
 
   // join each thread
   for (Pool::iterator it = pool_.begin(); it != pool_.end(); ++it) {
@@ -40,14 +39,15 @@ void ThreadPool::Stop() {
 
 void ThreadPool::Run() {
   while (running_) {
-    // printf("Waiting...\n");
-    Task task = queue_.Remove();
+    Task task(queue_.wait_pop());
+    task();
 
-    if (task) {
-      task();
-    }
     sync_condition_.notify_one();
   }
+
+  // Add noop so that waiting threads can do a task and exit loop
+  // Note: After a call to Stop() queue_ will have extra noop tasks
+  Add([]{});
 }
 
 }; // namespace knight

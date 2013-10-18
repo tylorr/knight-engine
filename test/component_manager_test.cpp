@@ -4,12 +4,15 @@
 #include "entity.h"
 #include "component.h"
 #include "common.h"
+#include <chrono>
 
 using knight::ID;
 using knight::Entity;
 using knight::SlotMap;
 using knight::ComponentManager;
 using knight::Component;
+
+
 
 class ComponentManagerTest : public ::testing::Test {
  protected:

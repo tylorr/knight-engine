@@ -2,24 +2,25 @@
 #define THREAD_POOL_H_
 
 #include "common.h"
-#include "work_queue.h"
+#include "concurrent_queue.h"
 
 #include <functional>
 #include <thread>
 #include <mutex>
 #include <condition_variable>
 #include <atomic>
+#include <memory>
 
 namespace knight {
 
-typedef std::function<void()> Task;
-
 class ThreadPool {
  public:
+  typedef std::function<void()> Task;
+
   const unsigned int kThreadCount;
 
-  ThreadPool(unsigned int count)
-      : kThreadCount(count) {}
+  ThreadPool() : ThreadPool(std::thread::hardware_concurrency()) { }
+  explicit ThreadPool(unsigned int count) : kThreadCount(count) { }
 
   ~ThreadPool() {
     Stop();
@@ -29,25 +30,27 @@ class ThreadPool {
   void Start();
 
   // Add task to job queue
-  void AddTask(Task);
+  void Add(Task);
 
   // Wait for all tasks to be finished
-  void WaitAll();
+  void Sync() const;
 
   // Join all threads
   void Stop();
 
-  size_t task_count() const { return queue_.Size(); }
+  size_t task_count() const { return queue_.size(); }
 
  private:
   typedef std::vector<std::thread> Pool;
 
+
   void Run();
 
-  WorkQueue<Task> queue_;
+  ConcurrentQueue<Task> queue_;
   Pool pool_;
-  std::mutex mutex_;
-  std::condition_variable sync_condition_;
+
+  mutable std::condition_variable sync_condition_;
+  mutable std::mutex mutex_;
 
   std::atomic_bool running_;
 

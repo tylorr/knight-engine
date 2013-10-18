@@ -1,7 +1,7 @@
 set(SOURCES
     test_main.cpp
     slot_map_test.cpp
-    work_queue_test.cpp
+    concurrent_queue_test.cpp
     thread_pool_test.cpp
     component_manager_test.cpp
 )

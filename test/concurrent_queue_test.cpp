@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "work_queue.h"
+#include "concurrent_queue.h"
 
 #include <functional>
 #include <thread>
@@ -7,36 +7,36 @@
 #include <condition_variable>
 #include <chrono>
 
-using knight::WorkQueue;
+using knight::ConcurrentQueue;
 using std::thread;
 using std::chrono::milliseconds;
 
 typedef std::function<void()> Task;
 
-class WorkQueueTest : public ::testing::Test {
+class ConcurrentQueueTest : public ::testing::Test {
  protected:
-  WorkQueue<Task> queue_;
+  ConcurrentQueue<Task> queue_;
 };
 
-TEST_F(WorkQueueTest, AddAndSize) {
-  queue_.Add([] { printf("Task 1"); });
+TEST_F(ConcurrentQueueTest, AddAndSize) {
+  queue_.push([] { printf("Task 1"); });
 
-  EXPECT_EQ(1, queue_.Size());
+  EXPECT_EQ(1, queue_.size());
 
-  queue_.Add([] { printf("Task 2"); });
+  queue_.push([] { printf("Task 2"); });
 
-  EXPECT_EQ(2, queue_.Size());
+  EXPECT_EQ(2, queue_.size());
 }
 
-void RemoveThread(WorkQueue<Task> &q) {
-  Task t = q.Remove();
+void RemoveThread(ConcurrentQueue<Task> &q) {
+  Task t(q.wait_pop());
   t();
 }
 
-TEST_F(WorkQueueTest, RemoveAfterAdd) {
+TEST_F(ConcurrentQueueTest, WaitAfterAdd) {
   int result = 0;
 
-  queue_.Add([&] { result = 1; });
+  queue_.push([&] { result = 1; });
 
   std::thread t(RemoveThread, std::ref(queue_));
 
@@ -45,31 +45,31 @@ TEST_F(WorkQueueTest, RemoveAfterAdd) {
   EXPECT_EQ(1, result);
 }
 
-TEST_F(WorkQueueTest, RemoveBeforeAdd) {
+TEST_F(ConcurrentQueueTest, WaitBeforeAdd) {
   int result = 0;
 
   std::thread t(RemoveThread, std::ref(queue_));
 
-  queue_.Add([&] { result = 1; });
+  queue_.push([&] { result = 1; });
 
   t.join();
 
   EXPECT_EQ(1, result);
 }
 
-void MissedAddThread(WorkQueue<Task> &q) {
-  Task t = q.Remove();
+void MissedAddThread(ConcurrentQueue<Task> &q) {
+  Task t = q.wait_pop();
   t();
-  Task t2 = q.Remove();
+  Task t2 = q.wait_pop();
   t2();
 }
 
-TEST_F(WorkQueueTest, MissedAddSignal) {
+TEST_F(ConcurrentQueueTest, MissedAddSignal) {
   int result = 0;
 
   std::thread t(MissedAddThread, std::ref(queue_));
 
-  queue_.Add([&] {
+  queue_.push([&] {
     milliseconds longDuration(100);
     std::this_thread::sleep_for(longDuration);
     result = 1;
@@ -77,22 +77,12 @@ TEST_F(WorkQueueTest, MissedAddSignal) {
 
   // Add() triggers condition_variable on thread, fortunately it is waiting on
   // variable with predicate: queue.size() > 1 so that it doesn't miss new tasks
-  queue_.Add([&] {
+  queue_.push([&] {
     result = 2;
   });
 
   t.join();
 
   EXPECT_EQ(2, result);
-}
-
-TEST_F(WorkQueueTest, Stop) {
-  std::thread t([this] {
-    Task t = queue_.Remove();
-  });
-
-  queue_.Stop();
-
-  t.join();
 }
 

@@ -4,23 +4,14 @@
 #include "program.h"
 #include "buffer_object.h"
 #include "vertex_array.h"
-#include "slot_map.h"
-#include "work_queue.h"
-#include "thread_pool.h"
-#include "component.h"
-#include "component_manager.h"
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
 #include <logog.hpp>
 
-#include <thread>
-#include <chrono>
 
 using namespace knight;
-
-using std::thread;
 
 int CurrentWidth = 800,
     CurrentHeight = 600;

@@ -4,6 +4,7 @@
 #include "program.h"
 #include "buffer_object.h"
 #include "vertex_array.h"
+#include "color_formatter.h"
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -26,6 +27,8 @@ int main(int argc, char *argv[]) {
   {
     // 'out' must lose scope before LOGOG_SHUTDOWN()
     logog::Cout out;
+    logog::ColorFormatter formatter;
+    out.SetFormatter(formatter);
 
     if (Initialize()) {
       Shader vert(ShaderType::VERTEX, "#version 130\nin vec2 position; void main() { gl_Position = vec4(position, 0.0, 1.0); }");

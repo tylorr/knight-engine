@@ -69,6 +69,7 @@ TEST_F(ThreadPoolTest, StopWithLongTasks) {
 
   pool_.Stop();
 
+  // succeed by getting here without stalling
   SUCCEED();
 
   EXPECT_EQ(1, result);

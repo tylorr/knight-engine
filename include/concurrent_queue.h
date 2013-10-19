@@ -15,43 +15,13 @@ class ConcurrentQueue {
  public:
   ConcurrentQueue() { }
 
-  void push(T item) {
-    std::lock_guard<std::mutex> lk(mutex_);
-    queue_.push(item);
-    condition_.notify_one();
-  }
+  void push(T item);
 
-  T wait_pop() {
-    std::unique_lock<std::mutex> lk(mutex_);
-    condition_.wait(lk, [this]{ return queue_.size() > 0; });
+  T wait_pop();
+  bool try_pop(T &item);
 
-    T item(std::move(queue_.front()));
-    queue_.pop();
-    return item;
-  }
-
-  bool try_pop(T &item) {
-    std::lock_guard<std::mutex> lk(mutex_);
-
-    bool result = false;
-    if (!queue_.empty()) {
-      item = queue_.front();
-      queue_.pop();
-      result = true;
-    }
-
-    return result;
-  }
-
-  size_t size() const {
-    std::lock_guard<std::mutex> lock(mutex_);
-    return queue_.size();
-  }
-
-  bool empty() const {
-    std::lock_guard<std::mutex> lock(mutex_);
-    return queue_.empty();
-  }
+  size_t size() const;
+  bool empty() const;
 
  private:
   std::queue<T> queue_;
@@ -63,5 +33,7 @@ class ConcurrentQueue {
 };
 
 }; // namespace knight
+
+#include "concurrent_queue.tpp"
 
 #endif // CONCURRENT_QUEUE_H_

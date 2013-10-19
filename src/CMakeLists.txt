@@ -8,6 +8,7 @@ set(SOURCES
     vertex_array.cpp
     thread_pool.cpp
     entity.cpp
+    component_manager.cpp
 )
 
 add_library(knight-engine ${SOURCES})

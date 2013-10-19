@@ -16,36 +16,17 @@ class ComponentManager {
   ComponentManager() { }
 
   template<typename T>
-  std::shared_ptr<T> AddComponent(Entity &entity) {
-    std::shared_ptr<T> component(Component::Create<T>());
-    AddComponent(entity, component);
-    return component;
-  }
+  std::shared_ptr<T> AddComponent(Entity &entity);
 
-  void AddComponent(Entity &entity, const ComponentPtr &component) {
-    if (component != nullptr) {
-      component_map_[component->type()][entity.id()] = component;
-      entity.AddComponent(component);
-    }
-  }
+  void AddComponent(Entity &entity, const ComponentPtr &component);
 
   template<typename T>
-  std::shared_ptr<T> GetComponent(const Entity &entity) {
-    return std::static_pointer_cast<T>(component_map_[Component::TypeFor<T>()][entity.id()]);
-  }
+  std::shared_ptr<T> GetComponent(const Entity &entity);
 
   template<typename T>
-  void RemoveComponent(Entity &entity) {
-    auto component = component_map_[Component::TypeFor<T>()][entity.id()];
-    RemoveComponent(entity, component);
-  }
+  void RemoveComponent(Entity &entity);
 
-  void RemoveComponent(Entity &entity, const ComponentPtr &component) {
-    if (component != nullptr) {
-      entity.RemoveComponent(component);
-      component_map_[component->type()][entity.id()] = nullptr;
-    }
-  }
+  void RemoveComponent(Entity &entity, const ComponentPtr &component);
 
  private:
   typedef std::unordered_map<ID, ComponentPtr> EntityComponentMap;
@@ -58,5 +39,7 @@ class ComponentManager {
 };
 
 }; // namespace knight
+
+#include "component_manager.tpp"
 
 #endif // COMPONENT_MANAGER_H_

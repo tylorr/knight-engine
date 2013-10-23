@@ -32,4 +32,4 @@ void BufferObject::GetSubData(const GLintptr &offset, const GLsizeiptr &size, GL
   glGetBufferSubData(target_, offset, size, data);
 }
 
-}; // namespace knight
+} // namespace knight

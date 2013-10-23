@@ -38,7 +38,7 @@ class ComponentManager {
   KNIGHT_DISALLOW_COPY_AND_ASSIGN(ComponentManager);
 };
 
-}; // namespace knight
+} // namespace knight
 
 #include "component_manager.tpp"
 

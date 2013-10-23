@@ -33,6 +33,6 @@ class Entity {
   KNIGHT_DISALLOW_COPY_AND_ASSIGN(Entity);
 };
 
-}; // namespace knight
+} // namespace knight
 
 #endif // ENTITY_H_

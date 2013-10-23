@@ -25,4 +25,4 @@ bool Entity::HasComponent(const ComponentPtr &component) {
   return result;
 }
 
-}; // namespace knight
+} // namespace knight

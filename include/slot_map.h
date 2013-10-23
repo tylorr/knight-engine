@@ -31,8 +31,9 @@ class SlotMap {
   KNIGHT_DISALLOW_COPY_AND_ASSIGN(SlotMap);
 };
 
-}; // namespace knight
+} // namespace knight
 
+// template impl
 #include "slot_map.tpp"
 
 #endif // SLOT_MAP_H_

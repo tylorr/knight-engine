@@ -9,6 +9,14 @@ std::shared_ptr<T> ComponentManager::AddComponent(Entity &entity) {
   return component;
 }
 
+void ComponentManager::AddComponent(Entity &entity,
+                                    const ComponentPtr &component) {
+  if (component != nullptr) {
+    component_map_[component->type()][entity.id()] = component;
+    entity.AddComponent(component);
+  }
+}
+
 template<typename T>
 std::shared_ptr<T> ComponentManager::GetComponent(const Entity &entity) {
   return std::static_pointer_cast<T>(
@@ -22,4 +30,12 @@ void ComponentManager::RemoveComponent(Entity &entity) {
   RemoveComponent(entity, component);
 }
 
-}; // namespace knight
+void ComponentManager::RemoveComponent(Entity &entity,
+                                       const ComponentPtr &component) {
+  if (component != nullptr) {
+    entity.RemoveComponent(component);
+    component_map_[component->type()][entity.id()] = nullptr;
+  }
+}
+
+} // namespace knight

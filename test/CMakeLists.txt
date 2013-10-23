@@ -6,6 +6,8 @@ set(SOURCES
     component_manager_test.cpp
 )
 
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=thread")
+
 add_executable(knight-test ${SOURCES})
 
 include_directories(${PROJECT_SOURCE_DIR}/third-party/googletest/include)

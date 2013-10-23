@@ -33,7 +33,7 @@ union ID {
   }
 };
 
-}; // namespace knight
+} // namespace knight
 
 namespace std {
 

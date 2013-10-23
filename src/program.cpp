@@ -57,4 +57,4 @@ GLint Program::GetAttribute(const GLchar *name) {
   return glGetAttribLocation(handle_, name);
 }
 
-}; // namespace knight
+} // namespace knight

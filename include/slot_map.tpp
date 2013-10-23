@@ -62,4 +62,4 @@ void SlotMap<T>::Destroy(ID id) {
   }
 }
 
-}; // namespace knight
+} // namespace knight

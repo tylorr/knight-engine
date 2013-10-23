@@ -25,6 +25,6 @@ private:
   GLuint handle_;
 };
 
-}; // namespace knight
+} // namespace knight
 
 #endif

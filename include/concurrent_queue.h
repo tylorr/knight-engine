@@ -32,7 +32,7 @@ class ConcurrentQueue {
   KNIGHT_DISALLOW_COPY_AND_ASSIGN(ConcurrentQueue);
 };
 
-}; // namespace knight
+} // namespace knight
 
 #include "concurrent_queue.tpp"
 

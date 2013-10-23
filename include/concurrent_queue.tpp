@@ -45,4 +45,4 @@ bool ConcurrentQueue<T>::empty() const {
   return queue_.empty();
 }
 
-}; // namespace knight
+} // namespace knight

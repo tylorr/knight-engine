@@ -37,6 +37,6 @@ class Shader {
   KNIGHT_DISALLOW_COPY_AND_ASSIGN(Shader);
 };
 
-}; // namespace knight
+} // namespace knight
 
 #endif // SHADER_H_

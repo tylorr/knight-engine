@@ -29,6 +29,6 @@ class BufferObject {
   KNIGHT_DISALLOW_COPY_AND_ASSIGN(BufferObject);
 };
 
-}; // namespace knight
+} // namespace knight
 
 #endif // BUFFER_OBJECT_H_

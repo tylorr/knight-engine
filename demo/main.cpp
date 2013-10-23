@@ -11,7 +11,6 @@
 
 #include <logog.hpp>
 
-
 using namespace knight;
 
 int CurrentWidth = 800,

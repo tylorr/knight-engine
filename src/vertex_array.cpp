@@ -28,4 +28,4 @@ void VertexArray::BindAttribute(const BufferObject& buffer,
   glVertexAttribPointer(attribute, size, type, normalized, stride, pointer);
 }
 
-}; // namespace knight
+} // namespace knight

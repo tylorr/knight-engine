@@ -43,7 +43,6 @@ class ThreadPool {
  private:
   typedef std::vector<std::thread> Pool;
 
-
   void Run();
 
   ConcurrentQueue<Task> queue_;
@@ -57,6 +56,6 @@ class ThreadPool {
   KNIGHT_DISALLOW_COPY_AND_ASSIGN(ThreadPool);
 };
 
-}; // namespace knight;
+} // namespace knight;
 
 #endif // THREAD_POOL_H_

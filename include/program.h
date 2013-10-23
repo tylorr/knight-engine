@@ -30,6 +30,6 @@ class Program {
   KNIGHT_DISALLOW_COPY_AND_ASSIGN(Program);
 };
 
-}; // namespace knight
+} // namespace knight
 
 #endif // PROGRAM_H_

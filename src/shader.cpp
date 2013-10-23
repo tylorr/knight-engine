@@ -68,4 +68,4 @@ string Shader::GetInfoLog() const {
   }
 }
 
-}; // namespace knight
+} // namespace knight

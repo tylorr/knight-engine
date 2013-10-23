@@ -50,4 +50,4 @@ void ThreadPool::Run() {
   Add([]{});
 }
 
-}; // namespace knight
+} // namespace knight

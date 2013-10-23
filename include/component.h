@@ -26,13 +26,26 @@ class Component {
   Component();
 
   // Return an incremented type for each call
-  static unsigned int NextType();
+  static unsigned int NextType() {
+    static unsigned int type(0);
+    return type++;
+  }
 
   unsigned int type_;
 };
 
-} // namespace knight
+template<typename T>
+std::shared_ptr<T> Component::Create() {
+  return std::shared_ptr<T>(new T(Component::TypeFor<T>()));
+}
 
-#include "component.tpp"
+// Generate and remember type for class T
+template<typename T>
+unsigned int Component::TypeFor() {
+  static unsigned int type(Component::NextType());
+  return type;
+}
+
+} // namespace knight
 
 #endif // COMPONENT_H_

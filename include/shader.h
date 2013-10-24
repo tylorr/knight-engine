@@ -1,5 +1,5 @@
-#ifndef SHADER_H_
-#define SHADER_H_
+#ifndef KNIGHT_SHADER_H_
+#define KNIGHT_SHADER_H_
 
 #include "common.h"
 
@@ -39,4 +39,4 @@ class Shader {
 
 } // namespace knight
 
-#endif // SHADER_H_
+#endif // KNIGHT_SHADER_H_

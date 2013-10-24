@@ -1,5 +1,5 @@
-#ifndef COMPONENT_H_
-#define COMPONENT_H_
+#ifndef KNIGHT_COMPONENT_H_
+#define KNIGHT_COMPONENT_H_
 
 #include <memory>
 
@@ -48,4 +48,4 @@ unsigned int Component::TypeFor() {
 
 } // namespace knight
 
-#endif // COMPONENT_H_
+#endif // KNIGHT_COMPONENT_H_

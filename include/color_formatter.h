@@ -1,5 +1,5 @@
-#ifndef COLOR_FORMATTER_H_
-#define COLOR_FORMATTER_H_
+#ifndef KNIGHT_COLOR_FORMATTER_H_
+#define KNIGHT_COLOR_FORMATTER_H_
 
 #include <logog.hpp>
 
@@ -82,4 +82,4 @@ class ColorFormatter : public FormatterGCC {
 
 }; // namespace logog
 
-#endif // COLOR_FORMATTER_H_
+#endif // KNIGHT_COLOR_FORMATTER_H_

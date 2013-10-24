@@ -1,5 +1,5 @@
-#ifndef WINDOW_H_
-#define WINDOW_H_
+#ifndef KNIGHT_WINDOW_H_
+#define KNIGHT_WINDOW_H_
 
 #include "common.h"
 
@@ -15,4 +15,4 @@ class Window {
   KNIGHT_DISALLOW_COPY_AND_ASSIGN(Window);
 };
 
-#endif // WINDOW_H_
+#endif // KNIGHT_WINDOW_H_

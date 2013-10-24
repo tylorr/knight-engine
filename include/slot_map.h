@@ -1,5 +1,5 @@
-#ifndef SLOT_MAP_H_
-#define SLOT_MAP_H_
+#ifndef KNIGHT_SLOT_MAP_H_
+#define KNIGHT_SLOT_MAP_H_
 
 #include "common.h"
 
@@ -35,13 +35,15 @@ template<typename T>
 ID SlotMap<T>::Create() {
   // Are there no spare entities?
   if (free_list_.empty()) {
-    // Create free entry for new entity in chunk
-    for (int i = kChunkSize - 1; i >= 0; --i) {
-      free_list_.push_back(slot_table_.size() * kChunkSize + i);
-    }
 
     // Add new chunk to table
     slot_table_.push_back(Chunk(new T[kChunkSize]));
+
+    // Mark entire chunk as free
+    free_list_.reserve(kChunkSize * slot_table_.size());
+    for (int i = kChunkSize - 1; i >= 0; --i) {
+      free_list_.push_back(slot_table_.size() * kChunkSize + i);
+    }
   }
 
   uint32_t freeId = free_list_.back();
@@ -93,4 +95,4 @@ void SlotMap<T>::Destroy(ID id) {
 
 } // namespace knight
 
-#endif // SLOT_MAP_H_
+#endif // KNIGHT_SLOT_MAP_H_

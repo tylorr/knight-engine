@@ -1,5 +1,5 @@
-#ifndef COMPONENT_MANAGER_H_
-#define COMPONENT_MANAGER_H_
+#ifndef KNIGHT_COMPONENT_MANAGER_H_
+#define KNIGHT_COMPONENT_MANAGER_H_
 
 #include "common.h"
 #include "entity.h"
@@ -62,4 +62,4 @@ void ComponentManager::RemoveComponent(Entity &entity) {
 
 } // namespace knight
 
-#endif // COMPONENT_MANAGER_H_
+#endif // KNIGHT_COMPONENT_MANAGER_H_

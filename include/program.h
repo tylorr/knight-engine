@@ -1,5 +1,5 @@
-#ifndef PROGRAM_H_
-#define PROGRAM_H_
+#ifndef KNIGHT_PROGRAM_H_
+#define KNIGHT_PROGRAM_H_
 
 #include "common.h"
 #include "shader.h"
@@ -32,4 +32,4 @@ class Program {
 
 } // namespace knight
 
-#endif // PROGRAM_H_
+#endif // KNIGHT_PROGRAM_H_

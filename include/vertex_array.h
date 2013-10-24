@@ -1,5 +1,5 @@
-#ifndef VERTEX_ARRAY_H_
-#define VERTEX_ARRAY_H_
+#ifndef KNIGHT_VERTEX_ARRAY_H_
+#define KNIGHT_VERTEX_ARRAY_H_
 
 #include "buffer_object.h"
 
@@ -27,4 +27,4 @@ private:
 
 } // namespace knight
 
-#endif
+#endif // KNIGHT_VERTEX_ARRAY_H_

@@ -1,12 +1,12 @@
-#ifndef COMMON_H_
-#define COMMON_H_
+#ifndef KNIGHT_COMMON_H_
+#define KNIGHT_COMMON_H_
 
 #include <cstdint>
 #include <functional>
 
 #define KNIGHT_DISALLOW_COPY_AND_ASSIGN(TypeName) \
-  TypeName(const TypeName&) = delete;             \
-  void operator=(const TypeName&) = delete;
+  TypeName(const TypeName &) = delete;             \
+  void operator=(const TypeName &) = delete;
 
 namespace knight {
 
@@ -47,4 +47,4 @@ struct hash<knight::ID> {
 
 }; // namespace std
 
-#endif // COMMON_H_
+#endif // KNIGHT_COMMON_H_

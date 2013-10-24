@@ -1,5 +1,5 @@
-#ifndef THREAD_POOL_H_
-#define THREAD_POOL_H_
+#ifndef KNIGHT_THREAD_POOL_H_
+#define KNIGHT_THREAD_POOL_H_
 
 #include "common.h"
 #include "concurrent_queue.h"
@@ -58,4 +58,4 @@ class ThreadPool {
 
 } // namespace knight;
 
-#endif // THREAD_POOL_H_
+#endif // KNIGHT_THREAD_POOL_H_

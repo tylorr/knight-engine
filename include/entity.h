@@ -1,5 +1,5 @@
-#ifndef ENTITY_H_
-#define ENTITY_H_
+#ifndef KNIGHT_ENTITY_H_
+#define KNIGHT_ENTITY_H_
 
 #include "common.h"
 
@@ -35,4 +35,4 @@ class Entity {
 
 } // namespace knight
 
-#endif // ENTITY_H_
+#endif // KNIGHT_ENTITY_H_

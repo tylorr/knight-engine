@@ -1,5 +1,5 @@
-#ifndef BUFFER_OBJECT_H_
-#define BUFFER_OBJECT_H_
+#ifndef KNIGHT_BUFFER_OBJECT_H_
+#define KNIGHT_BUFFER_OBJECT_H_
 
 #include "common.h"
 
@@ -31,4 +31,4 @@ class BufferObject {
 
 } // namespace knight
 
-#endif // BUFFER_OBJECT_H_
+#endif // KNIGHT_BUFFER_OBJECT_H_

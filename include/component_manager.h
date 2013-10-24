@@ -16,17 +16,17 @@ class ComponentManager {
   ComponentManager() { }
 
   template<typename T>
-  std::shared_ptr<T> AddComponent(Entity &entity);
+  std::shared_ptr<T> AddComponent(Entity *entity);
 
-  void AddComponent(Entity &entity, const ComponentPtr &component);
-
-  template<typename T>
-  std::shared_ptr<T> GetComponent(const Entity &entity);
+  void AddComponent(Entity *entity, const ComponentPtr &component);
 
   template<typename T>
-  void RemoveComponent(Entity &entity);
+  std::shared_ptr<T> GetComponent(const Entity *entity);
 
-  void RemoveComponent(Entity &entity, const ComponentPtr &component);
+  template<typename T>
+  void RemoveComponent(Entity *entity);
+
+  void RemoveComponent(Entity *entity, const ComponentPtr &component);
 
  private:
   typedef std::unordered_map<ID, ComponentPtr> EntityComponentMap;
@@ -41,22 +41,24 @@ class ComponentManager {
 // Template implementations
 
 template<typename T>
-std::shared_ptr<T> ComponentManager::AddComponent(Entity &entity) {
-  std::shared_ptr<T> component(Component::Create<T>());
-  AddComponent(entity, component);
-  return component;
+std::shared_ptr<T> ComponentManager::AddComponent(Entity *entity) {
+  if (entity != nullptr) {
+    std::shared_ptr<T> component(Component::Create<T>());
+    AddComponent(entity, component);
+    return component;
+  }
 }
 
 template<typename T>
-std::shared_ptr<T> ComponentManager::GetComponent(const Entity &entity) {
+std::shared_ptr<T> ComponentManager::GetComponent(const Entity *entity) {
   return std::static_pointer_cast<T>(
-    component_map_[Component::TypeFor<T>()][entity.id()]
+    component_map_[Component::TypeFor<T>()][entity->id()]
   );
 }
 
 template<typename T>
-void ComponentManager::RemoveComponent(Entity &entity) {
-  auto component = component_map_[Component::TypeFor<T>()][entity.id()];
+void ComponentManager::RemoveComponent(Entity *entity) {
+  auto component = component_map_[Component::TypeFor<T>()][entity->id()];
   RemoveComponent(entity, component);
 }
 

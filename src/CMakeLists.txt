@@ -9,6 +9,7 @@ set(SOURCES
     thread_pool.cpp
     entity.cpp
     component_manager.cpp
+    system.cpp
 )
 
 add_library(knight-engine ${SOURCES})

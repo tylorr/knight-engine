@@ -1,6 +1,8 @@
 #ifndef KNIGHT_COMPONENT_H_
 #define KNIGHT_COMPONENT_H_
 
+#include "common.h"
+
 #include <memory>
 
 namespace knight {
@@ -14,24 +16,23 @@ class Component {
 
   // Generate and remember type for class T
   template<typename T>
-  static unsigned int TypeFor();
+  static ComponentFlag TypeFor();
 
-  unsigned int type() const { return type_; }
-  unsigned int flag() const { return 1 << type_; }
+  ComponentFlag type() const { return type_; }
 
  protected:
-  explicit Component(unsigned int type) : type_(type) { }
+  explicit Component(ComponentFlag type) : type_(type) { }
 
  private:
   Component();
 
   // Return an incremented type for each call
-  static unsigned int NextType() {
-    static unsigned int type(0);
-    return type++;
+  static ComponentFlag NextType() {
+    static ComponentFlag bit(0);
+    return 0x1 << bit++;
   }
 
-  unsigned int type_;
+  ComponentFlag type_;
 };
 
 template<typename T>
@@ -41,8 +42,8 @@ std::shared_ptr<T> Component::Create() {
 
 // Generate and remember type for class T
 template<typename T>
-unsigned int Component::TypeFor() {
-  static unsigned int type(Component::NextType());
+ComponentFlag Component::TypeFor() {
+  static ComponentFlag type(Component::NextType());
   return type;
 }
 

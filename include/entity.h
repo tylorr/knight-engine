@@ -15,12 +15,12 @@ class Entity {
  public:
   typedef std::shared_ptr<Component> ComponentPtr;
 
-  Entity() : id_() { }
+  Entity() : id_(0), component_flags_(0) { }
 
   ID id() const { return id_; }
   void set_id(ID id) { id_ = id; }
 
-  unsigned int component_flags() const { return component_flags_; }
+  ComponentFlag component_flags() const { return component_flags_; }
 
   void AddComponent(const ComponentPtr &flag);
   void RemoveComponent(const ComponentPtr &flag);
@@ -28,7 +28,7 @@ class Entity {
 
  private:
   ID id_;
-  unsigned int component_flags_;
+  ComponentFlag component_flags_;
 
   KNIGHT_DISALLOW_COPY_AND_ASSIGN(Entity);
 };

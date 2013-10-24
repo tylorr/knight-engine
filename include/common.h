@@ -10,6 +10,8 @@
 
 namespace knight {
 
+typedef unsigned int ComponentFlag;
+
 union ID {
   uint64_t id;
   struct {

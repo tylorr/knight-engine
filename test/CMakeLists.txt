@@ -4,6 +4,7 @@ set(SOURCES
     concurrent_queue_test.cpp
     thread_pool_test.cpp
     component_manager_test.cpp
+    system_test.cpp
 )
 
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=thread")

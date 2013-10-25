@@ -35,15 +35,16 @@ template<typename T>
 ID SlotMap<T>::Create() {
   // Are there no spare entities?
   if (free_list_.empty()) {
+    free_list_.reserve(kChunkSize * (slot_table_.size() + 1));
+
+    // Mark entire chunk as free
+    uint32_t lastIndex = slot_table_.size() * kChunkSize;
+    for (int i = kChunkSize - 1; i >= 0; --i) {
+      free_list_.push_back(lastIndex + i);
+    }
 
     // Add new chunk to table
     slot_table_.push_back(Chunk(new T[kChunkSize]));
-
-    // Mark entire chunk as free
-    free_list_.reserve(kChunkSize * slot_table_.size());
-    for (int i = kChunkSize - 1; i >= 0; --i) {
-      free_list_.push_back(slot_table_.size() * kChunkSize + i);
-    }
   }
 
   uint32_t freeId = free_list_.back();

@@ -16,7 +16,7 @@ class System {
   virtual ~System() { }
 
   template<typename T>
-  void TrackComponentType();
+  void SetFlag();
 
   virtual void OnEntityCreated(const Entity *);
   virtual void OnEntityDestroyed(const Entity *);
@@ -32,7 +32,7 @@ class System {
 };
 
 template<typename T>
-void System::TrackComponentType() {
+void System::SetFlag() {
   component_flags_ |= Component::TypeFor<T>();
 }
 

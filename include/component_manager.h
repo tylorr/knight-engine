@@ -46,6 +46,8 @@ std::shared_ptr<T> ComponentManager::AddComponent(Entity *entity) {
     std::shared_ptr<T> component(Component::Create<T>());
     AddComponent(entity, component);
     return component;
+  } else {
+    return nullptr;
   }
 }
 

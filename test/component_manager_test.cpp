@@ -4,15 +4,8 @@
 #include "entity.h"
 #include "component.h"
 #include "common.h"
-#include <chrono>
 
-using knight::ID;
-using knight::Entity;
-using knight::SlotMap;
-using knight::ComponentManager;
-using knight::Component;
-
-
+using namespace knight;
 
 class ComponentManagerTest : public ::testing::Test {
  protected:
@@ -43,42 +36,42 @@ class TestComponent2 : public Component {
 };
 
 TEST_F(ComponentManagerTest, AddComponentType) {
-  auto component = cm_.AddComponent<TestComponent1>(*entity_);
+  auto component = cm_.AddComponent<TestComponent1>(entity_);
   ASSERT_NE(nullptr, component);
   EXPECT_TRUE(entity_->HasComponent(component));
 }
 
 TEST_F(ComponentManagerTest, AddComponentObject) {
   auto component = Component::Create<TestComponent1>();
-  cm_.AddComponent(*entity_, component);
+  cm_.AddComponent(entity_, component);
   ASSERT_NE(nullptr, component);
   EXPECT_TRUE(entity_->HasComponent(component));
 }
 
 TEST_F(ComponentManagerTest, GetComponent) {
-  auto c1 = cm_.AddComponent<TestComponent1>(*entity_);
+  auto c1 = cm_.AddComponent<TestComponent1>(entity_);
 
-  auto c2 = cm_.GetComponent<TestComponent1>(*entity_);
+  auto c2 = cm_.GetComponent<TestComponent1>(entity_);
   EXPECT_EQ(c1, c2);
 
-  auto c3 = cm_.GetComponent<TestComponent2>(*entity_);
+  auto c3 = cm_.GetComponent<TestComponent2>(entity_);
   EXPECT_EQ(nullptr, c3);
 }
 
 TEST_F(ComponentManagerTest, RemoveComponentType) {
-  auto c1 = cm_.AddComponent<TestComponent1>(*entity_);
-  cm_.RemoveComponent<TestComponent1>(*entity_);
+  auto c1 = cm_.AddComponent<TestComponent1>(entity_);
+  cm_.RemoveComponent<TestComponent1>(entity_);
 
-  auto c2 = cm_.GetComponent<TestComponent1>(*entity_);
+  auto c2 = cm_.GetComponent<TestComponent1>(entity_);
   EXPECT_EQ(nullptr, c2);
   EXPECT_FALSE(entity_->HasComponent(c1));
 }
 
 TEST_F(ComponentManagerTest, RemoveComponentObject) {
-  auto c1 = cm_.AddComponent<TestComponent1>(*entity_);
-  cm_.RemoveComponent(*entity_, c1);
+  auto c1 = cm_.AddComponent<TestComponent1>(entity_);
+  cm_.RemoveComponent(entity_, c1);
 
-  auto c2 = cm_.GetComponent<TestComponent1>(*entity_);
+  auto c2 = cm_.GetComponent<TestComponent1>(entity_);
   EXPECT_EQ(nullptr, c2);
   EXPECT_FALSE(entity_->HasComponent(c1));
 }

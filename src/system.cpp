@@ -4,7 +4,8 @@
 namespace knight {
 
 void System::OnEntityCreated(const Entity *entity) {
-  // Does the entity have all tracked componenets?
+
+  // Does the entity have proper componenets?
   if (entity != nullptr &&
       (component_flags_ & entity->component_flags()) == component_flags_) {
     entities_.emplace(entity->id());

@@ -11,58 +11,89 @@ namespace knight {
 
 class ComponentManager {
  public:
-  typedef std::shared_ptr<Component> ComponentPtr;
+  // typedef std::shared_ptr<Component> ComponentPtr;
 
   ComponentManager() { }
 
   template<typename T>
-  std::shared_ptr<T> AddComponent(Entity *entity);
+  std::shared_ptr<T> AddComponent(Entity *entity, std::shared_ptr<T> component);
 
-  void AddComponent(Entity *entity, const ComponentPtr &component);
+  template<typename T, typename... Args>
+  std::shared_ptr<T> AddComponent(Entity *entity, Args&&... args);
 
   template<typename T>
   std::shared_ptr<T> GetComponent(const Entity *entity);
 
   template<typename T>
-  void RemoveComponent(Entity *entity);
+  std::shared_ptr<T> RemoveComponent(Entity *entity);
 
-  void RemoveComponent(Entity *entity, const ComponentPtr &component);
+  // void RemoveComponent(Entity *entity, const ComponentPtr &component);
 
  private:
-  typedef std::unordered_map<ID, ComponentPtr> EntityComponentMap;
+  typedef std::shared_ptr<ComponentBase> BasePtr;
+  typedef std::unordered_map<Entity::ID, BasePtr> EntityComponentMap;
   typedef std::unordered_map<unsigned int, EntityComponentMap> ComponentTypeMap;
 
-  // component = [component_type][entity_id]
+  // component = [family][entity_id]
   ComponentTypeMap component_map_;
 
   KNIGHT_DISALLOW_COPY_AND_ASSIGN(ComponentManager);
 };
 
-// Template implementations
+template<typename T>
+std::shared_ptr<T> ComponentManager::AddComponent(Entity *entity,
+                                                  std::shared_ptr<T> component) {
+  BasePtr base(std::static_pointer_cast<ComponentBase>(component));
+  component_map_[T::family()][entity->id()] = base;
+  entity->AddComponent(T::family());
+
+  return component;
+}
+
+template<typename T, typename... Args>
+std::shared_ptr<T> ComponentManager::AddComponent(Entity *entity, Args&&... args) {
+  return AddComponent<T>(entity, std::shared_ptr<T>(new T(std::forward<Args>(args)...)));
+}
+
+// template<typename T>
+// std::shared_ptr<T> ComponentManager::AddComponent(Entity *entity) {
+//   if (entity != nullptr) {
+//     std::shared_ptr<T> component(Component::Create<T>());
+//     AddComponent(entity, component);
+//     return component;
+//   } else {
+//     return nullptr;
+//   }
+// }
 
 template<typename T>
-std::shared_ptr<T> ComponentManager::AddComponent(Entity *entity) {
+std::shared_ptr<T> ComponentManager::GetComponent(const Entity *entity) {
   if (entity != nullptr) {
-    std::shared_ptr<T> component(Component::Create<T>());
-    AddComponent(entity, component);
-    return component;
+    return std::static_pointer_cast<T>(
+      component_map_[T::family()][entity->id()]
+    );
   } else {
     return nullptr;
   }
 }
 
 template<typename T>
-std::shared_ptr<T> ComponentManager::GetComponent(const Entity *entity) {
-  return std::static_pointer_cast<T>(
-    component_map_[Component::TypeFor<T>()][entity->id()]
-  );
+std::shared_ptr<T> ComponentManager::RemoveComponent(Entity *entity) {
+  if (entity != nullptr) {
+    std::shared_ptr<T> component(std::static_pointer_cast<T>(component_map_[T::family()][entity->id()]));
+    component_map_[T::family()][entity->id()] = nullptr;
+    entity->RemoveComponent(T::family());
+    return component;
+  } else {
+    return nullptr;
+  }
 }
 
-template<typename T>
-void ComponentManager::RemoveComponent(Entity *entity) {
-  auto component = component_map_[Component::TypeFor<T>()][entity->id()];
-  RemoveComponent(entity, component);
-}
+// template<typename T>
+// void ComponentManager::RemoveComponent(Entity *entity) {
+//   auto component = component_map_[Component::TypeFor<T>()][entity->id()];
+//   RemoveComponent(entity, component);
+// }
 
 } // namespace knight
 

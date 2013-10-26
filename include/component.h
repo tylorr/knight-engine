@@ -1,51 +1,36 @@
 #ifndef KNIGHT_COMPONENT_H_
 #define KNIGHT_COMPONENT_H_
 
-#include "common.h"
-
-#include <memory>
+#include <cstdint>
 
 namespace knight {
 
-class Component {
+class ComponentBase {
  public:
-
-  // Create pointer to component passing it a component Type
-  template<typename T>
-  static std::shared_ptr<T> Create();
-
-  // Generate and remember type for class T
-  template<typename T>
-  static ComponentFlag TypeFor();
-
-  ComponentFlag type() const { return type_; }
+  typedef uint64_t Family;
+  // typedef uint64_t FamilyBit;
 
  protected:
-  explicit Component(ComponentFlag type) : type_(type) { }
-
- private:
-  Component();
-
-  // Return an incremented type for each call
-  static ComponentFlag NextType() {
-    static ComponentFlag bit(0);
-    return 0x1 << bit++;
-  }
-
-  ComponentFlag type_;
+  static Family next_family_;
 };
 
 template<typename T>
-std::shared_ptr<T> Component::Create() {
-  return std::shared_ptr<T>(new T(Component::TypeFor<T>()));
+struct Component : public ComponentBase {
+ public:
+  static Family family();
+  // static FamilyBit family_bit();
+};
+
+template<typename T>
+ComponentBase::Family Component<T>::family() {
+  static Family family(next_family_++);
+  return family;
 }
 
-// Generate and remember type for class T
-template<typename T>
-ComponentFlag Component::TypeFor() {
-  static ComponentFlag type(Component::NextType());
-  return type;
-}
+// template<typename T>
+// ComponentBase::FamilyBit Component<T>::family_bit() {
+//   return uint64_t(1) << family();
+// }
 
 } // namespace knight
 

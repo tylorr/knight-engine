@@ -1,28 +1,17 @@
 #include "entity.h"
-#include "component.h"
 
 namespace knight {
 
-void Entity::AddComponent(const ComponentPtr &component) {
-  if (component != nullptr) {
-    component_flags_ |= component->type();
-  }
+void Entity::AddComponent(const ComponentBase::Family &family) {
+  component_flags_.set(family);
 }
 
-void Entity::RemoveComponent(const ComponentPtr &component) {
-  if (component != nullptr) {
-    component_flags_ &= ~component->type();
-  }
+void Entity::RemoveComponent(const ComponentBase::Family &family) {
+  component_flags_.reset(family);
 }
 
-bool Entity::HasComponent(const ComponentPtr &component) {
-  bool result = false;
-
-  if (component != nullptr) {
-    result = (component_flags_ & component->type()) != 0;
-  }
-
-  return result;
+bool Entity::HasComponent(const ComponentBase::Family &family) {
+  return component_flags_.test(family);
 }
 
 } // namespace knight

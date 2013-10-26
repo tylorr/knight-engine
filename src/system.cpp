@@ -18,4 +18,4 @@ void System::OnEntityDestroyed(const Entity *entity) {
   }
 }
 
-} // knight
+} // namespace knight

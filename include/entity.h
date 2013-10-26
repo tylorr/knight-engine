@@ -29,22 +29,20 @@ class Entity {
     }
   };
 
-  Entity() : id_(0), component_flags_(0) { }
+  Entity() : id_(0) { }
 
   ID id() const { return id_; }
 
-  // Internal use only
-  void set_id(ID id) { id_ = id; }
-
-  ComponentMask component_flags() const { return component_flags_; }
+  ComponentMask component_flags() const { return 0; }
 
   void AddComponent(const ComponentBase::Family &);
   void RemoveComponent(const ComponentBase::Family &);
   bool HasComponent(const ComponentBase::Family &);
 
  private:
+  friend class SlotMap;
+
   ID id_;
-  ComponentMask component_flags_;
 
   KNIGHT_DISALLOW_COPY_AND_ASSIGN(Entity);
 };
@@ -53,7 +51,7 @@ class Entity {
 
 namespace std {
 
-// std::hash specialization for ID
+// std::hash specialization for Entity::ID
 template<>
 struct hash<knight::Entity::ID> {
   size_t operator()(const knight::Entity::ID &id) const {

@@ -11,89 +11,69 @@ namespace knight {
 
 class ComponentManager {
  public:
-  // typedef std::shared_ptr<Component> ComponentPtr;
-
   ComponentManager() { }
 
   template<typename T>
-  std::shared_ptr<T> AddComponent(Entity *entity, std::shared_ptr<T> component);
+  std::shared_ptr<T> AddComponent(const Entity::ID &, std::shared_ptr<T>);
 
   template<typename T, typename... Args>
-  std::shared_ptr<T> AddComponent(Entity *entity, Args&&... args);
+  std::shared_ptr<T> AddComponent(const Entity::ID &, Args&&...);
 
   template<typename T>
-  std::shared_ptr<T> GetComponent(const Entity *entity);
+  std::shared_ptr<T> GetComponent(const Entity::ID &);
 
   template<typename T>
-  std::shared_ptr<T> RemoveComponent(Entity *entity);
+  std::shared_ptr<T> RemoveComponent(const Entity::ID &);
 
   // void RemoveComponent(Entity *entity, const ComponentPtr &component);
 
  private:
   typedef std::shared_ptr<ComponentBase> BasePtr;
   typedef std::unordered_map<Entity::ID, BasePtr> EntityComponentMap;
-  typedef std::unordered_map<unsigned int, EntityComponentMap> ComponentTypeMap;
+  typedef std::unordered_map<ComponentBase::Family, EntityComponentMap> UniqueEntityComponentMap;
+  typedef std::unordered_map<Entity::ID, ComponentMask> ComponentMaskMap;
 
   // component = [family][entity_id]
-  ComponentTypeMap component_map_;
+  UniqueEntityComponentMap entity_components_;
+  ComponentMaskMap entity_component_mask_;
 
   KNIGHT_DISALLOW_COPY_AND_ASSIGN(ComponentManager);
 };
 
 template<typename T>
-std::shared_ptr<T> ComponentManager::AddComponent(Entity *entity,
-                                                  std::shared_ptr<T> component) {
+std::shared_ptr<T> ComponentManager::AddComponent(
+    const Entity::ID &id,
+    std::shared_ptr<T> component) {
   BasePtr base(std::static_pointer_cast<ComponentBase>(component));
-  component_map_[T::family()][entity->id()] = base;
-  entity->AddComponent(T::family());
+  entity_components_[T::family()][id] = base;
+
+  entity_component_mask_[id].set(T::family());
 
   return component;
 }
 
 template<typename T, typename... Args>
-std::shared_ptr<T> ComponentManager::AddComponent(Entity *entity, Args&&... args) {
-  return AddComponent<T>(entity, std::shared_ptr<T>(new T(std::forward<Args>(args)...)));
-}
-
-// template<typename T>
-// std::shared_ptr<T> ComponentManager::AddComponent(Entity *entity) {
-//   if (entity != nullptr) {
-//     std::shared_ptr<T> component(Component::Create<T>());
-//     AddComponent(entity, component);
-//     return component;
-//   } else {
-//     return nullptr;
-//   }
-// }
-
-template<typename T>
-std::shared_ptr<T> ComponentManager::GetComponent(const Entity *entity) {
-  if (entity != nullptr) {
-    return std::static_pointer_cast<T>(
-      component_map_[T::family()][entity->id()]
-    );
-  } else {
-    return nullptr;
-  }
+std::shared_ptr<T> ComponentManager::AddComponent(const Entity::ID &id,
+                                                  Args&&... args) {
+  return AddComponent<T>(id, std::make_shared<T>(std::forward(args)...));
 }
 
 template<typename T>
-std::shared_ptr<T> ComponentManager::RemoveComponent(Entity *entity) {
-  if (entity != nullptr) {
-    std::shared_ptr<T> component(std::static_pointer_cast<T>(component_map_[T::family()][entity->id()]));
-    component_map_[T::family()][entity->id()] = nullptr;
-    entity->RemoveComponent(T::family());
-    return component;
-  } else {
-    return nullptr;
-  }
+std::shared_ptr<T> ComponentManager::GetComponent(const Entity::ID &id) {
+  return std::static_pointer_cast<T>(entity_components_[T::family()][id]);
 }
 
-// template<typename T>
-// void ComponentManager::RemoveComponent(Entity *entity) {
-//   auto component = component_map_[Component::TypeFor<T>()][entity->id()];
-//   RemoveComponent(entity, component);
-// }
+template<typename T>
+std::shared_ptr<T> ComponentManager::RemoveComponent(const Entity::ID &id) {
+  std::shared_ptr<T> component;
+  component = std::static_pointer_cast<T>(entity_components_[T::family()][id]);
+
+  entity_components_[T::family()][id] = nullptr;
+
+  entity_component_mask_[id].reset(T::family());
+
+  return component;
+}
 
 } // namespace knight
 

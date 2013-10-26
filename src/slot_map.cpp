@@ -24,15 +24,9 @@ Entity::ID SlotMap::Create() {
 
   // get first free object
   Entity *entity = &slot_table_[free_index / kChunkSize][free_index % kChunkSize];
+  entity->id_.index = free_index;
 
-  // Update index
-  Entity::ID id = entity->id();
-  id.index = free_index;
-  entity->set_id(id);
-
-  // TODO: reset object
-
-  return id;
+  return entity->id_;
 }
 
 Entity *SlotMap::Get(const Entity::ID &id) const {
@@ -55,10 +49,10 @@ void SlotMap::Destroy(Entity::ID id) {
   Entity *entity = Get(id);
 
   if (entity != nullptr) {
-    // Increment version to generate unique id
-    id.version++;
-    entity->set_id(id);
-    free_list_.push_back(id.index);
+    // Increment version to generate unique id and invalidate old id
+    entity->id_.version++;
+
+    free_list_.push_back(entity->id_.index);
   } else {
     ERR("Trying to delete non-existent object: %lu", id.id);
   }

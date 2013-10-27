@@ -1,5 +1,5 @@
-#ifndef KNIGHT_ENTITY_CONSTRUCTOR_H_
-#define KNIGHT_ENTITY_CONSTRUCTOR_H_
+#ifndef KNIGHT_ENTITY_BUNDLE_H_
+#define KNIGHT_ENTITY_BUNDLE_H_
 
 #include "entity.h"
 #include "entity_manager.h"
@@ -10,14 +10,13 @@ namespace knight {
 
 /// Stores a collection of components that later can be added to a newly
 /// created Entity
-class EntityConstructor {
+class EntityBundle {
  public:
-  typedef std::shared_ptr<EntityConstructor> ConstructorPtr;
-  typedef std::shared_ptr<EntityManager> ManagerPtr;
+  typedef std::shared_ptr<EntityBundle> ConstructorPtr;
 
   template<typename... Components>
-  static ConstructorPtr Make(ManagerPtr manager, Components&&... components) {
-    ConstructorPtr constructor(new EntityConstructor(manager));
+  static ConstructorPtr Make(EntityManager *manager, Components&&... components) {
+    ConstructorPtr constructor(new EntityBundle(manager));
     constructor->BindComponents(std::forward<Components>(components)...);
     return constructor;
   }
@@ -27,11 +26,11 @@ class EntityConstructor {
   }
 
  private:
-  EntityConstructor(ManagerPtr manager) : manager_(manager) { }
+  EntityBundle(EntityManager *manager) : manager_(manager) { }
 
   template<typename... Components>
   void BindComponents(Components&&... components) {
-    bound_ = std::bind(&EntityConstructor::CreateAndCompose<Components...>,
+    bound_ = std::bind(&EntityBundle::CreateAndCompose<Components...>,
                        this,
                        std::forward<Components>(components)...);
   }
@@ -55,9 +54,9 @@ class EntityConstructor {
   }
 
   std::function<Entity::ID()> bound_;
-  ManagerPtr manager_;
+  EntityManager *manager_;
 };
 
 } // namespace knight
 
-#endif // KNIGHT_ENTITY_CONSTRUCTOR_H_
+#endif // KNIGHT_ENTITY_BUNDLE_H_

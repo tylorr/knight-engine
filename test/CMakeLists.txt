@@ -4,10 +4,10 @@ set(SOURCES
     concurrent_queue_test.cpp
     thread_pool_test.cpp
     entity_manager_test.cpp
-    system_test.cpp
+    entity_bundle_test.cpp
 )
 
-# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=thread")
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O1 -fsanitize=thread -fPIE -fPIC")
 
 add_executable(knight-test ${SOURCES})
 

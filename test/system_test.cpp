@@ -3,7 +3,7 @@
 #include "common.h"
 #include "system.h"
 #include "entity.h"
-#include "component_manager.h"
+#include "entity_manager.h"
 #include "component.h"
 #include "slot_map.h"
 
@@ -12,14 +12,14 @@ using namespace knight;
 class SystemTest : public ::testing::Test {
  protected:
   virtual void SetUp() {
-    Entity::ID id = em_.Create();
-    entity1_ = em_.Get(id);
+    // Entity::ID id = em_.Create();
+    // entity1_ = em_.Get(id);
 
-    id = em_.Create();
-    entity2_ = em_.Get(id);
+    // id = em_.Create();
+    // entity2_ = em_.Get(id);
   }
 
-  ComponentManager cm_;
+  EntityManager cm_;
   SlotMap em_;
   System sys_;
   Entity *entity1_;

@@ -14,6 +14,11 @@ class ComponentBase {
   static Family next_family_;
 };
 
+/// All components should inherit from Component in the form:
+///
+/// struct TestComponent : public Component<TestComponent> { }
+///
+/// All components must provide a default constructor.
 template<typename T>
 struct Component : public ComponentBase {
  public:

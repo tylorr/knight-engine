@@ -3,7 +3,7 @@ set(SOURCES
     slot_map_test.cpp
     concurrent_queue_test.cpp
     thread_pool_test.cpp
-    component_manager_test.cpp
+    entity_manager_test.cpp
     system_test.cpp
 )
 

@@ -39,7 +39,7 @@ class EntityConstructor {
   template<typename... Components>
   Entity::ID CreateAndCompose(Components&&... components) {
     Entity::ID id = manager_->Create();
-    Pass(AddComponent(id, components)...);
+    Pass(AddComponent(id, std::forward<Components>(components))...);
     return id;
   }
 
@@ -49,7 +49,7 @@ class EntityConstructor {
 
   /// Return value is always ignored, used by Pass method
   template<typename T>
-  bool AddComponent(const Entity::ID &id, std::shared_ptr<T> component) {
+  bool AddComponent(const Entity::ID &id, const std::shared_ptr<T> &component) {
     manager_->AddComponent(id, component);
     return true;
   }

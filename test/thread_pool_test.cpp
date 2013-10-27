@@ -33,9 +33,6 @@ TEST_F(ThreadPoolTest, StartAndWait) {
 
   pool_.Start();
 
-  // Wait for threads to start processing
-  // std::this_thread::sleep_for(std::chrono::milliseconds(200));
-
   for (int i = 0; i < numTasks; ++i) {
     pool_.Add([&]{ result++; });
   }

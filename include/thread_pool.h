@@ -20,7 +20,8 @@ class ThreadPool {
   const unsigned int kThreadCount;
 
   ThreadPool() : ThreadPool(std::thread::hardware_concurrency()) { }
-  explicit ThreadPool(unsigned int count) : kThreadCount(count) { }
+  explicit ThreadPool(unsigned int count)
+    : kThreadCount(count), running_(false), task_count_(0) { }
 
   ~ThreadPool() {
     Stop();
@@ -52,6 +53,7 @@ class ThreadPool {
   mutable std::mutex mutex_;
 
   std::atomic_bool running_;
+  std::atomic_uint task_count_;
 
   KNIGHT_DISALLOW_COPY_AND_ASSIGN(ThreadPool);
 };

@@ -13,13 +13,16 @@ void ThreadPool::Start() {
 }
 
 void ThreadPool::Add(Task task) {
+  task_count_++;
   queue_.push(task);
 }
 
 void ThreadPool::Sync() const {
   // wait until queue is empty or Stop() has been triggered
   std::unique_lock<std::mutex> lk(mutex_);
-  sync_condition_.wait(lk, [this]{ return queue_.size() == 0 || !running_; });
+  sync_condition_.wait(lk, [this]{
+    return (task_count_ == 0) || !running_;
+  });
 }
 
 void ThreadPool::Stop() {
@@ -42,6 +45,7 @@ void ThreadPool::Run() {
     Task task(queue_.wait_pop());
     task();
 
+    task_count_--;
     sync_condition_.notify_one();
   }
 

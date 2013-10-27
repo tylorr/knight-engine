@@ -32,12 +32,6 @@ class Entity {
 
   ID id() const { return id_; }
 
-  ComponentMask component_mask() const { return 0; }
-
-  // void AddComponent(const ComponentBase::Family &);
-  // void RemoveComponent(const ComponentBase::Family &);
-  // bool HasComponent(const ComponentBase::Family &);
-
  private:
   friend class SlotMap;
 

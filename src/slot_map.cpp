@@ -19,10 +19,11 @@ Entity::ID SlotMap::Create() {
     slot_table_.push_back(Chunk(new Entity[kChunkSize]));
   }
 
+  // get first free index
   uint32_t free_index = free_list_.back();
   free_list_.pop_back();
 
-  // get first free object
+  // get entity at index and update it's index
   Entity *entity = &slot_table_[free_index / kChunkSize][free_index % kChunkSize];
   entity->id_.index = free_index;
 
@@ -37,7 +38,7 @@ Entity *SlotMap::Get(const Entity::ID &id) const {
     Entity *entity = &slot_table_[chunkIndex][id.index % kChunkSize];
 
     // If the ids (specifically the versions) match return object else NULL
-    return entity->id() != id ? nullptr : entity;
+    return entity->id_ != id ? nullptr : entity;
   } else {
 
     // Chunk doesn't exist return NULL

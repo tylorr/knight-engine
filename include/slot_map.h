@@ -1,6 +1,7 @@
 #ifndef KNIGHT_SLOT_MAP_H_
 #define KNIGHT_SLOT_MAP_H_
 
+#include "common.h"
 #include "entity.h"
 
 #include <vector>
@@ -8,7 +9,6 @@
 #include <memory>
 
 namespace knight {
-
 
 class SlotMap {
  public:

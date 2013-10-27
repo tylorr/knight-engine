@@ -11,6 +11,11 @@
 
 #include <logog.hpp>
 
+#include <iostream>
+
+using std::cout;
+using std::endl;
+
 using namespace knight;
 
 int CurrentWidth = 800,

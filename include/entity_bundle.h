@@ -12,13 +12,14 @@ namespace knight {
 /// created Entity
 class EntityBundle {
  public:
-  typedef std::shared_ptr<EntityBundle> ConstructorPtr;
+  typedef std::shared_ptr<EntityBundle> BundlePtr;
 
   template<typename... Components>
-  static ConstructorPtr Make(EntityManager *manager, Components&&... components) {
-    ConstructorPtr constructor(new EntityBundle(manager));
-    constructor->BindComponents(std::forward<Components>(components)...);
-    return constructor;
+  static BundlePtr Make(EntityManager *manager, const bool &copy,
+                        Components&&... components) {
+    BundlePtr bundle(new EntityBundle(manager, copy));
+    bundle->BindComponents(std::forward<Components>(components)...);
+    return bundle;
   }
 
   Entity::ID Construct() {
@@ -26,17 +27,17 @@ class EntityBundle {
   }
 
  private:
-  EntityBundle(EntityManager *manager) : manager_(manager) { }
+  EntityBundle(EntityManager *manager, const bool &copy)
+    : manager_(manager), copy_(copy) { }
 
   template<typename... Components>
   void BindComponents(Components&&... components) {
-    bound_ = std::bind(&EntityBundle::CreateAndCompose<Components...>,
-                       this,
+    bound_ = std::bind(&EntityBundle::Compose<Components...>, this,
                        std::forward<Components>(components)...);
   }
 
   template<typename... Components>
-  Entity::ID CreateAndCompose(Components&&... components) {
+  Entity::ID Compose(Components&&... components) {
     Entity::ID id = manager_->Create();
     Pass(AddComponent(id, std::forward<Components>(components))...);
     return id;
@@ -48,13 +49,17 @@ class EntityBundle {
 
   /// Return value is always ignored, used by Pass method
   template<typename T>
-  bool AddComponent(const Entity::ID &id, const std::shared_ptr<T> &component) {
+  bool AddComponent(const Entity::ID &id, std::shared_ptr<T> component) {
+    if (copy_) {
+      component.reset(new T(*component));
+    }
     manager_->AddComponent(id, component);
     return true;
   }
 
   std::function<Entity::ID()> bound_;
   EntityManager *manager_;
+  bool copy_;
 };
 
 } // namespace knight

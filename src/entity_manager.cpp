@@ -8,7 +8,7 @@ Entity::ID EntityManager::Create() {
   return entities_.Create();
 }
 
-Entity *EntityManager::EntityManager::Get(const Entity::ID &id) {
+Entity *EntityManager::Get(const Entity::ID &id) {
   return entities_.Get(id);
 }
 

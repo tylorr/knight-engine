@@ -2,6 +2,7 @@
 #define KNIGHT_COMMON_H_
 
 #include <bitset>
+#include <cstdint>
 
 #define KNIGHT_DISALLOW_COPY_AND_ASSIGN(TypeName) \
   TypeName(const TypeName &) = delete;             \

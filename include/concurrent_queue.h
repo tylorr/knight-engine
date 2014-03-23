@@ -41,8 +41,8 @@ void ConcurrentQueue<T>::push(T item) {
   condition_.notify_one();
 }
 
-template<typename T>
-T ConcurrentQueue<T>::ConcurrentQueue<T>::wait_pop() {
+template<class T>
+T ConcurrentQueue<T>::wait_pop() {
   std::unique_lock<std::mutex> lk(mutex_);
   condition_.wait(lk, [this]{ return queue_.size() > 0; });
 

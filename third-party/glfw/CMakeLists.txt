@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 2.8)
 
 set(GLFW_VERSION_MAJOR "3")
 set(GLFW_VERSION_MINOR "0")
-set(GLFW_VERSION_PATCH "3")
+set(GLFW_VERSION_PATCH "4")
 set(GLFW_VERSION_EXTRA "")
 set(GLFW_VERSION "${GLFW_VERSION_MAJOR}.${GLFW_VERSION_MINOR}")
 set(GLFW_VERSION_FULL "${GLFW_VERSION}.${GLFW_VERSION_PATCH}${GLFW_VERSION_EXTRA}")
@@ -13,6 +13,7 @@ set(LIB_SUFFIX "" CACHE STRING "Takes an empty string or 64. Directory where lib
 option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 option(GLFW_BUILD_EXAMPLES "Build the GLFW example programs" ON)
 option(GLFW_BUILD_TESTS "Build the GLFW test programs" ON)
+option(GLFW_BUILD_DOCS "Build the GLFW documentation" ON)
 option(GLFW_INSTALL "Generate installation target" ON)
 option(GLFW_DOCUMENT_INTERNALS "Include internals in documentation" OFF)
 
@@ -73,11 +74,13 @@ endif()
 
 find_package(Threads REQUIRED)
 
-set(DOXYGEN_SKIP_DOT TRUE)
-find_package(Doxygen)
+if (GLFW_BUILD_DOCS)
+    set(DOXYGEN_SKIP_DOT TRUE)
+    find_package(Doxygen)
 
-if (GLFW_DOCUMENT_INTERNALS)
-    set(GLFW_INTERNAL_DOCS "${GLFW_SOURCE_DIR}/src/internal.h ${GLFW_SOURCE_DIR}/docs/internal.dox")
+    if (GLFW_DOCUMENT_INTERNALS)
+        set(GLFW_INTERNAL_DOCS "${GLFW_SOURCE_DIR}/src/internal.h ${GLFW_SOURCE_DIR}/docs/internal.dox")
+    endif()
 endif()
 
 #--------------------------------------------------------------------
@@ -85,7 +88,6 @@ endif()
 #--------------------------------------------------------------------
 if (UNIX)
     add_definitions(-Wall)
-    add_definitions(-fsanitize=thread -O1)
 
     if (BUILD_SHARED_LIBS)
         add_definitions(-fvisibility=hidden)
@@ -118,7 +120,7 @@ endif()
 #--------------------------------------------------------------------
 if (WIN32)
     set(_GLFW_WIN32 1)
-    message(STATUS "Using Win32 for window creation")
+    message(STATUS "Using Win32 for window creation") 
 
     if (GLFW_USE_EGL)
         set(_GLFW_EGL 1)
@@ -134,7 +136,7 @@ elseif (APPLE)
     message(STATUS "Using NSGL for context creation")
 elseif (UNIX)
     set(_GLFW_X11 1)
-    message(STATUS "Using X11 for window creation")
+    message(STATUS "Using X11 for window creation") 
 
     if (GLFW_USE_EGL)
         set(_GLFW_EGL 1)
@@ -239,7 +241,7 @@ if (_GLFW_X11)
     # Check for Xkb (X keyboard extension)
     if (NOT X11_Xkb_FOUND)
         message(FATAL_ERROR "The X keyboard extension headers were not found")
-    endif()
+    endif() 
 
     list(APPEND glfw_INCLUDE_DIR ${X11_Xkb_INCLUDE_PATH})
 
@@ -283,23 +285,15 @@ if (_GLFW_GLX)
 
         # Check for dlopen support as a fallback
 
-        find_library(DL_LIBRARY dl)
-        mark_as_advanced(DL_LIBRARY)
-        if (DL_LIBRARY)
-            set(CMAKE_REQUIRED_LIBRARIES ${DL_LIBRARY})
-        else()
-            set(CMAKE_REQUIRED_LIBRARIES "")
-        endif()
-
+        set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_DL_LIBS})
         check_function_exists(dlopen _GLFW_HAS_DLOPEN)
-
         if (NOT _GLFW_HAS_DLOPEN)
             message(FATAL_ERROR "No entry point retrieval mechanism found")
         endif()
 
-        if (DL_LIBRARY)
-            list(APPEND glfw_LIBRARIES ${DL_LIBRARY})
-            set(GLFW_PKG_LIBS "${GLFW_PKG_LIBS} -ldl")
+        if (CMAKE_DL_LIBS)
+            list(APPEND glfw_LIBRARIES ${CMAKE_DL_LIBS})
+            set(GLFW_PKG_LIBS "${GLFW_PKG_LIBS} -l${CMAKE_DL_LIBS}")
         endif()
     endif()
 
@@ -337,7 +331,7 @@ endif()
 # Use Cocoa for window creation and NSOpenGL for context creation
 #--------------------------------------------------------------------
 if (_GLFW_COCOA AND _GLFW_NSGL)
-
+        
     if (GLFW_USE_MENUBAR)
         set(_GLFW_USE_MENUBAR 1)
     endif()
@@ -352,18 +346,20 @@ if (_GLFW_COCOA AND _GLFW_NSGL)
     else()
         message(STATUS "Building GLFW only for the native architecture")
     endif()
-
+    
     # Set up library and include paths
     find_library(COCOA_FRAMEWORK Cocoa)
     find_library(IOKIT_FRAMEWORK IOKit)
     find_library(CORE_FOUNDATION_FRAMEWORK CoreFoundation)
+    find_library(CORE_VIDEO_FRAMEWORK CoreVideo)
     list(APPEND glfw_LIBRARIES ${COCOA_FRAMEWORK}
                                ${OPENGL_gl_LIBRARY}
                                ${IOKIT_FRAMEWORK}
-                               ${CORE_FOUNDATION_FRAMEWORK})
+                               ${CORE_FOUNDATION_FRAMEWORK}
+                               ${CORE_VIDEO_FRAMEWORK})
 
     set(GLFW_PKG_DEPS "")
-    set(GLFW_PKG_LIBS "-framework Cocoa -framework OpenGL -framework IOKit -framework CoreFoundation")
+    set(GLFW_PKG_LIBS "-framework Cocoa -framework OpenGL -framework IOKit -framework CoreFoundation -framework CoreVideo")
 endif()
 
 #--------------------------------------------------------------------
@@ -387,8 +383,8 @@ endif()
 configure_file(${GLFW_SOURCE_DIR}/docs/Doxyfile.in
                ${GLFW_BINARY_DIR}/docs/Doxyfile @ONLY)
 
-configure_file(${GLFW_SOURCE_DIR}/src/config.h.in
-               ${GLFW_BINARY_DIR}/src/config.h @ONLY)
+configure_file(${GLFW_SOURCE_DIR}/src/glfw_config.h.in 
+               ${GLFW_BINARY_DIR}/src/glfw_config.h @ONLY)
 
 configure_file(${GLFW_SOURCE_DIR}/src/glfwConfig.cmake.in
                ${GLFW_BINARY_DIR}/src/glfwConfig.cmake @ONLY)
@@ -414,7 +410,7 @@ if (GLFW_BUILD_TESTS)
     add_subdirectory(tests)
 endif()
 
-if (DOXYGEN_FOUND)
+if (DOXYGEN_FOUND AND GLFW_BUILD_DOCS)
     add_subdirectory(docs)
 endif()
 
@@ -423,7 +419,7 @@ endif()
 # The library is installed by src/CMakeLists.txt
 #--------------------------------------------------------------------
 if (GLFW_INSTALL)
-    install(DIRECTORY include/GLFW DESTINATION include
+    install(DIRECTORY include/GLFW DESTINATION include 
             FILES_MATCHING PATTERN glfw3.h PATTERN glfw3native.h)
 
     install(FILES ${GLFW_BINARY_DIR}/src/glfwConfig.cmake

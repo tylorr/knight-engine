@@ -29,7 +29,8 @@ TEST_F(ConcurrentQueueTest, AddAndSize) {
 }
 
 void RemoveThread(ConcurrentQueue<Task> &q) {
-  Task t(q.wait_pop());
+  Task t;
+  q.wait_pop(t);
   t();
 }
 
@@ -58,9 +59,12 @@ TEST_F(ConcurrentQueueTest, WaitBeforeAdd) {
 }
 
 void MissedAddThread(ConcurrentQueue<Task> &q) {
-  Task t = q.wait_pop();
+  Task t;
+  q.wait_pop(t);
   t();
-  Task t2 = q.wait_pop();
+
+  Task t2;
+  q.wait_pop(t2);
   t2();
 }
 

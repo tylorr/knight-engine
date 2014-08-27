@@ -5,7 +5,7 @@
 #include <cstdint>
 
 #define KNIGHT_DISALLOW_COPY_AND_ASSIGN(TypeName) \
-  TypeName(const TypeName &) = delete;             \
+  TypeName(const TypeName &) = delete;            \
   void operator=(const TypeName &) = delete;
 
 namespace knight {

@@ -14,10 +14,12 @@ template<typename T>
 class ConcurrentQueue {
  public:
   ConcurrentQueue() { }
+  ~ConcurrentQueue() { condition_.notify_all(); }
 
-  void push(T item);
+  void push(const T &item);
+  void push(T &&item);
 
-  T wait_pop();
+  void wait_pop(T &item);
   bool try_pop(T &item);
 
   size_t size() const;
@@ -35,34 +37,46 @@ class ConcurrentQueue {
 // Template implementations
 
 template<typename T>
-void ConcurrentQueue<T>::push(T item) {
-  std::lock_guard<std::mutex> lk(mutex_);
-  queue_.push(item);
+void ConcurrentQueue<T>::push(const T &item) {
+  {
+    std::lock_guard<std::mutex> lk(mutex_);
+    queue_.push(item);
+  }
+
   condition_.notify_one();
 }
 
-template<class T>
-T ConcurrentQueue<T>::wait_pop() {
+template<typename T>
+void ConcurrentQueue<T>::push(T &&item) {
+  {
+    std::lock_guard<std::mutex> lk(mutex_);
+    queue_.push(std::move(item));
+  }
+
+  condition_.notify_one();
+}
+
+template<typename T>
+void ConcurrentQueue<T>::wait_pop(T &item) {
   std::unique_lock<std::mutex> lk(mutex_);
   condition_.wait(lk, [this]{ return queue_.size() > 0; });
 
-  T item(std::move(queue_.front()));
+  item = queue_.front();
   queue_.pop();
-  return item;
 }
 
 template<typename T>
 bool ConcurrentQueue<T>::try_pop(T &item) {
   std::lock_guard<std::mutex> lk(mutex_);
 
-  bool result = false;
-  if (!queue_.empty()) {
-    item = queue_.front();
-    queue_.pop();
-    result = true;
+  if (queue_.empty()) {
+    return false;
   }
+  
+  item = queue_.front();
+  queue_.pop();
 
-  return result;
+  return true;
 }
 
 template<typename T>

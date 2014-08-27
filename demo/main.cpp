@@ -5,6 +5,7 @@
 #include "buffer_object.h"
 #include "vertex_array.h"
 #include "color_formatter.h"
+#include "cout_flush.h"
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -29,14 +30,13 @@ bool InitWindow();
 int main(int argc, char *argv[]) {
   LOGOG_INITIALIZE();
   {
-    // 'out' must lose scope before LOGOG_SHUTDOWN()
-    logog::Cout out;
+    logog::CoutFlush out;
     logog::ColorFormatter formatter;
     out.SetFormatter(formatter);
 
     if (Initialize()) {
-      Shader vert(ShaderType::VERTEX, "#version 130\nin vec2 position; void main() { gl_Position = vec4(position, 0.0, 1.0); }");
-      Shader frag(ShaderType::FRAGMENT, "#version 130\nout vec4 outColor; void main() { outColor = vec4(1.0, 0.0, 0.0, 1.0); }");
+      Shader vert(ShaderType::VERTEX, "#version 330\nin vec2 position; void main() { gl_Position = vec4(position, 0.0, 1.0); }");
+      Shader frag(ShaderType::FRAGMENT, "#version 330\nout vec4 outColor; void main() { outColor = vec4(1.0, 0.0, 0.0, 1.0); }");
       Program program(vert, frag);
       program.Bind();
 

@@ -1,3 +1,5 @@
+#define LOGOG_LEVEL LOGOG_LEVEL_ALL
+
 #include "gtest/gtest.h"
 
 #include <logog.hpp>

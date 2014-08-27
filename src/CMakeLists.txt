@@ -6,7 +6,6 @@ set(SOURCES
     shader.cpp
     buffer_object.cpp
     vertex_array.cpp
-    thread_pool.cpp
     entity.cpp
     entity_manager.cpp
     slot_map.cpp

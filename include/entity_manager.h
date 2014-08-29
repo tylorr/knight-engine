@@ -5,7 +5,7 @@
 #include "entity.h"
 #include "slot_map.h"
 
-#include <unordered_map>
+#include <map>
 
 namespace knight {
 
@@ -45,9 +45,9 @@ class EntityManager {
 
  private:
   typedef std::shared_ptr<ComponentBase> BasePtr;
-  typedef std::unordered_map<Entity::ID, BasePtr> EntityComponentMap;
-  typedef std::unordered_map<unsigned int, EntityComponentMap> EntityComponentsMap;
-  typedef std::unordered_map<Entity::ID, ComponentMask> ComponentMaskMap;
+  typedef std::map<Entity::ID, BasePtr> EntityComponentMap;
+  typedef std::map<unsigned int, EntityComponentMap> EntityComponentsMap;
+  typedef std::map<Entity::ID, ComponentMask> ComponentMaskMap;
 
   // component = [family][entity_id]
   EntityComponentsMap entity_components_;

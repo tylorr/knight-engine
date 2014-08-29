@@ -1,10 +1,10 @@
 set(SOURCES
     test_main.cpp
-    #slot_map_test.cpp
+    slot_map_test.cpp
     # concurrent_queue_test.cpp
     thread_pool_test.cpp
-    # entity_manager_test.cpp
-    # entity_bundle_test.cpp
+    entity_manager_test.cpp
+    entity_bundle_test.cpp
 )
 
 add_executable(knight-test ${SOURCES})

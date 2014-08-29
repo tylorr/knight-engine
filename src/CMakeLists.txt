@@ -2,7 +2,8 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
 
 set(SOURCES
-    program.cpp
+    common.cpp
+    shader_program.cpp
     shader.cpp
     buffer_object.cpp
     vertex_array.cpp
@@ -11,6 +12,8 @@ set(SOURCES
     slot_map.cpp
     system.cpp
     component.cpp
+    uniform.cpp
+    uniform_factory.cpp
 )
 
 add_library(knight-engine ${SOURCES})

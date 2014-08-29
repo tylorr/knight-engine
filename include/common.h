@@ -3,6 +3,7 @@
 
 #include <bitset>
 #include <cstdint>
+#include <string>
 
 #define KNIGHT_DISALLOW_COPY_AND_ASSIGN(TypeName) \
   TypeName(const TypeName &) = delete;            \
@@ -14,6 +15,8 @@ namespace knight {
 static const uint64_t MAX_COMPONENTS = 64;
 
 typedef std::bitset<MAX_COMPONENTS> ComponentMask;
+
+void ExitOnGLError(const std::string &error_message);
 
 } // namespace knight
 

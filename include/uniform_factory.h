@@ -9,6 +9,7 @@
 #include <utility>
 #include <map>
 #include <exception>
+#include <functional>
 
 namespace knight {
 
@@ -16,6 +17,9 @@ class ShaderProgram;
 
 class UniformFactory {
  public:
+  UniformFactory();
+  ~UniformFactory() { }
+
   UniformBase *Create(ShaderProgram *shader_program, const GLint &location, 
                       const char *name, const GLenum &type);
 
@@ -30,8 +34,15 @@ class UniformFactory {
   };
 
   typedef std::pair<std::string, GLenum> UniformNameType;
+  typedef std::function<UniformBase *(const std::string &)> UniformFactoryFunc;
 
   std::map<UniformNameType, UniformBase *> uniforms_;
+  std::map<GLenum, UniformFactoryFunc> uniform_factories_;
+
+  template<typename T, size_t row_count, size_t col_count = 1>
+  void Register(const GLenum &type);
+
+  KNIGHT_DISALLOW_COPY_AND_ASSIGN(UniformFactory);
 };
 
 template<typename T, size_t row_count, size_t col_count>
@@ -48,6 +59,13 @@ Uniform<T, row_count, col_count> *UniformFactory::Get(const std::string &name) {
 
     throw std::invalid_argument(name);
   }
+}
+
+template<typename T, size_t row_count, size_t col_count>
+void UniformFactory::Register(const GLenum &type) {
+  uniform_factories_[type] = [] (const std::string &name) { 
+    return new Uniform<T, row_count, col_count>(name);
+  };
 }
 
 } // namespace knight

@@ -15,32 +15,29 @@ class UniformBase;
 
 class ShaderProgram {
  public:
-  ShaderProgram();
-  ShaderProgram(UniformFactory *uniform_factory, const Shader &vertex, 
-                const Shader &fragment);
+  ShaderProgram() : handle_(glCreateProgram()) { }
   ~ShaderProgram();
+
+  void Initialize(const Shader &vertex, const Shader &fragment,
+                  UniformFactory *uniform_factory);
 
   GLuint handle() const { return handle_; }
 
-  void Attach(const Shader &shader);
-  void Link();
   void Bind() const;
 
   std::string GetInfoLog() const;
-
-  GLint GetAttribute(const GLchar *name);
+  GLint GetAttributeLocation(const GLchar *name);
 
   void Update();
-
   void NotifyDirty(const GLint &location, const UniformBase *uniform);
 
-  void ExtractUniforms();
-
  private:
-  UniformFactory *uniform_factory_;
   GLuint handle_;
-
   std::map<GLint, const UniformBase *> dirty_uniforms_;
+
+  void Attach(const Shader &shader);
+  void Link();
+  void ExtractUniforms(UniformFactory *uniform_factory);
 
   KNIGHT_DISALLOW_COPY_AND_ASSIGN(ShaderProgram);
 };

@@ -4,6 +4,12 @@
 
 #include <GL/glew.h>
 
+#include <fstream>
+#include <cerrno>
+
+using std::string;
+using std::ifstream;
+
 namespace knight {
 
 const char *getErrorString(GLenum error) {
@@ -30,6 +36,24 @@ void ExitOnGLError(const std::string &error_message) {
     ERR("%s: %s", error_message.c_str(), getErrorString(error_value));
     exit(EXIT_FAILURE);
   }
+}
+
+string GetFileContents(const char *filename) {
+  ifstream in(filename, std::ios::in);
+  if (in) {
+    string contents;
+    in.seekg(0, std::ios::end);
+    contents.resize(in.tellg());
+    in.seekg(0, std::ios::beg);
+
+    in.read(&contents[0], contents.size());
+
+    in.close();
+
+    return contents;
+  }
+
+  throw(errno);
 }
 
 } // namespace knight

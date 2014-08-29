@@ -18,6 +18,8 @@ class ShaderProgram;
 
 class UniformBase {
  public:
+  UniformBase(const std::string &name) : name_(name) { }
+
   UniformBase(const std::string &name, ShaderProgram *shader_program,
               const GLint &location);
 
@@ -41,11 +43,10 @@ class Uniform : public UniformBase {
  public:
   typedef T Type;
 
+  Uniform(const std::string &name) : UniformBase(name) { }
+
   Uniform(const std::string &name, ShaderProgram *shader_program,
-              const GLint &location) 
-    : UniformBase(name, shader_program, location) {
-    std::memset(elements_, 0, element_count_);    
-  }
+          const GLint &location) : UniformBase(name, shader_program, location) { }
 
   virtual void Update(const GLint &location) const;
 

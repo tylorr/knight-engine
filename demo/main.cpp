@@ -40,12 +40,16 @@ int main(int argc, char *argv[]) {
       try {
         UniformFactory uniform_factory;
 
-        Shader vert(ShaderType::VERTEX, "#version 330\nin vec2 position; void main() { gl_Position = vec4(position, 0.0, 1.0); }");
-        Shader frag(ShaderType::FRAGMENT, "#version 330\nout vec4 outColor; uniform vec4 out_color; void main() { outColor = out_color; }");
-        ShaderProgram shader_program(&uniform_factory, vert, frag);
-        shader_program.Bind();
+        Shader vert(ShaderType::VERTEX);
+        vert.Initialize("#version 330\nin vec2 position; void main() { gl_Position = vec4(position, 0.0, 1.0); }");
 
-        shader_program.ExtractUniforms();
+        Shader frag(ShaderType::FRAGMENT);
+        frag.Initialize("#version 330\nout vec4 outColor; uniform vec4 out_color; void main() { outColor = out_color; }");
+        
+        ShaderProgram shader_program;
+        shader_program.Initialize(vert, frag, &uniform_factory);
+
+        shader_program.Bind();
 
         float out_color[4] = { 0.0f, 1.0f, 0.0f, 1.0f };
 
@@ -65,7 +69,7 @@ int main(int argc, char *argv[]) {
         BufferObject vbo(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
         VertexArray vao;
-        vao.BindAttribute(vbo, shader_program.GetAttribute("position"), 2, GL_FLOAT,
+        vao.BindAttribute(vbo, shader_program.GetAttributeLocation("position"), 2, GL_FLOAT,
                           GL_FALSE, 0, (const GLvoid *)0);
         // Main loop
         while (!glfwWindowShouldClose(window)) {

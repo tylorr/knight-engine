@@ -18,6 +18,8 @@ typedef std::bitset<MAX_COMPONENTS> ComponentMask;
 
 void ExitOnGLError(const std::string &error_message);
 
+std::string GetFileContents(const char *filename);
+
 } // namespace knight
 
 #endif // KNIGHT_COMMON_H_

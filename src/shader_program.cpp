@@ -7,17 +7,13 @@ using std::string;
 
 namespace knight {
 
-ShaderProgram::ShaderProgram() {
-  handle_ = glCreateProgram();
-}
-
-ShaderProgram::ShaderProgram(UniformFactory *uniform_factory, 
-                             const Shader &vertex, const Shader &fragment)
-    : uniform_factory_(uniform_factory) {
-  handle_ = glCreateProgram();
+void ShaderProgram::Initialize(const Shader &vertex, const Shader &fragment, 
+                               UniformFactory *uniform_factory) {
   Attach(vertex);
   Attach(fragment);
   Link();
+
+  ExtractUniforms(uniform_factory);
 }
 
 ShaderProgram::~ShaderProgram() {
@@ -29,18 +25,40 @@ void ShaderProgram::Attach(const Shader &shader) {
 }
 
 void ShaderProgram::Link() {
-  GLint res;
+  GLint result;
 
   glLinkProgram(handle_);
-  glGetProgramiv(handle_, GL_LINK_STATUS, &res);
+  glGetProgramiv(handle_, GL_LINK_STATUS, &result);
 
-  if (res == GL_FALSE) {
+  if (result == GL_FALSE) {
     ERR("Failed to link program: %s", GetInfoLog().c_str());
   }
 }
 
 void ShaderProgram::Bind() const {
   glUseProgram(handle_);
+}
+
+void ShaderProgram::ExtractUniforms(UniformFactory *uniform_factory) {
+  GLint max_uniform_name_length;
+  glGetProgramiv(handle_, GL_ACTIVE_UNIFORM_MAX_LENGTH, &max_uniform_name_length);
+
+  GLint uniform_count;
+  glGetProgramiv(handle_, GL_ACTIVE_UNIFORMS, &uniform_count);
+
+  for (GLint i = 0; i < uniform_count; ++i) {
+    char name[max_uniform_name_length];
+
+    GLint value_size;
+    GLenum value_type;
+
+    glGetActiveUniform(handle_, i, max_uniform_name_length, nullptr, 
+                       &value_size, &value_type, name);
+
+    GLint location = glGetUniformLocation(handle_, name);
+
+    uniform_factory->Create(this, location, name, value_type);
+  }
 }
 
 string ShaderProgram::GetInfoLog() const {
@@ -56,7 +74,7 @@ string ShaderProgram::GetInfoLog() const {
   }
 }
 
-GLint ShaderProgram::GetAttribute(const GLchar *name) {
+GLint ShaderProgram::GetAttributeLocation(const GLchar *name) {
   return glGetAttribLocation(handle_, name);
 }
 
@@ -76,28 +94,6 @@ void ShaderProgram::Update() {
 void ShaderProgram::NotifyDirty(const GLint &location, 
                                 const UniformBase *uniform) {
   dirty_uniforms_[location] = uniform;
-}
-
-void ShaderProgram::ExtractUniforms() {
-  GLint max_uniform_name_length;
-  glGetProgramiv(handle_, GL_ACTIVE_UNIFORM_MAX_LENGTH, &max_uniform_name_length);
-
-  GLint uniform_count;
-  glGetProgramiv(handle_, GL_ACTIVE_UNIFORMS, &uniform_count);
-
-  for (GLint i = 0; i < uniform_count; ++i) {
-    char name[max_uniform_name_length];
-
-    GLint value_size;
-    GLenum value_type;
-
-    glGetActiveUniform(handle_, i, max_uniform_name_length, nullptr, 
-                       &value_size, &value_type, name);
-
-    GLint location = glGetUniformLocation(handle_, name);
-
-    uniform_factory_->Create(this, location, name, value_type);
-  }
 }
 
 } // namespace knight

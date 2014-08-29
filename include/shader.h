@@ -17,22 +17,21 @@ enum class ShaderType : GLenum {
 
 class Shader {
  public:
-  Shader(ShaderType type);
-  Shader(ShaderType type, const std::string &code);
-
+  Shader(const ShaderType &type) 
+    : handle_(glCreateShader(static_cast<GLenum>(type))) { }
   ~Shader();
 
-  static std::string ReadSource(const char *filename);
+  void Initialize(const std::string &code);
 
   GLuint handle() const { return handle_; }
-
-  void Source(const std::string &code);
-  void Compile();
 
   std::string GetInfoLog() const;
 
  private:
   GLuint handle_;
+
+  void Source(const std::string &code);
+  void Compile();
 
   KNIGHT_DISALLOW_COPY_AND_ASSIGN(Shader);
 };

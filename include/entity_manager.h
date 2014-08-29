@@ -44,8 +44,8 @@ class EntityManager {
   void RemoveComponent(const Entity::ID &, std::shared_ptr<T>);
 
  private:
-  typedef std::shared_ptr<ComponentBase> BasePtr;
-  typedef std::map<Entity::ID, BasePtr> EntityComponentMap;
+  typedef std::shared_ptr<ComponentBase> ComponentBasePtr;
+  typedef std::map<Entity::ID, ComponentBasePtr> EntityComponentMap;
   typedef std::map<unsigned int, EntityComponentMap> EntityComponentsMap;
   typedef std::map<Entity::ID, ComponentMask> ComponentMaskMap;
 
@@ -60,7 +60,7 @@ class EntityManager {
 template<typename T>
 void EntityManager::AddComponent(const Entity::ID &id,
                                  std::shared_ptr<T> component) {
-  BasePtr base(std::static_pointer_cast<ComponentBase>(component));
+  ComponentBasePtr base(std::static_pointer_cast<ComponentBase>(component));
   entity_components_[T::family()][id] = base;
   entity_component_mask_[id].set(T::family());
 }

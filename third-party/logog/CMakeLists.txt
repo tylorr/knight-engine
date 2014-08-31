@@ -10,7 +10,7 @@ set( LOGOG_UNIT_TESTING FALSE CACHE BOOL "Enable logog's internal unit testing f
 set( LOGOG_USE_COTIRE TRUE CACHE BOOL "Use cotire to speed up builds.")
 
 if( LOGOG_USE_COTIRE )
-	set (CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake")	
+	set (CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/CMake")	
 	include(cotire OPTIONAL)
 endif()
 

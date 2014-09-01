@@ -17,6 +17,9 @@
 
 #include <logog.hpp>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+
 #include <exception>
 
 using namespace knight;

@@ -17,7 +17,6 @@ set(GLFW_INSTALL OFF)
 add_definitions(-DGLM_FORCE_RADIANS)
 
 add_subdirectory(third-party/glfw)
-add_subdirectory(third-party/stb_image)
 add_subdirectory(third-party/logog)
 add_subdirectory(third-party/googletest)
 add_subdirectory(src)

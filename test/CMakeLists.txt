@@ -7,9 +7,10 @@ set(SOURCES
     entity_bundle_test.cpp
 )
 
+include_directories(${PROJECT_SOURCE_DIR}/include)
 include_directories(${PROJECT_SOURCE_DIR}/third-party/googletest/include)
 include_directories(${PROJECT_SOURCE_DIR}/third-party/logog/include)
-include_directories(${PROJECT_SOURCE_DIR}/include)
+include_directories(${PROJECT_SOURCE_DIR}/third-party/stb_image)
 
 add_executable(knight-test ${SOURCES})
 target_link_libraries(knight-test knight-engine gtest)

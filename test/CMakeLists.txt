@@ -14,3 +14,5 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 add_executable(knight-test ${SOURCES})
 target_link_libraries(knight-test knight-engine gtest)
 cotire(knight-test)
+
+add_test(NAME knight-test-all COMMAND knight-test)

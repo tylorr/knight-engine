@@ -1,0 +1,15 @@
+diff --git third-party/stb_image/stb_image.h third-party/stb_image/stb_image.h
+index 20593b2..817b01f 100644
+--- third-party/stb_image/stb_image.h
++++ third-party/stb_image/stb_image.h
+@@ -547,8 +547,8 @@ static void *stbi__malloc(size_t size)
+    #define stbi__err(x,y)  stbi__err(x)
+ #endif
+ 
+-#define stbi__errpf(x,y)   ((float *) (stbi__err(x,y)?NULL:NULL))
+-#define stbi__errpuc(x,y)  ((unsigned char *) (stbi__err(x,y)?NULL:NULL))
++#define stbi__errpf(x,y)   ((float *) (intptr_t)(stbi__err(x,y)?NULL:NULL))
++#define stbi__errpuc(x,y)  ((unsigned char *) (intptr_t)(stbi__err(x,y)?NULL:NULL))
+ 
+ STBIDEF void stbi_image_free(void *retval_from_stbi_load)
+ {

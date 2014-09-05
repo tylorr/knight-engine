@@ -380,8 +380,6 @@ endif()
 #--------------------------------------------------------------------
 # Create generated files
 #--------------------------------------------------------------------
-configure_file(${GLFW_SOURCE_DIR}/docs/Doxyfile.in
-               ${GLFW_BINARY_DIR}/docs/Doxyfile @ONLY)
 
 configure_file(${GLFW_SOURCE_DIR}/src/glfw_config.h.in 
                ${GLFW_BINARY_DIR}/src/glfw_config.h @ONLY)

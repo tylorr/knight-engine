@@ -1,6 +1,7 @@
 #ifndef KNIGHT_VERTEX_ARRAY_H_
 #define KNIGHT_VERTEX_ARRAY_H_
 
+#include "common.h"
 #include "buffer_object.h"
 
 namespace knight {
@@ -8,6 +9,7 @@ namespace knight {
 class VertexArray {
 public:
   VertexArray() { }
+  VertexArray(VertexArray &&other) : handle_(std::move(other.handle_)) { }
   ~VertexArray();
 
   GLuint handle() const { return handle_; }
@@ -22,8 +24,15 @@ public:
                      const GLboolean &normalized, const GLsizei &stride,
                      const GLvoid *pointer);
 
+  VertexArray &operator=(VertexArray &&other) {
+    handle_ = std::move(other.handle_);
+    return *this;
+  }
+
 private:
   GLuint handle_;
+
+  KNIGHT_DISALLOW_COPY_AND_ASSIGN(VertexArray);
 };
 
 } // namespace knight

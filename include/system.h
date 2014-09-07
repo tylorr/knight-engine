@@ -25,10 +25,8 @@ class System {
   ComponentMask component_flags() const { return component_flags_; }
 
  private:
-  typedef std::unordered_set<Entity::ID> EntitySet;
-
   ComponentMask component_flags_;
-  EntitySet entities_;
+  std::unordered_set<Entity::ID> entities_;
 };
 
 // template<typename T>

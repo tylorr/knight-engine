@@ -18,6 +18,8 @@ enum class ShaderType : GLenum {
 class Shader {
  public:
   Shader() { }
+  Shader(Shader &&other) : handle_(std::move(other.handle_)) { }
+
   ~Shader();
 
   void Initialize(const ShaderType &type, const std::string &code);
@@ -25,6 +27,11 @@ class Shader {
   GLuint handle() const { return handle_; }
 
   std::string GetInfoLog() const;
+
+  Shader &operator=(Shader &&other) {
+    handle_ = std::move(other.handle_);
+    return *this;
+  }
 
  private:
   GLuint handle_;

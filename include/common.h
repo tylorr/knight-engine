@@ -12,7 +12,11 @@ namespace knight {
 
 #define KNIGHT_DISALLOW_COPY_AND_ASSIGN(TypeName) \
   TypeName(const TypeName &) = delete;            \
-  void operator=(const TypeName &) = delete;
+  TypeName &operator=(const TypeName &) = delete;
+
+#define KNIGHT_DISALLOW_MOVE_AND_ASSIGN(TypeName) \
+  TypeName(TypeName &&) = delete;            \
+  TypeName &operator=(TypeName &&) = delete;
 
 #if defined(DEVELOPMENT)
   #define XASSERT(test, msg, ...) do {if (!(test)) error(__LINE__, __FILE__, \

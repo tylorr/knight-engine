@@ -43,6 +43,7 @@ class UniformFactory {
   void Register(const GLenum &type);
 
   KNIGHT_DISALLOW_COPY_AND_ASSIGN(UniformFactory);
+  KNIGHT_DISALLOW_MOVE_AND_ASSIGN(UniformFactory);
 };
 
 template<typename T, size_t row_count, size_t col_count>

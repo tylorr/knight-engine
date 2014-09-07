@@ -20,6 +20,9 @@ class GlBind {
 
  private:
   const T &target_;
+
+  KNIGHT_DISALLOW_COPY_AND_ASSIGN(GlBind);
+  KNIGHT_DISALLOW_MOVE_AND_ASSIGN(GlBind);
 };
 
 } // namespace knight

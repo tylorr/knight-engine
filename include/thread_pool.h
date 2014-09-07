@@ -39,6 +39,7 @@ class ThreadPool {
   std::atomic_uint unfinished_task_count_;
 
   KNIGHT_DISALLOW_COPY_AND_ASSIGN(ThreadPool);
+  KNIGHT_DISALLOW_MOVE_AND_ASSIGN(ThreadPool);
 };
 
 ThreadPool::ThreadPool(const unsigned int &thread_count)

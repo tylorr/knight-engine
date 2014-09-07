@@ -10,6 +10,10 @@ namespace knight {
 class BufferObject {
  public:
   BufferObject() { }
+  BufferObject(BufferObject &&other)
+    : handle_(std::move(other.handle_)),
+      target_(std::move(other.target_)) { }
+
   ~BufferObject();
 
   GLuint handle() const { return handle_; }
@@ -26,6 +30,12 @@ class BufferObject {
   void SubData(const GLintptr &offset, const GLsizeiptr &size, const GLvoid *data);
 
   void GetSubData(const GLintptr &offset, const GLsizeiptr &size, GLvoid *data);
+
+  BufferObject &operator=(BufferObject &&other) {
+    handle_ = std::move(other.handle_);
+    target_ = std::move(other.target_);
+    return *this;
+  }
 
  private:
   GLuint handle_;

@@ -15,10 +15,19 @@ class SlotMap {
   const size_t kChunkSize = 256;
 
   SlotMap() { }
+  SlotMap(SlotMap &&other) 
+    : slot_table_(std::move(other.slot_table_)),
+      free_list_(std::move(other.free_list_)) { }
 
   Entity::ID Create();
   Entity *Get(const Entity::ID &id) const;
   void Destroy(Entity::ID id);
+
+  SlotMap &operator=(SlotMap &&other) {
+    slot_table_ = std::move(other.slot_table_);
+    free_list_ = std::move(other.free_list_);
+    return *this;
+  }
 
  private:
   typedef std::unique_ptr<Entity[]> Chunk;

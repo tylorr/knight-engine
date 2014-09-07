@@ -16,6 +16,11 @@ class UniformBase;
 class ShaderProgram {
  public:
   ShaderProgram() { }
+
+  ShaderProgram(ShaderProgram &&other)
+    : handle_(std::move(other.handle_)),
+      dirty_uniforms_(std::move(other.dirty_uniforms_)) { }
+
   ~ShaderProgram();
 
   void Initialize(const Shader &vertex, const Shader &fragment,
@@ -31,6 +36,12 @@ class ShaderProgram {
 
   void Update();
   void NotifyDirty(const GLint &location, const UniformBase *uniform);
+
+  ShaderProgram &operator=(ShaderProgram &&other) {
+    handle_ = std::move(other.handle_);
+    dirty_uniforms_ = std::move(other.dirty_uniforms_);
+    return *this;
+  }
 
  private:
   GLuint handle_;

@@ -15,7 +15,7 @@ class UniformBase;
 
 class ShaderProgram {
  public:
-  ShaderProgram() : handle_(glCreateProgram()) { }
+  ShaderProgram() { }
   ~ShaderProgram();
 
   void Initialize(const Shader &vertex, const Shader &fragment,
@@ -24,6 +24,7 @@ class ShaderProgram {
   GLuint handle() const { return handle_; }
 
   void Bind() const;
+  void Unbind() const;
 
   std::string GetInfoLog() const;
   GLint GetAttributeLocation(const GLchar *name);

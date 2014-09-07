@@ -7,16 +7,17 @@ namespace knight {
 
 class VertexArray {
 public:
-  VertexArray();
+  VertexArray() { }
   ~VertexArray();
 
   GLuint handle() const { return handle_; }
 
+  void Initialize();
+
   void Bind() const;
+  void Unbind() const;
 
-  void BindBuffer(const BufferObject& buffer);
-
-  void BindAttribute(const BufferObject& buffer, const GLint& attribute,
+  void BindAttribute(const GLint& attribute,
                      const GLint &size, const GLenum &type,
                      const GLboolean &normalized, const GLsizei &stride,
                      const GLvoid *pointer);

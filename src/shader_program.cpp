@@ -9,6 +9,7 @@ namespace knight {
 
 void ShaderProgram::Initialize(const Shader &vertex, const Shader &fragment, 
                                UniformFactory *uniform_factory) {
+  handle_ = glCreateProgram();
   Attach(vertex);
   Attach(fragment);
   Link();
@@ -37,6 +38,10 @@ void ShaderProgram::Link() {
 
 void ShaderProgram::Bind() const {
   glUseProgram(handle_);
+}
+
+void ShaderProgram::Unbind() const {
+  glUseProgram(0);
 }
 
 void ShaderProgram::ExtractUniforms(UniformFactory *uniform_factory) {
@@ -78,12 +83,10 @@ GLint ShaderProgram::GetAttributeLocation(const GLchar *name) {
   return glGetAttribLocation(handle_, name);
 }
 
-void ShaderProgram::Update() {
+void ShaderProgram::Update() {  
   for (auto it = dirty_uniforms_.begin(); it != dirty_uniforms_.end(); ) {
     auto location = (*it).first;
     auto *uniform = (*it).second;
-
-    DBUG("Updating %s at location %d for program %d", uniform->name().c_str(), location, handle_);
 
     uniform->Update(location);
 

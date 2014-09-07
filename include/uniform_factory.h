@@ -18,7 +18,7 @@ class ShaderProgram;
 class UniformFactory {
  public:
   UniformFactory();
-  ~UniformFactory() { }
+  ~UniformFactory();
 
   UniformBase *Create(ShaderProgram *shader_program, const GLint &location, 
                       const char *name, const GLenum &type);

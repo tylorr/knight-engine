@@ -11,7 +11,8 @@ using std::istreambuf_iterator;
 
 namespace knight {
 
-void Shader::Initialize(const std::string &code) {
+void Shader::Initialize(const ShaderType &type, const std::string &code) {
+  handle_ = glCreateShader(static_cast<GLenum>(type));
   Source(code);
   Compile();
 }

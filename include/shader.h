@@ -17,11 +17,10 @@ enum class ShaderType : GLenum {
 
 class Shader {
  public:
-  Shader(const ShaderType &type) 
-    : handle_(glCreateShader(static_cast<GLenum>(type))) { }
+  Shader() { }
   ~Shader();
 
-  void Initialize(const std::string &code);
+  void Initialize(const ShaderType &type, const std::string &code);
 
   GLuint handle() const { return handle_; }
 

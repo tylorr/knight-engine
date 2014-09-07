@@ -62,7 +62,7 @@ class Uniform : public UniformBase {
 
 template<typename T, size_t row_count, size_t col_count>
 void Uniform<T, row_count, col_count>::SetValue(const T *values) {
-  if (std::memcmp(elements_, values, total_element_size_) != 0) { 
+  if (std::memcmp(elements_, values, total_element_size_) != 0) {
     std::memcpy(elements_, values, total_element_size_);
     NotifyOwners();
   }

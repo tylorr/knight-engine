@@ -8,6 +8,7 @@
 #include "cout_flush.h"
 #include "uniform.h"
 #include "uniform_factory.h"
+#include "gl_bind.h"
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -40,54 +41,56 @@ int main(int argc, char *argv[]) {
     out.SetFormatter(formatter);
 
     if (Initialize()) {
-      try {
-        UniformFactory uniform_factory;
+      UniformFactory uniform_factory;
 
-        Shader vert(ShaderType::VERTEX);
-        vert.Initialize("#version 330\nin vec2 position; void main() { gl_Position = vec4(position, 0.0, 1.0); }");
+      Shader vert;
+      vert.Initialize(ShaderType::VERTEX, "#version 330\nin vec2 position; void main() { gl_Position = vec4(position, 0.0, 1.0); }");
 
-        Shader frag(ShaderType::FRAGMENT);
-        frag.Initialize("#version 330\nout vec4 outColor; uniform vec4 out_color; void main() { outColor = out_color; }");
-        
-        ShaderProgram shader_program;
-        shader_program.Initialize(vert, frag, &uniform_factory);
+      Shader frag;
+      frag.Initialize(ShaderType::FRAGMENT, "#version 330\nout vec4 outColor; uniform vec4 out_color; void main() { outColor = out_color; }");
+      
+      ShaderProgram shader_program;
+      shader_program.Initialize(vert, frag, &uniform_factory);
 
-        shader_program.Bind();
+      GlBind<ShaderProgram> shader_program_bind(shader_program);
 
-        float out_color[4] = { 0.0f, 1.0f, 0.0f, 1.0f };
+      float out_color[4] = { 0.0f, 1.0f, 0.0f, 1.0f };
 
-        auto *color_uniform = uniform_factory.Get<float, 4>("out_color");
-        
-        color_uniform->SetValue(out_color);
-        shader_program.Update();
-        color_uniform->SetValue(out_color);
-        shader_program.Update();
+      auto *color_uniform = uniform_factory.Get<float, 4>("out_color");
+      
+      color_uniform->SetValue(out_color);
+      shader_program.Update();
+      color_uniform->SetValue(out_color);
+      shader_program.Update();
 
-        float vertices[] = {
-          -0.5f,  0.5f,
-           0.5f,  0.5f,
-           0.5f, -0.5f
-        };
+      float vertices[] = {
+        -0.5f,  0.5f,
+         0.5f,  0.5f,
+         0.5f, -0.5f
+      };
 
-        BufferObject vbo(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+      BufferObject vbo;
+      vbo.Initialize(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-        VertexArray vao;
-        vao.BindAttribute(vbo, shader_program.GetAttributeLocation("position"), 2, GL_FLOAT,
-                          GL_FALSE, 0, (const GLvoid *)0);
-        // Main loop
-        while (!glfwWindowShouldClose(window)) {
+      GlBind<BufferObject> vbo_bind(vbo);
 
-          glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+      VertexArray vao;
+      vao.Initialize();
 
-          glDrawArrays(GL_TRIANGLES, 0, 3);
-          // RenderFunction();
+      GlBind<VertexArray> vao_bind(vao);
 
-          glfwSwapBuffers(window);
-          glfwPollEvents();
-        }
-      } catch(std::exception &e) {
-        std::string err_message = std::string("EXCEPTION: ") + e.what();
-        CRITICAL(err_message.c_str());
+      vao.BindAttribute(shader_program.GetAttributeLocation("position"), 2, 
+                        GL_FLOAT, GL_FALSE, 0, (const GLvoid *)0);
+      // // Main loop
+      while (!glfwWindowShouldClose(window)) {
+
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+        // RenderFunction();
+
+        glfwSwapBuffers(window);
+        glfwPollEvents();
       }
 
       // Close window and terminate GLFW

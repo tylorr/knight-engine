@@ -2,33 +2,41 @@
 
 namespace knight {
 
-BufferObject::BufferObject(GLenum target)
-    : target_(target) {
-  glGenBuffers(1, &handle_);
-}
-
-BufferObject::BufferObject(GLenum target, const GLsizeiptr &size, const GLvoid *data, const GLenum &usage)
-    : target_(target) {
-  glGenBuffers(1, &handle_);
-  Data(size, data, usage);
-}
-
 BufferObject::~BufferObject() {
   glDeleteBuffers(1, &handle_);
 }
 
-void BufferObject::Data(const GLsizeiptr &size, const GLvoid *data, const GLenum &usage) {
+void BufferObject::Initialize(const GLenum &target) {
+  target_ = target;
+  glGenBuffers(1, &handle_);
+}
+
+void BufferObject::Initialize(const GLenum &target, const GLsizeiptr &size, 
+                              const GLvoid *data, const GLenum &usage) {
+  target_ = target;
+  glGenBuffers(1, &handle_);
+  Bind();
+  Data(size, data, usage);
+  Unbind();
+}
+
+void BufferObject::Bind() const {
   glBindBuffer(target_, handle_);
+}
+
+void BufferObject::Unbind() const {
+  glBindBuffer(target_, 0);
+}
+
+void BufferObject::Data(const GLsizeiptr &size, const GLvoid *data, const GLenum &usage) {
   glBufferData(target_, size, data, usage);
 }
 
 void BufferObject::SubData(const GLintptr &offset, const GLsizeiptr &size, const GLvoid *data) {
-  glBindBuffer(target_, handle_);
   glBufferSubData(target_, offset, size, data);
 }
 
 void BufferObject::GetSubData(const GLintptr &offset, const GLsizeiptr &size, GLvoid *data) {
-  glBindBuffer(target_, handle_);
   glGetBufferSubData(target_, offset, size, data);
 }
 

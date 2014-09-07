@@ -38,25 +38,35 @@ UniformFactory::UniformFactory() {
   Register<float, 4, 4>(GL_FLOAT_MAT4);
 }
 
+UniformFactory::~UniformFactory() {
+  for (auto it = uniforms_.begin(); it != uniforms_.end(); ++it) {
+    delete it->second;
+  }
+}
+
 UniformBase *UniformFactory::Create(ShaderProgram *shader_program, 
                                     const GLint &location, 
                                     const char *name, 
                                     const GLenum &type) {
-  UniformBase *uniform;
+  UniformBase *uniform = nullptr;
 
   auto name_type_key = std::make_pair(name, type);
   auto it = uniforms_.find(name_type_key);
 
   if (it != uniforms_.end()) {
     uniform = (*it).second;
+    uniform->AddShaderProgram(shader_program, location);
   } else {
-    auto uniform_factory = uniform_factories_.at(type);
-    uniform = uniform_factory(name);
+    auto factory_it = uniform_factories_.find(type);
 
-    uniforms_[name_type_key] = uniform;
+    if (factory_it != uniform_factories_.end()) {
+      auto uniform_factory = (*factory_it).second;
+      uniform = uniform_factory(name);
+      uniform->AddShaderProgram(shader_program, location);
+      
+      uniforms_[name_type_key] = uniform;
+    }
   }
-
-  uniform->AddShaderProgram(shader_program, location);
 
   return uniform;
 }

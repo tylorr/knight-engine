@@ -9,13 +9,18 @@ namespace knight {
 
 class BufferObject {
  public:
-  BufferObject(GLenum target);
-  BufferObject(GLenum target, const GLsizeiptr &size, const GLvoid *data, const GLenum &usage);
-
+  BufferObject() { }
   ~BufferObject();
 
   GLuint handle() const { return handle_; }
   GLenum target() const { return target_; }
+
+  void Initialize(const GLenum &target);
+  void Initialize(const GLenum &target, const GLsizeiptr &size, 
+                  const GLvoid *data, const GLenum &usage);
+
+  void Bind() const;
+  void Unbind() const;
 
   void Data(const GLsizeiptr &size, const GLvoid *data, const GLenum &usage);
   void SubData(const GLintptr &offset, const GLsizeiptr &size, const GLvoid *data);

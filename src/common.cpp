@@ -42,20 +42,16 @@ string GetFileContents(const char *filename) {
 
   ifstream in(filename, std::ios::in);
 
-  if (in) {
-    string contents;
-    in.seekg(0, std::ios::end);
-    contents.resize(in.tellg());
-    in.seekg(0, std::ios::beg);
-    in.read(&contents[0], contents.size());
-    in.close();
+  XASSERT(in, "Could not find file '%s'", filename);
 
-    return contents;
-  }
+  string contents;
+  in.seekg(0, std::ios::end);
+  contents.resize(in.tellg());
+  in.seekg(0, std::ios::beg);
+  in.read(&contents[0], contents.size());
+  in.close();
 
-  ERR("Could not find file %s", filename);
-
-  throw(errno);
+  return contents;
 }
 
 } // namespace knight

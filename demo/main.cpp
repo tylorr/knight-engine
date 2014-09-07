@@ -1,5 +1,6 @@
 #define LOGOG_LEVEL LOGOG_LEVEL_ALL
 
+#include "common.h"
 #include "shader.h"
 #include "shader_program.h"
 #include "buffer_object.h"
@@ -9,29 +10,36 @@
 #include "uniform.h"
 #include "uniform_factory.h"
 #include "gl_bind.h"
+#include "imgui_manager.h"
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 #include <logog.hpp>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
-
-#include <exception>
+#include <imgui.h>
 
 using namespace knight;
 
-int CurrentWidth = 800,
-    CurrentHeight = 600;
+int current_width = 1280,
+    current_height = 720;
 
 GLFWwindow *window;
 
+UniformFactory uniform_factory;
+
 bool Initialize();
 bool InitWindow();
+
+void GlfwKeyCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
+void GlfwScrollCallback(GLFWwindow *window, double xoffset, double yoffset);
+void GlfwCharCallback(GLFWwindow *window, unsigned int c);
 
 int main(int argc, char *argv[]) {
   LOGOG_INITIALIZE();
@@ -41,66 +49,53 @@ int main(int argc, char *argv[]) {
     out.SetFormatter(formatter);
 
     if (Initialize()) {
-      UniformFactory uniform_factory;
-
-      Shader vert;
-      vert.Initialize(ShaderType::VERTEX, "#version 330\nin vec2 position; void main() { gl_Position = vec4(position, 0.0, 1.0); }");
-
-      Shader frag;
-      frag.Initialize(ShaderType::FRAGMENT, "#version 330\nout vec4 outColor; uniform vec4 out_color; void main() { outColor = out_color; }");
-      
-      ShaderProgram shader_program;
-      shader_program.Initialize(vert, frag, &uniform_factory);
-
-      GlBind<ShaderProgram> shader_program_bind(shader_program);
-
-      float out_color[4] = { 0.0f, 1.0f, 0.0f, 1.0f };
-
-      auto *color_uniform = uniform_factory.Get<float, 4>("out_color");
-      
-      color_uniform->SetValue(out_color);
-      shader_program.Update();
-      color_uniform->SetValue(out_color);
-      shader_program.Update();
-
-      float vertices[] = {
-        -0.5f,  0.5f,
-         0.5f,  0.5f,
-         0.5f, -0.5f
-      };
-
-      BufferObject vbo;
-      vbo.Initialize(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-      GlBind<BufferObject> vbo_bind(vbo);
-
-      VertexArray vao;
-      vao.Initialize();
-
-      GlBind<VertexArray> vao_bind(vao);
-
-      vao.BindAttribute(shader_program.GetAttributeLocation("position"), 2, 
-                        GL_FLOAT, GL_FALSE, 0, (const GLvoid *)0);
-      // // Main loop
+      // Main loop
       while (!glfwWindowShouldClose(window)) {
+        ImGuiManager::BeginFrame();
 
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        static bool show_test_window = true;
+        static bool show_another_window = false;
+        static float f;
+        ImGui::Text("Hello, world!");
+        ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
+        show_test_window ^= ImGui::Button("Test Window");
+        show_another_window ^= ImGui::Button("Another Window");
 
-        glDrawArrays(GL_TRIANGLES, 0, 3);
-        // RenderFunction();
+        static float ms_per_frame[120] = { 0 };
+        static int ms_per_frame_idx = 0;
+        static float ms_per_frame_accum = 0.0f;
+        ms_per_frame_accum -= ms_per_frame[ms_per_frame_idx];
+        ms_per_frame[ms_per_frame_idx] = ImGui::GetIO().DeltaTime * 1000.0f;
+        ms_per_frame_accum += ms_per_frame[ms_per_frame_idx];
+        ms_per_frame_idx = (ms_per_frame_idx + 1) % 120;
+        const float ms_per_frame_avg = ms_per_frame_accum / 120;
+        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", ms_per_frame_avg, 1000.0f / ms_per_frame_avg);
+
+        if (show_test_window) {
+          ImGui::ShowTestWindow(&show_test_window);
+        }
+
+        // Show another simple window
+        if (show_another_window) {
+          ImGui::Begin("Another Window", &show_another_window, ImVec2(200, 100));
+          ImGui::Text("Hello");
+          ImGui::End();
+        }
+
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        ImGuiManager::EndFrame();
 
         glfwSwapBuffers(window);
         glfwPollEvents();
       }
 
-      // Close window and terminate GLFW
       glfwTerminate();
     }
   }
 
   LOGOG_SHUTDOWN();
 
-  // Exit program
   exit(EXIT_SUCCESS);
 }
 
@@ -120,23 +115,35 @@ bool Initialize()
     return false;
   }
 
+  const GLenum error_value = glGetError();
+
+  if (error_value != GL_NO_ERROR && error_value != GL_INVALID_ENUM)
+  {
+    ERR("%s", "Glew init error");
+    exit(EXIT_FAILURE);
+  }
+
+  ImGuiManager::Initialize(window, &uniform_factory);
+
   INFO("OpenGL Version: %s", glGetString(GL_VERSION));
 
-  glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-
-  glCullFace(GL_BACK);
-  glFrontFace(GL_CCW);
+  glClearColor(0.8f, 0.6f, 0.6f, 1.0f);
 
   return true;
 }
 
-bool InitWindow(void) {
+bool InitWindow() {
   if (!glfwInit()) {
     EMERGENCY("Unable to initialize GLFW library");
     return false;
   }
 
-  window = glfwCreateWindow(CurrentWidth, CurrentHeight, "Hello World", NULL, NULL);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+  glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+
+  window = glfwCreateWindow(current_width, current_height, "Hello World", nullptr, nullptr);
 
   if (!window) {
     EMERGENCY("Could not create a new rendering window");
@@ -145,5 +152,21 @@ bool InitWindow(void) {
 
   glfwMakeContextCurrent(window);
 
+  glfwSetKeyCallback(window, GlfwKeyCallback);
+  glfwSetScrollCallback(window, GlfwScrollCallback);
+  glfwSetCharCallback(window, GlfwCharCallback);
+
   return true;
+}
+
+void GlfwKeyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
+  ImGuiManager::OnKey(key, action, mods);
+}
+
+void GlfwCharCallback(GLFWwindow *window, unsigned int character) {
+  ImGuiManager::OnCharacter(character);
+}
+
+void GlfwScrollCallback(GLFWwindow *window, double xoffset, double yoffset) {
+  ImGuiManager::OnScroll(yoffset);
 }

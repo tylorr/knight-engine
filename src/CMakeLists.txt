@@ -14,6 +14,7 @@ set(SOURCES
     component.cpp
     uniform.cpp
     uniform_factory.cpp
+    imgui_manager.cpp
 )
 
 find_package(GLEW REQUIRED)
@@ -25,6 +26,7 @@ include_directories(${GLEW_INCLUDE_DIRS})
 include_directories(${PROJECT_SOURCE_DIR}/third-party/glm)
 include_directories(${PROJECT_SOURCE_DIR}/third-party/logog/include)
 include_directories(${PROJECT_SOURCE_DIR}/third-party/stb_image)
+include_directories(${PROJECT_SOURCE_DIR}/third-party/imgui)
 # include_directories(${LUA_INCLUDE_DIR})
 
 

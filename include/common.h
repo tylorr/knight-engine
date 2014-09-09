@@ -1,5 +1,4 @@
-#ifndef KNIGHT_COMMON_H_
-#define KNIGHT_COMMON_H_
+#pragma once
 
 #include <logog.hpp>
 
@@ -25,6 +24,8 @@ namespace knight {
   #define XASSERT(test, msg, ...) ((void)0)
 #endif
 
+#define BOOL_STRING(value) (value ? "true" : "false")
+
 // TODO: set from cmake
 static const uint64_t MAX_COMPONENTS = 64;
 
@@ -43,5 +44,3 @@ void error(const int &line_number, const char *filename,
 std::string GetFileContents(const char *filename);
 
 } // namespace knight
-
-#endif // KNIGHT_COMMON_H_

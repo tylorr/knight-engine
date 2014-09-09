@@ -1,5 +1,4 @@
-#ifndef KNIGHT_COMPONENT_H_
-#define KNIGHT_COMPONENT_H_
+#pragma once
 
 #include <cstdint>
 
@@ -31,5 +30,3 @@ ComponentBase::Family Component<T>::family() {
 }
 
 } // namespace knight
-
-#endif // KNIGHT_COMPONENT_H_

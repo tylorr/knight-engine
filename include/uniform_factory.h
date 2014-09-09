@@ -1,5 +1,4 @@
-#ifndef KNIGHT_UNIFORM_FACTORY_H_
-#define KNIGHT_UNIFORM_FACTORY_H_
+#pragma once
 
 #include "uniform.h"
 
@@ -70,5 +69,3 @@ void UniformFactory::Register(const GLenum &type) {
 }
 
 } // namespace knight
-
-#endif // KNIGHT_UNIFORM_FACTORY_H_

@@ -1,5 +1,4 @@
-#ifndef KNIGHT_BUFFER_OBJECT_H_
-#define KNIGHT_BUFFER_OBJECT_H_
+#pragma once
 
 #include "common.h"
 
@@ -45,5 +44,3 @@ class BufferObject {
 };
 
 } // namespace knight
-
-#endif // KNIGHT_BUFFER_OBJECT_H_

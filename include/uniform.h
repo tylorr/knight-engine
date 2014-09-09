@@ -1,5 +1,4 @@
-#ifndef KNIGHT_UNIFORM_H_
-#define KNIGHT_UNIFORM_H_
+#pragma once
 
 #include "common.h"
 
@@ -77,5 +76,3 @@ void Uniform<T, row_count, col_count>::SetValue(const T *values) {
 }
 
 } // namespace knight
-
-#endif // KNIGHT_UNIFORM_H_

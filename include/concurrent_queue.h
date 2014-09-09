@@ -1,5 +1,4 @@
-#ifndef KNIGHT_CONCURRENT_QUEUE_H_
-#define KNIGHT_CONCURRENT_QUEUE_H_
+#pragma once
 
 #include "common.h"
 
@@ -92,5 +91,3 @@ bool ConcurrentQueue<T>::empty() const {
 }
 
 } // namespace knight
-
-#endif // KNIGHT_CONCURRENT_QUEUE_H_

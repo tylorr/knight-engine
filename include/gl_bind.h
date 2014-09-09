@@ -1,5 +1,4 @@
-#ifndef KNIGHT_GL_BIND_H_
-#define KNIGHT_GL_BIND_H_
+#pragma once
 
 #include "common.h"
 
@@ -26,5 +25,3 @@ class GlBind {
 };
 
 } // namespace knight
-
-#endif // KNIGHT_GL_BIND_H_

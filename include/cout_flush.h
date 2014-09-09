@@ -1,5 +1,4 @@
-#ifndef KNIGHT_COUT_FLUSH_H_
-#define KNIGHT_COUT_FLUSH_H_
+#pragma once
 
 #include <logog.hpp>
 
@@ -15,5 +14,3 @@ class CoutFlush : public Target
 };
 
 }
-
-#endif // KNIGHT_COUT_FLUSH_H_

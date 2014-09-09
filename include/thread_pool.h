@@ -1,5 +1,4 @@
-#ifndef KNIGHT_THREAD_POOL_H_
-#define KNIGHT_THREAD_POOL_H_
+#pragma once
 
 #include "common.h"
 
@@ -107,5 +106,3 @@ void ThreadPool::Sync() const {
 }
 
 } // namespace knight;
-
-#endif // KNIGHT_THREAD_POOL_H_

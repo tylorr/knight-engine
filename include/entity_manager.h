@@ -1,5 +1,4 @@
-#ifndef KNIGHT_ENTITY_MANAGER_H_
-#define KNIGHT_ENTITY_MANAGER_H_
+#pragma once
 
 #include "common.h"
 #include "entity.h"
@@ -96,5 +95,3 @@ void EntityManager::RemoveComponent(const Entity::ID &, std::shared_ptr<T>) {
 }
 
 } // namespace knight
-
-#endif // KNIGHT_ENTITY_MANAGER_H_

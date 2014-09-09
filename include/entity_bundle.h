@@ -1,5 +1,4 @@
-#ifndef KNIGHT_ENTITY_BUNDLE_H_
-#define KNIGHT_ENTITY_BUNDLE_H_
+#pragma once
 
 #include "entity.h"
 #include "entity_manager.h"
@@ -90,5 +89,3 @@ bool EntityBundle::AddComponent(const Entity::ID &id, std::shared_ptr<T> compone
 }
 
 } // namespace knight
-
-#endif // KNIGHT_ENTITY_BUNDLE_H_

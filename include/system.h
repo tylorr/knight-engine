@@ -1,5 +1,4 @@
-#ifndef KNIGHT_SYSTEM_H_
-#define KNIGHT_SYSTEM_H_
+#pragma once
 
 #include "common.h"
 #include "entity.h"
@@ -35,5 +34,3 @@ class System {
 // }
 
 } // namespace knight
-
-#endif // KNIGHT_SYSTEM_H_

@@ -1,5 +1,4 @@
-#ifndef KNIGHT_ENTITY_H_
-#define KNIGHT_ENTITY_H_
+#pragma once
 
 #include "common.h"
 
@@ -53,5 +52,3 @@ struct hash<knight::Entity::ID> {
 };
 
 }; // namespace std
-
-#endif // KNIGHT_ENTITY_H_

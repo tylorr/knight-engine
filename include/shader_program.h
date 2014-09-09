@@ -1,5 +1,4 @@
-#ifndef KNIGHT_SHADER_PROGRAM_H_
-#define KNIGHT_SHADER_PROGRAM_H_
+#pragma once
 
 #include "common.h"
 #include "shader.h"
@@ -55,5 +54,3 @@ class ShaderProgram {
 };
 
 } // namespace knight
-
-#endif // KNIGHT_SHADER_PROGRAM_H_

@@ -1,5 +1,4 @@
-#ifndef KNIGHT_SLOT_MAP_H_
-#define KNIGHT_SLOT_MAP_H_
+#pragma once
 
 #include "common.h"
 #include "entity.h"
@@ -39,5 +38,3 @@ class SlotMap {
 };
 
 } // namespace knight
-
-#endif // KNIGHT_SLOT_MAP_H_

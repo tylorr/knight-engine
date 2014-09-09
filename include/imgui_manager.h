@@ -1,5 +1,4 @@
-#ifndef KNIGHT_IMGUI_MANAGER_H_
-#define KNIGHT_IMGUI_MANAGER_H_
+#pragma once
 
 class GLFWwindow;
 
@@ -21,5 +20,3 @@ void OnScroll(const double &yoffset);
 } // namespace ImGuiManager
 
 } // namespace knight
-
-#endif // KNIGHT_IMGUI_MANAGER_H_

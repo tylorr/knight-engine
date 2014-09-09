@@ -1,5 +1,4 @@
-#ifndef KNIGHT_VERTEX_ARRAY_H_
-#define KNIGHT_VERTEX_ARRAY_H_
+#pragma once
 
 #include "common.h"
 #include "buffer_object.h"
@@ -36,5 +35,3 @@ private:
 };
 
 } // namespace knight
-
-#endif // KNIGHT_VERTEX_ARRAY_H_

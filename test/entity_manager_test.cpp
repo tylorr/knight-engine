@@ -1,21 +1,12 @@
-#include "gtest/gtest.h"
 #include "entity_manager.h"
 #include "slot_map.h"
 #include "entity.h"
 #include "component.h"
 #include "common.h"
 
+#include <catch.hpp>
+
 using namespace knight;
-
-class EntityManagerTest : public ::testing::Test {
- protected:
-  virtual void SetUp() {
-    id_ = entity_manager_.Create();
-  }
-
-  EntityManager entity_manager_;
-  Entity::ID id_;
-};
 
 struct TestComponent1 : public Component<TestComponent1> {
  public:
@@ -29,41 +20,47 @@ struct TestComponent2 : public Component<TestComponent2> {
   TestComponent2() { }
 };
 
+TEST_CASE("Entity Manager Test") {
 
-TEST_F(EntityManagerTest, AddComponentType) {
-  int x = 3;
-  auto component = entity_manager_.AddComponent<TestComponent1>(id_, x);
-  ASSERT_NE(nullptr, component);
+  EntityManager entity_manager_;
+  Entity::ID id_ = entity_manager_.Create();
 
-  EXPECT_EQ(x, component->x_);
+  SECTION("Add component in place") {
+    int x = 3;
+    auto component = entity_manager_.AddComponent<TestComponent1>(id_, x);
+    REQUIRE(component != nullptr);
 
-  EXPECT_TRUE(entity_manager_.HasComponent<TestComponent1>(id_));
-  EXPECT_TRUE(entity_manager_.component_mask(id_).test(TestComponent1::family()));
-}
+    CHECK(component->x_ == x);
 
-TEST_F(EntityManagerTest, AddComponentObject) {
-  auto component = std::make_shared<TestComponent1>();
-  entity_manager_.AddComponent(id_, component);
+    CHECK(entity_manager_.HasComponent<TestComponent1>(id_));
+    CHECK(entity_manager_.component_mask(id_).test(TestComponent1::family()));
+  }
 
-  EXPECT_TRUE(entity_manager_.HasComponent<TestComponent1>(id_));
-  EXPECT_TRUE(entity_manager_.component_mask(id_).test(TestComponent1::family()));
-}
+  SECTION("Add component by value") {
+    auto component = std::make_shared<TestComponent1>();
+    entity_manager_.AddComponent(id_, component);
 
-TEST_F(EntityManagerTest, GetComponent) {
-  auto c1 = entity_manager_.AddComponent<TestComponent1>(id_);
+    CHECK(entity_manager_.HasComponent<TestComponent1>(id_));
+    CHECK(entity_manager_.component_mask(id_).test(TestComponent1::family()));
+  }
 
-  auto c2 = entity_manager_.GetComponent<TestComponent1>(id_);
-  EXPECT_EQ(c1, c2);
+  SECTION("Getting non-existent component returns nullptr") {
+    auto component2 = entity_manager_.GetComponent<TestComponent2>(id_);
+    CHECK(component2 == nullptr);
+  }
 
-  auto c3 = entity_manager_.GetComponent<TestComponent2>(id_);
-  EXPECT_EQ(nullptr, c3);
-}
+  auto component = entity_manager_.AddComponent<TestComponent1>(id_);
 
-TEST_F(EntityManagerTest, RemoveComponent) {
-  auto c1 = entity_manager_.AddComponent<TestComponent1>(id_);
-  entity_manager_.RemoveComponent<TestComponent1>(id_);
+  SECTION("Get component by type returns correct component") {
+    auto component2 = entity_manager_.GetComponent<TestComponent1>(id_);
+    CHECK(component == component2);
+  }
 
-  auto c2 = entity_manager_.GetComponent<TestComponent1>(id_);
-  EXPECT_EQ(nullptr, c2);
-  EXPECT_FALSE(entity_manager_.HasComponent<TestComponent1>(id_));
+  SECTION("Removing component make component inaccessible") {
+    entity_manager_.RemoveComponent<TestComponent1>(id_);
+
+    auto component2 = entity_manager_.GetComponent<TestComponent1>(id_);
+    CHECK(component2 == nullptr);
+    CHECK(!entity_manager_.HasComponent<TestComponent1>(id_));
+  }
 }

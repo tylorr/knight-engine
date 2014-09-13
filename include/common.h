@@ -1,12 +1,11 @@
 #pragma once
 
-#include <logog.hpp>
-
 #include <bitset>
 #include <cstdint>
 #include <string>
 #include <cstdlib>
 #include <limits>
+#include <cstdio>
 
 namespace knight {
 
@@ -27,12 +26,11 @@ namespace knight {
 
 #define BOOL_STRING(value) (value ? "true" : "false")
 
-// TODO: set from cmake
-static const uint64_t MAX_COMPONENTS = 64;
-
 template<typename T>
 union ID {
-  static constexpr uint64_t max() noexcept { return std::numeric_limits<uint64_t>::max(); }
+  static constexpr uint64_t max() noexcept { 
+    return std::numeric_limits<uint64_t>::max(); 
+  }
   
   uint64_t id;
   struct {
@@ -55,6 +53,9 @@ union ID {
   }
 };
 
+// TODO: set from cmake
+static const uint64_t MAX_COMPONENTS = 64;
+
 typedef std::bitset<MAX_COMPONENTS> ComponentMask;
 
 void ExitOnGLError(const std::string &error_message);
@@ -62,9 +63,9 @@ void ExitOnGLError(const std::string &error_message);
 template<typename... Args>
 void error(const int &line_number, const char *filename, 
            const char *message, Args... args) {
-  ERR("%s:%d", filename, line_number);
-  ERR(message, args...);
-  abort();
+  printf("%s:%d", filename, line_number);
+  printf(message, args...);
+  exit(1);
 }
 
 std::string GetFileContents(const char *filename);

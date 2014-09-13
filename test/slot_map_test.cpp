@@ -1,57 +1,48 @@
-#include "gtest/gtest.h"
-#include "slot_map.h"
-#include "entity.h"
 #include "common.h"
+#include "slot_map.h"
+
+#include <catch.hpp>
 
 using namespace knight;
 
-class SlotMapTest : public ::testing::Test {
- protected:
-  SlotMap<Entity> slot_map;
+struct Object {
+  typedef ID<Object> ID;
+
+  ID id_;
 };
 
-TEST_F(SlotMapTest, Create) {
-  Entity::ID id = slot_map.Create();
-  EXPECT_EQ(0u, id.index);
-  EXPECT_EQ(0u, id.version);
+TEST_CASE("Slot Map") {
+  SlotMap<Object> slot_map;
 
-  Entity::ID id2 = slot_map.Create();
-  EXPECT_EQ(1u, id2.index);
-  EXPECT_EQ(0u, id2.version);
-}
+  Object::ID id;
+  Object *object;
 
-TEST_F(SlotMapTest, Get) {
-  Entity::ID id = slot_map.Create();
-  Entity *entity = slot_map.Get(id);
+  SECTION("Invalid id will return a nullptr") {
+    object = slot_map.Get(id);
+    CHECK(object == nullptr);
+  }
 
-  ASSERT_NE(nullptr, entity);
-  EXPECT_EQ(id, entity->id());
+  id = slot_map.Create();
 
-  Entity::ID fakeID;
-  fakeID.index = 10;
-  fakeID.version = 10;
+  SECTION("Valid id will return correct object") {
+    object = slot_map.Get(id);
 
-  entity = slot_map.Get(fakeID);
-  EXPECT_EQ(nullptr, entity);
-}
-
-TEST_F(SlotMapTest, Destroy) {
-  Entity::ID id = slot_map.Create();
-  slot_map.Destroy(id);
-
-  Entity *entity = slot_map.Get(id);
-  EXPECT_EQ(nullptr, entity);
-}
-
-TEST_F(SlotMapTest, UniqueIDs) {
-  Entity::ID id = slot_map.Create();
-  EXPECT_EQ(0u, id.index);
-  EXPECT_EQ(0u, id.version);
+    REQUIRE(object != nullptr);
+    CHECK(id == object->id_);
+  }
 
   slot_map.Destroy(id);
 
-  Entity::ID id2 = slot_map.Create();
-  EXPECT_NE(id, id2);
-  EXPECT_EQ(0u, id2.index);
-  EXPECT_EQ(1u, id2.version);
+  SECTION("Destroying object will invalidate id") {
+    object = slot_map.Get(id);
+    CHECK(object == nullptr);
+  }
+
+  SECTION("Objects created at same index will have different versions") {
+    Object::ID new_id = slot_map.Create();
+
+    CHECK(new_id != id);
+    CHECK(new_id.index == id.index);
+    CHECK(new_id.version == id.version + 1);
+  }
 }

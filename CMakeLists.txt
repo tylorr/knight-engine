@@ -18,7 +18,6 @@ add_definitions(-DGLM_FORCE_RADIANS)
 
 add_subdirectory(third-party/glfw)
 add_subdirectory(third-party/logog)
-add_subdirectory(third-party/googletest)
 add_subdirectory(third-party/imgui)
 add_subdirectory(src)
 add_subdirectory(demo)

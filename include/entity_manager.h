@@ -51,7 +51,7 @@ class EntityManager {
   // component = [family][entity_id]
   EntityComponentsMap entity_components_;
   ComponentMaskMap entity_component_mask_;
-  SlotMap entities_;
+  SlotMap<Entity> entities_;
 
   KNIGHT_DISALLOW_COPY_AND_ASSIGN(EntityManager);
 };

@@ -7,32 +7,19 @@
 
 namespace knight {
 
+template<typename T>
+class SlotMap;
+
 class Entity {
  public:
-  union ID {
-    uint64_t id;
-    struct {
-      uint32_t index;
-      uint32_t version;
-    };
-
-    ID() : id(0) { }
-    ID(const uint64_t &val) : id(val) { }
-    ID(uint64_t &&val) : id(val) { }
-
-    operator uint64_t() const { return id; }
-    ID &operator=(const uint64_t &val) {
-      id = val;
-      return *this;
-    }
-  };
+  typedef ID<Entity> ID;
 
   Entity() : id_(0) { }
 
   ID id() const { return id_; }
 
  private:
-  friend class SlotMap;
+  friend class SlotMap<Entity>;
 
   ID id_;
 
@@ -51,4 +38,4 @@ struct hash<knight::Entity::ID> {
   }
 };
 
-}; // namespace std
+} // namespace std

@@ -11,6 +11,7 @@
 #include "uniform_factory.h"
 #include "gl_bind.h"
 #include "imgui_manager.h"
+#include "task_manager.h"
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -24,6 +25,9 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 #include <imgui.h>
+
+#include <thread>
+#include <chrono>
 
 using namespace knight;
 
@@ -47,6 +51,38 @@ int main(int argc, char *argv[]) {
     logog::CoutFlush out;
     logog::ColorFormatter formatter;
     out.SetFormatter(formatter);
+
+    TaskManager::Start(1);
+
+    WorkItem work_item([](const WorkItem &work_item) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(work_item.arg2.i));
+      DBUG("[%d] Arg: %d", work_item.arg1.i, work_item.arg2.i);
+    });
+
+    work_item.arg1.i = 0;
+    work_item.arg2.i = 700;
+    auto task_id = TaskManager::BeginAdd(work_item);
+
+    work_item.arg1.i = 10;
+    work_item.arg2.i = 800;
+    auto child_id = TaskManager::BeginAdd(work_item);
+
+    TaskManager::AddChild(task_id, child_id);
+
+    TaskManager::FinishAdd(child_id);
+
+    work_item.arg1.i = 1;
+    work_item.arg2.i = 500;
+    auto d_task_id = TaskManager::BeginAddWithDependency(work_item, task_id);
+
+    TaskManager::FinishAdd(d_task_id);
+    TaskManager::FinishAdd(task_id);
+
+    work_item.arg1.i = 2;
+    work_item.arg2.i = 0;
+    TaskManager::Add(1, &work_item);
+
+    TaskManager::Wait(d_task_id);
 
     if (Initialize()) {
       // Main loop
@@ -93,6 +129,8 @@ int main(int argc, char *argv[]) {
       glfwTerminate();
     }
   }
+
+  TaskManager::Stop();
 
   LOGOG_SHUTDOWN();
 

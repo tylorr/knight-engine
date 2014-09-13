@@ -9,12 +9,12 @@ set(SOURCES
     vertex_array.cpp
     entity.cpp
     entity_manager.cpp
-    slot_map.cpp
     system.cpp
     component.cpp
     uniform.cpp
     uniform_factory.cpp
     imgui_manager.cpp
+    task_manager.cpp
 )
 
 find_package(GLEW REQUIRED)

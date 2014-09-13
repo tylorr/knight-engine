@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <string>
 #include <cstdlib>
+#include <limits>
 
 namespace knight {
 
@@ -28,6 +29,31 @@ namespace knight {
 
 // TODO: set from cmake
 static const uint64_t MAX_COMPONENTS = 64;
+
+template<typename T>
+union ID {
+  static constexpr uint64_t max() noexcept { return std::numeric_limits<uint64_t>::max(); }
+  
+  uint64_t id;
+  struct {
+    uint32_t index;
+    uint32_t version;
+  };
+
+  ID() : id(0) { }
+  ID(const uint64_t &val) : id(val) { }
+  ID(uint64_t &&val) : id(val) { }
+
+  operator uint64_t() const { return id; }
+  ID &operator=(const uint64_t &val) {
+    id = val;
+    return *this;
+  }
+
+  bool operator==(const ID &other) const {
+    return id == other.id;
+  }
+};
 
 typedef std::bitset<MAX_COMPONENTS> ComponentMask;
 

@@ -203,14 +203,20 @@ void Initialize(GLFWwindow *window, UniformFactory *uniform_factory) {
   ImGui::GetDefaultFontData(nullptr, nullptr, &png_data, &png_size);
 
   int tex_x, tex_y;
-  void *tex_data = stbi_load_from_memory((const unsigned char *)png_data, (int)png_size, &tex_x, &tex_y, nullptr, 0);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tex_x, tex_y, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex_data);
+  void *tex_data = stbi_load_from_memory((const unsigned char *)png_data, 
+                                         (int)png_size, 
+                                         &tex_x, &tex_y, 
+                                         nullptr, 0);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tex_x, tex_y, 
+               0, GL_RGBA, GL_UNSIGNED_BYTE, tex_data);
   stbi_image_free(tex_data);
   glBindTexture(GL_TEXTURE_2D, 0);
 
   imgui_manager_state.vert_shader.Initialize(ShaderType::VERTEX, kVertexSource);
   imgui_manager_state.frag_shader.Initialize(ShaderType::FRAGMENT, kFragmentSource);
-  imgui_manager_state.shader_program.Initialize(imgui_manager_state.vert_shader, imgui_manager_state.frag_shader, uniform_factory);
+  imgui_manager_state.shader_program.Initialize(imgui_manager_state.vert_shader, 
+                                                imgui_manager_state.frag_shader, 
+                                                uniform_factory);
 
   glm::mat4 mvp = glm::ortho(0.0f, (float)width, (float)height, 0.0f, -1.0f, +1.0f);
 

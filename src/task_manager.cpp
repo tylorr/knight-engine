@@ -76,7 +76,7 @@ void TryCloseTask(const Task::ID &task_id) {
 }
 
 void TryCloseTaskRecursively(Task *task) {
-  XASSERT(task != nullptr, "Trying to close non-existent task: %lu", task_id);
+  XASSERT(task != nullptr, "Trying to close non-existent task");
 
   if (--task->open_work_items_ == 0) {
     auto *parent_task = open_tasks_.Get(task->parent_id_);
@@ -110,6 +110,8 @@ Task *CreateTask(const WorkItem &work_item) {
 void Start(const unsigned int &thread_count) {
   XASSERT(thread_pool_.size() == 0, "Trying to call start more than once");
 
+  stop_ = false;
+
   for (unsigned int i = 0; i < thread_count; ++i) {
     thread_pool_.emplace_back(DoWork);
   }
@@ -123,6 +125,8 @@ void Stop() {
   for (size_t i = 0; i < thread_pool_.size(); ++i) {
     thread_pool_[i].join();
   }
+
+  thread_pool_.clear();
 }
 
 Task::ID BeginAdd(const WorkItem &work_item) {
@@ -135,8 +139,10 @@ Task::ID BeginAdd(const WorkItem &work_item) {
     // Add dummy open work item so that task cannot complete until FinishAdd()
     // is called
     task->open_work_items_++;
+
     
     work_queue_.emplace(task);
+
   }
 
   condition_.notify_one();
@@ -203,6 +209,9 @@ void AddChild(const Task::ID &parent_id, const Task::ID &child_id) {
   XASSERT(child_task != nullptr, "Trying to add a non-existent task as a child: %lu <- %lu", parent_id, child_id);
 
   parent_task->open_work_items_++;
+
+
+
   child_task->parent_id_ = parent_id;
 }
 
@@ -219,10 +228,6 @@ void Wait(const Task::ID &task_id_to_wait_for) {
 
       if (open_tasks_.Get(task_id_to_wait_for) == nullptr || stop_) {
         return;
-      }
-
-      if (work_queue_.empty()) {
-        continue;
       }
 
       task = work_queue_.top();

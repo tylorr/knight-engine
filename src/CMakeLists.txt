@@ -15,6 +15,7 @@ set(SOURCES
     uniform_factory.cpp
     imgui_manager.cpp
     task_manager.cpp
+    allocator.cpp
 )
 
 find_package(GLEW REQUIRED)
@@ -27,6 +28,7 @@ include_directories(${PROJECT_SOURCE_DIR}/third-party/glm)
 include_directories(${PROJECT_SOURCE_DIR}/third-party/logog/include)
 include_directories(${PROJECT_SOURCE_DIR}/third-party/stb_image)
 include_directories(${PROJECT_SOURCE_DIR}/third-party/imgui)
+include_directories(${PROJECT_SOURCE_DIR}/third-party/dlmalloc)
 # include_directories(${LUA_INCLUDE_DIR})
 
 
@@ -35,6 +37,7 @@ add_library(knight-engine ${SOURCES})
 target_link_libraries(knight-engine glfw ${GLFW_LIBRARIES})
 target_link_libraries(knight-engine ${GLEW_LIBRARIES})
 target_link_libraries(knight-engine logog)
+target_link_libraries(knight-engine dlmalloc)
 # target_link_libraries(demo stb_image)
 # target_link_libraries(demo ${LUA_LIBRARIES})
 

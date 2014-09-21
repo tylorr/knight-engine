@@ -40,10 +40,14 @@ endmacro()
 
 set(FBSCHEMA_OUTPUT "${PROJECT_BINARY_DIR}/schema_headers/")
 
+add_definitions(-DMSPACES)
+add_definitions(-DUSE_DL_PREFIX)
+
 add_subdirectory(third-party/glfw)
 add_subdirectory(third-party/logog)
 add_subdirectory(third-party/imgui)
 add_subdirectory(third-party/flatbuffers)
+add_subdirectory(third-party/dlmalloc)
 add_subdirectory(src)
 add_subdirectory(demo)
 add_subdirectory(test)

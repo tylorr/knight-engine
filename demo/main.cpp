@@ -12,6 +12,7 @@
 #include "gl_bind.h"
 #include "imgui_manager.h"
 #include "task_manager.h"
+#include "allocator.h"
 
 #include "monster_generated.h"
 #include "event_header_generated.h"
@@ -49,6 +50,11 @@ void GlfwKeyCallback(GLFWwindow *window, int key, int scancode, int action, int 
 void GlfwScrollCallback(GLFWwindow *window, double xoffset, double yoffset);
 void GlfwCharCallback(GLFWwindow *window, unsigned int c);
 
+#define BUFFER_SIZE 256 * sizeof(size_t) + sizeof(HeapAllocator)
+char buffer_[BUFFER_SIZE];
+
+HeapAllocator *static_heap = 0;
+
 int main(int argc, char *argv[]) {
   LOGOG_INITIALIZE();
   {
@@ -56,6 +62,7 @@ int main(int argc, char *argv[]) {
     logog::ColorFormatter formatter;
     out.SetFormatter(formatter);
 
+    static_heap = new (buffer_) HeapAllocator(nullptr, buffer_ + sizeof(HeapAllocator), BUFFER_SIZE - sizeof(HeapAllocator));
 
     if (Initialize()) {
       // flatbuffers::FlatBufferBuilder fbb;
@@ -121,6 +128,7 @@ int main(int argc, char *argv[]) {
       glfwTerminate();
     }
 
+    static_heap->~HeapAllocator();
   }
   LOGOG_SHUTDOWN();
 

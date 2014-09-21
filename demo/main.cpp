@@ -13,6 +13,9 @@
 #include "imgui_manager.h"
 #include "task_manager.h"
 
+#include "monster_generated.h"
+#include "event_header_generated.h"
+
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
@@ -30,6 +33,7 @@
 #include <chrono>
 
 using namespace knight;
+using namespace knight::events;
 
 int current_width = 1280,
     current_height = 720;
@@ -52,39 +56,27 @@ int main(int argc, char *argv[]) {
     logog::ColorFormatter formatter;
     out.SetFormatter(formatter);
 
-    TaskManager::Start(1);
-
-    WorkItem work_item([](const WorkItem &work_item) {
-      std::this_thread::sleep_for(std::chrono::milliseconds(work_item.arg2.i));
-      DBUG("[%d] Arg: %d", work_item.arg1.i, work_item.arg2.i);
-    });
-
-    work_item.arg1.i = 0;
-    work_item.arg2.i = 700;
-    auto task_id = TaskManager::BeginAdd(work_item);
-
-    work_item.arg1.i = 10;
-    work_item.arg2.i = 800;
-    auto child_id = TaskManager::BeginAdd(work_item);
-
-    TaskManager::AddChild(task_id, child_id);
-
-    TaskManager::FinishAdd(child_id);
-
-    work_item.arg1.i = 1;
-    work_item.arg2.i = 500;
-    auto d_task_id = TaskManager::BeginAddWithDependency(work_item, task_id);
-
-    TaskManager::FinishAdd(d_task_id);
-    TaskManager::FinishAdd(task_id);
-
-    work_item.arg1.i = 2;
-    work_item.arg2.i = 0;
-    TaskManager::Add(1, &work_item);
-
-    TaskManager::Wait(d_task_id);
 
     if (Initialize()) {
+      // flatbuffers::FlatBufferBuilder fbb;
+
+      // auto monster_location = CreateMonster(fbb, 100, 20);
+
+      // auto event_header_location = CreateEventHeader(fbb, Event_Monster, monster_location.Union());
+
+      // fbb.Finish(event_header_location);
+
+      // auto event_header = GetEventHeader(fbb.GetBufferPointer());
+
+      // auto event_type = event_header->event_type();
+
+      // if (event_type == Event_Monster) {
+      //   auto *monster = GetMonster(event_header->event());
+      //   DBUG("Monster mana: %d", monster->mana());
+      //   DBUG("Monster foo: %d", monster->foo());
+      // }
+      
+
       // Main loop
       while (!glfwWindowShouldClose(window)) {
         ImGuiManager::BeginFrame();
@@ -128,10 +120,8 @@ int main(int argc, char *argv[]) {
 
       glfwTerminate();
     }
+
   }
-
-  TaskManager::Stop();
-
   LOGOG_SHUTDOWN();
 
   exit(EXIT_SUCCESS);

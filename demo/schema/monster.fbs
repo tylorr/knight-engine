@@ -1,0 +1,16 @@
+namespace knight.events;
+
+enum Color:byte { Red = 0, Green, Blue = 2 }
+
+struct Vec3 {
+  x:float;
+  y:float;
+  z:float;
+}
+
+table Monster {
+  mana:short = 150;
+  foo:short;
+}
+
+root_type Monster;

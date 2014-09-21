@@ -19,7 +19,7 @@ namespace knight {
 
 #if defined(DEVELOPMENT)
   #define XASSERT(test, msg, ...) do {if (!(test)) error(__LINE__, __FILE__, \
-      "Assertion failed: %s\n\n" msg, #test,  __VA_ARGS__);} while (0)
+      "Assertion failed: %s\n\n" msg, #test, ##  __VA_ARGS__);} while (0)
 #else
   #define XASSERT(test, msg, ...) ((void)0)
 #endif
@@ -63,9 +63,10 @@ void ExitOnGLError(const std::string &error_message);
 template<typename... Args>
 void error(const int &line_number, const char *filename, 
            const char *message, Args... args) {
-  printf("%s:%d", filename, line_number);
+  printf("%s:%d\n", filename, line_number);
   printf(message, args...);
-  exit(1);
+  printf("\n");
+  abort();
 }
 
 std::string GetFileContents(const char *filename);

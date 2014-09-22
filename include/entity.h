@@ -7,19 +7,19 @@
 
 namespace knight {
 
-template<typename T>
+template<typename T, typename ID>
 class SlotMap;
 
 class Entity {
  public:
-  typedef ID<Entity> ID;
+  typedef ID64<Entity>::ID ID;
 
   Entity() : id_(0) { }
 
   ID id() const { return id_; }
 
  private:
-  friend class SlotMap<Entity>;
+  friend class SlotMap<Entity, Entity::ID>;
 
   ID id_;
 

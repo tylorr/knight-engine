@@ -32,7 +32,7 @@ std::atomic_bool stop_;
 std::mutex mutex_;
 std::condition_variable condition_;
 
-SlotMap<Task> open_tasks_;
+SlotMap<Task, Task::ID> open_tasks_;
 std::priority_queue<Task *, std::vector<Task *>, TaskPointerComparator> work_queue_;
 std::unordered_map<Task::ID, Task::ID> dependency_map_;
 

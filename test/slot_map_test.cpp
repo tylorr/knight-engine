@@ -6,13 +6,13 @@
 using namespace knight;
 
 struct Object {
-  typedef ID<Object> ID;
+  typedef ID32<Object>::ID ID;
 
   ID id_;
 };
 
 TEST_CASE("Slot Map") {
-  SlotMap<Object> slot_map;
+  SlotMap<Object, Object::ID> slot_map;
 
   Object::ID id;
   Object *object;

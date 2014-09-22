@@ -17,33 +17,28 @@ namespace knight {
   TypeName(TypeName &&) = delete;            \
   TypeName &operator=(TypeName &&) = delete;
 
-#if defined(DEVELOPMENT)
-  #define XASSERT(test, msg, ...) do {if (!(test)) error(__LINE__, __FILE__, \
-      "Assertion failed: %s\n\n" msg, #test, ##  __VA_ARGS__);} while (0)
-#else
-  #define XASSERT(test, msg, ...) ((void)0)
-#endif
-
 #define BOOL_STRING(value) (value ? "true" : "false")
 
-template<typename T>
+template<typename Owner, typename T, size_t index_bits, size_t version_bits>
 union ID {
-  static constexpr uint64_t max() noexcept { 
-    return std::numeric_limits<uint64_t>::max(); 
+  typedef T type;
+
+  static constexpr T max() noexcept { 
+    return std::numeric_limits<T>::max(); 
   }
   
-  uint64_t id;
+  T id;
   struct {
-    uint32_t index;
-    uint32_t version;
+    T index   : index_bits;
+    T version : version_bits;
   };
 
   ID() : id(0) { }
-  ID(const uint64_t &val) : id(val) { }
-  ID(uint64_t &&val) : id(val) { }
+  ID(const T &val) : id(val) { }
+  ID(T &&val) : id(val) { }
 
-  operator uint64_t() const { return id; }
-  ID &operator=(const uint64_t &val) {
+  operator T() const { return id; }
+  ID &operator=(const T &val) {
     id = val;
     return *this;
   }
@@ -53,12 +48,25 @@ union ID {
   }
 };
 
-// TODO: set from cmake
-static const uint64_t MAX_COMPONENTS = 64;
+template<typename Owner>
+struct ID32 { typedef ID<Owner, uint32_t, 16, 16> ID; };
 
-typedef std::bitset<MAX_COMPONENTS> ComponentMask;
+template<typename Owner>
+struct ID64 { typedef ID<Owner, uint64_t, 32, 32> ID; };
+
+// TODO: set from cmake
+static const uint64_t kMaxComponents = 64;
+
+typedef std::bitset<kMaxComponents> ComponentMask;
 
 void ExitOnGLError(const std::string &error_message);
+
+#if defined(DEVELOPMENT)
+  #define XASSERT(test, msg, ...) do {if (!(test)) error(__LINE__, __FILE__, \
+      "Assertion failed: %s\n\n" msg, #test, ##  __VA_ARGS__);} while (0)
+#else
+  #define XASSERT(test, msg, ...) ((void)0)
+#endif
 
 template<typename... Args>
 void error(const int &line_number, const char *filename, 

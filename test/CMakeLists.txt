@@ -10,11 +10,8 @@ set(SOURCES
 
 add_definitions(-DLOGOG_USE_PREFIX)
 
-include_directories(${PROJECT_SOURCE_DIR}/include)
+include_directories(${KNIGHT_ENGINE_INCLUDES})
 include_directories(${PROJECT_SOURCE_DIR}/third-party/catch)
-include_directories(${PROJECT_SOURCE_DIR}/third-party/stb_image)
-include_directories(${PROJECT_SOURCE_DIR}/third-party/logog/include)
-include_directories(${PROJECT_SOURCE_DIR}/third-party/foundation)
 
 add_executable(knight_test ${SOURCES})
 target_link_libraries(knight_test knight-engine)

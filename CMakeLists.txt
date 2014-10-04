@@ -26,7 +26,6 @@ macro(add_fbs _fb_list_name)
     endif()
   endforeach()
   if (_relPath)
-    # propagate _fb_list_name to parent directory
     set (${_fb_list_name} ${${_fb_list_name}} PARENT_SCOPE)
   endif()
 endmacro()
@@ -44,11 +43,26 @@ set(FBSCHEMA_OUTPUT "${PROJECT_BINARY_DIR}/schema_headers/")
 add_definitions(-DMSPACES)
 add_definitions(-DUSE_DL_PREFIX)
 
+find_package(GLEW REQUIRED)
+# find_package(Lua REQUIRED)
+
+set(KNIGHT_ENGINE_INCLUDES
+  ${PROJECT_SOURCE_DIR}/include
+  ${PROJECT_SOURCE_DIR}/third-party/glfw/include
+  ${GLEW_INCLUDE_DIRS}
+  ${PROJECT_SOURCE_DIR}/third-party/glm
+  ${PROJECT_SOURCE_DIR}/third-party/logog/include
+  ${PROJECT_SOURCE_DIR}/third-party/stb_image
+  ${PROJECT_SOURCE_DIR}/third-party/imgui
+  ${PROJECT_SOURCE_DIR}/third-party/flatbuffers/include
+  ${PROJECT_SOURCE_DIR}/third-party/foundation
+  #${LUA_INCLUDE_DIR}
+)
+
 add_subdirectory(third-party/glfw)
 add_subdirectory(third-party/logog)
 add_subdirectory(third-party/imgui)
 add_subdirectory(third-party/flatbuffers)
-# add_subdirectory(third-party/dlmalloc)
 add_subdirectory(third-party/foundation)
 add_subdirectory(src)
 add_subdirectory(demo)

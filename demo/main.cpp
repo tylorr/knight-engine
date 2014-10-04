@@ -12,7 +12,6 @@
 #include "gl_bind.h"
 #include "imgui_manager.h"
 #include "task_manager.h"
-#include "allocator.h"
 
 #include "monster_generated.h"
 #include "event_header_generated.h"
@@ -25,6 +24,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <logog.hpp>
+#include <memory.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -34,7 +34,8 @@
 #include <chrono>
 
 using namespace knight;
-using namespace knight::events;
+using namespace foundation;
+//using namespace knight::events;
 
 int current_width = 1280,
     current_height = 720;
@@ -50,19 +51,14 @@ void GlfwKeyCallback(GLFWwindow *window, int key, int scancode, int action, int 
 void GlfwScrollCallback(GLFWwindow *window, double xoffset, double yoffset);
 void GlfwCharCallback(GLFWwindow *window, unsigned int c);
 
-#define BUFFER_SIZE 256 * sizeof(size_t) + sizeof(HeapAllocator)
-char buffer_[BUFFER_SIZE];
-
-HeapAllocator *static_heap = 0;
-
 int main(int argc, char *argv[]) {
+  memory_globals::init();
+
   LOGOG_INITIALIZE();
   {
     logog::CoutFlush out;
     logog::ColorFormatter formatter;
     out.SetFormatter(formatter);
-
-    static_heap = new (buffer_) HeapAllocator(nullptr, buffer_ + sizeof(HeapAllocator), BUFFER_SIZE - sizeof(HeapAllocator));
 
     if (Initialize()) {
       // flatbuffers::FlatBufferBuilder fbb;
@@ -81,8 +77,7 @@ int main(int argc, char *argv[]) {
       //   auto *monster = GetMonster(event_header->event());
       //   DBUG("Monster mana: %d", monster->mana());
       //   DBUG("Monster foo: %d", monster->foo());
-      // }
-      
+      // }            
 
       // Main loop
       while (!glfwWindowShouldClose(window)) {
@@ -127,10 +122,9 @@ int main(int argc, char *argv[]) {
 
       glfwTerminate();
     }
-
-    static_heap->~HeapAllocator();
   }
   LOGOG_SHUTDOWN();
+  memory_globals::shutdown();
 
   exit(EXIT_SUCCESS);
 }

@@ -1,11 +1,11 @@
 set(SOURCES
     test_main.cpp
     slot_map_test.cpp
-    # thread_pool_test.cpp
     entity_manager_test.cpp
-    # entity_bundle_test.cpp
-    task_manager_test.cpp
+    index_iterator_test.cpp
+    # task_manager_test.cpp
     heap_test.cpp
+    priority_queue_test.cpp
 )
 
 add_definitions(-DLOGOG_USE_PREFIX)

@@ -1,3 +1,5 @@
+#pragma once
+
 #include "collection_types.h"
 #include "array.h"
 

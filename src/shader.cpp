@@ -18,7 +18,9 @@ void Shader::Initialize(const ShaderType &type, const std::string &code) {
 }
 
 Shader::~Shader() {
-  glDeleteShader(handle_);
+  if (handle_) {
+    glDeleteShader(handle_);
+  }
 }
 
 void Shader::Source(const std::string &code) {

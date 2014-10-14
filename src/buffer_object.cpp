@@ -3,7 +3,9 @@
 namespace knight {
 
 BufferObject::~BufferObject() {
-  glDeleteBuffers(1, &handle_);
+  if (handle_) {
+    glDeleteBuffers(1, &handle_);
+  }
 }
 
 void BufferObject::Initialize(const GLenum &target) {
@@ -21,6 +23,7 @@ void BufferObject::Initialize(const GLenum &target, const GLsizeiptr &size,
 }
 
 void BufferObject::Bind() const {
+  XASSERT(handle_, "Trying to bind an uninitialized buffer object");
   glBindBuffer(target_, handle_);
 }
 

@@ -18,7 +18,9 @@ void ShaderProgram::Initialize(const Shader &vertex, const Shader &fragment,
 }
 
 ShaderProgram::~ShaderProgram() {
+  if (handle_) {
   glDeleteProgram(handle_);
+  }
 }
 
 void ShaderProgram::Attach(const Shader &shader) {
@@ -37,6 +39,7 @@ void ShaderProgram::Link() {
 }
 
 void ShaderProgram::Bind() const {
+  XASSERT(handle_, "Trying to bind an uninitialized shader program");
   glUseProgram(handle_);
 }
 

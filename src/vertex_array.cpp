@@ -3,7 +3,9 @@
 namespace knight {
 
 VertexArray::~VertexArray() {
-  glDeleteVertexArrays(1, &handle_);
+  if (handle_) {
+    glDeleteVertexArrays(1, &handle_);
+  }
 }
 
 void VertexArray::Initialize() {
@@ -11,6 +13,7 @@ void VertexArray::Initialize() {
 }
 
 void VertexArray::Bind() const {
+  XASSERT(handle_, "Trying to bind an uninitialized vertex array");
   glBindVertexArray(handle_);
 }
 

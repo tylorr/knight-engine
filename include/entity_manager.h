@@ -4,6 +4,8 @@
 #include "entity.h"
 #include "slot_map.h"
 
+#include <memory_types.h>
+
 #include <map>
 
 namespace knight {
@@ -12,7 +14,7 @@ class ComponentBase;
 
 class EntityManager {
  public:
-  EntityManager() { }
+  EntityManager(foundation::Allocator &allocator) : entities_(allocator) { }
 
   Entity::ID Create();
   Entity *Get(const Entity::ID &);

@@ -4,6 +4,7 @@
 #include "slot_map.h"
 
 #include <logog.hpp>
+#include <memory.h>
 
 #include <queue>
 #include <unordered_map>
@@ -32,7 +33,7 @@ std::atomic_bool stop_;
 std::mutex mutex_;
 std::condition_variable condition_;
 
-SlotMap<Task, Task::ID> open_tasks_;
+SlotMap<Task, Task::ID> open_tasks_(foundation::memory_globals::default_allocator());
 std::priority_queue<Task *, std::vector<Task *>, TaskPointerComparator> work_queue_;
 std::unordered_map<Task::ID, Task::ID> dependency_map_;
 

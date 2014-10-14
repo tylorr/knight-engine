@@ -18,7 +18,9 @@ namespace foundation
 		Array(Allocator &a);
 		~Array();
 		Array(const Array &other);
+		Array(Array &&other);
 		Array &operator=(const Array &other);
+		Array &operator=(Array &&other);
 		
 		T &operator[](uint32_t i);
 		const T &operator[](uint32_t i) const;

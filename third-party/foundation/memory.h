@@ -54,8 +54,8 @@ namespace foundation
 
 	private:
 		/// Allocators cannot be copied.
-	    Allocator(const Allocator& other);
-	    Allocator& operator=(const Allocator& other);
+	    Allocator(const Allocator& other) = delete;
+	    Allocator& operator=(const Allocator& other) = delete;
 	};
 
 	

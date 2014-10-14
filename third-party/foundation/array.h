@@ -48,6 +48,9 @@ namespace foundation {
 		template<typename T> void push_back(Array<T> &a, const T &item);
 		/// Pops the last item from the array. The array cannot be empty.
 		template<typename T> void pop_back(Array<T> &a);
+
+		/// Construct item in place on the end of the array.
+		template<typename T, typename... Args> void emplace_back(Array<T> &a, Args&&... args);
 	}
 
 	namespace array
@@ -119,6 +122,14 @@ namespace foundation {
 		{
 			a._size--;
 		}
+
+		template<typename T, typename... Args>
+		void emplace_back(Array<T> &a, Args&&... args) {
+			if (a._size + 1 > a._capacity)
+				grow(a);
+			new (a._data + a._size) T(std::forward<Args>(args)...);
+			++a._size;
+		}
 	}
 
 	template <typename T>
@@ -140,11 +151,35 @@ namespace foundation {
 	}
 
 	template <typename T>
+	Array<T>::Array(Array<T> &&other) : _allocator(nullptr), _size(0), _capacity(0), _data(nullptr)
+	{
+		*this = std::move(other);
+	}
+
+	template <typename T>
 	Array<T> &Array<T>::operator=(const Array<T> &other)
 	{
 		const uint32_t n = other._size;
 		array::resize(*this, n);
 		memcpy(_data, other._data, sizeof(T)*n);
+		return *this;
+	}
+
+	template <typename T>
+	Array<T> &Array<T>::operator=(Array<T> &&other)
+	{
+		if (this != &other) {
+			_allocator->deallocate(_data);
+
+			_allocator = other._allocator;
+			_data = other._data;
+			_size = other._size;
+			_capacity = other._capacity;
+
+			other._size = 0;
+			other._capacity = 0;
+			other._data = nullptr;
+		}
 		return *this;
 	}
 

@@ -16,9 +16,9 @@ namespace foundation {
 		/// Returns true if the specified key exists in the hash.
 		template<typename T> bool has(const Hash<T> &h, uint64_t key);
 
-		/// Returns the value stored for the specified key, or deffault if the key
+		/// Returns the value stored for the specified key, or default if the key
 		/// does not exist in the hash.
-		template<typename T> const T &get(const Hash<T> &h, uint64_t key, const T &deffault);
+		template<typename T> const T &get(const Hash<T> &h, uint64_t key, const T &def);
 
 		/// Sets the value for the key.
 		template<typename T> void set(Hash<T> &h, uint64_t key, const T &value);
@@ -228,10 +228,10 @@ namespace foundation {
 			return hash_internal::find_or_fail(h, key) != hash_internal::END_OF_LIST;
 		}
 
-		template<typename T> const T &get(const Hash<T> &h, uint64_t key, const T &deffault)
+		template<typename T> const T &get(const Hash<T> &h, uint64_t key, const T &def)
 		{
 			const uint32_t i = hash_internal::find_or_fail(h, key);
-			return i == hash_internal::END_OF_LIST ? deffault : h._data[i].value;
+			return i == hash_internal::END_OF_LIST ? def : h._data[i].value;
 		}
 
 		template<typename T> void set(Hash<T> &h, uint64_t key, const T &value)

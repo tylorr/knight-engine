@@ -16,6 +16,7 @@ namespace foundation
 	public:
 		/// Creates a new temporary allocator using the specified backing allocator.
 		TempAllocator(Allocator &backing = memory_globals::default_scratch_allocator());
+		
 		virtual ~TempAllocator();
 
 		virtual void *allocate(uint32_t size, uint32_t align = DEFAULT_ALIGN);
@@ -29,6 +30,8 @@ namespace foundation
 
 		/// Returns SIZE_NOT_TRACKED.
 		virtual uint32_t total_allocated() {return SIZE_NOT_TRACKED;}
+
+		bool is_buffer_allocated(void *) const;
 
 	private:
 		char _buffer[BUFFER_SIZE];	//< Local stack buffer for allocations.
@@ -54,7 +57,9 @@ namespace foundation
 	// ---------------------------------------------------------------
 
 	template <int BUFFER_SIZE>
-	TempAllocator<BUFFER_SIZE>::TempAllocator(Allocator &backing) : _backing(backing), _chunk_size(4*1024)
+	TempAllocator<BUFFER_SIZE>::TempAllocator(Allocator &backing) 
+		: _backing(backing), 
+			_chunk_size(4*1024)
 	{
 		_p = _start = _buffer;
 		_end = _start + BUFFER_SIZE;
@@ -89,9 +94,17 @@ namespace foundation
 			*(void **)_start = 0;
 			_p += sizeof(void *);
 			_p = (char *)memory::align_forward(_p, align);
+
 		}
 		void *result = _p;
 		_p += size;
 		return result;
+	}
+
+	template<int BUFFER_SIZE>
+	bool TempAllocator<BUFFER_SIZE>::is_buffer_allocated(void *ptr) const {
+		char *char_ptr = static_cast<char *>(ptr);
+
+		return char_ptr >= _buffer && (_buffer + BUFFER_SIZE) > char_ptr;
 	}
 }

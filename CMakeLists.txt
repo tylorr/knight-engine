@@ -3,6 +3,7 @@ project(knight-engine)
 
 enable_testing()
 
+message(STATUS ${CMAKE_CXX_COMPILER})
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -std=c++11 -Wall -fdiagnostics-color=always") # -Wno-mismatched-tags -fcolor-diagnostics")
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMakeModules)
@@ -40,14 +41,12 @@ endmacro()
 
 set(FBSCHEMA_OUTPUT "${PROJECT_BINARY_DIR}/schema_headers/")
 
-add_definitions(-DMSPACES)
-add_definitions(-DUSE_DL_PREFIX)
-
 find_package(GLEW REQUIRED)
 # find_package(Lua REQUIRED)
 
 set(KNIGHT_ENGINE_INCLUDES
   ${PROJECT_SOURCE_DIR}/include
+  ${PROJECT_SOURCE_DIR}/type_erasure
   ${PROJECT_SOURCE_DIR}/third-party/glfw/include
   ${GLEW_INCLUDE_DIRS}
   ${PROJECT_SOURCE_DIR}/third-party/glm
@@ -64,6 +63,7 @@ add_subdirectory(third-party/logog)
 add_subdirectory(third-party/imgui)
 add_subdirectory(third-party/flatbuffers)
 add_subdirectory(third-party/foundation)
+add_subdirectory(type_erasure)
 add_subdirectory(src)
 add_subdirectory(demo)
 add_subdirectory(test)

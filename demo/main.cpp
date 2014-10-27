@@ -12,6 +12,10 @@
 #include "gl_bind.h"
 #include "imgui_manager.h"
 #include "task_manager.h"
+#include "temp_allocator.h"
+#include "AnyFoo.h"
+#include "AnyBar.h"
+//#include "spec.h"
 
 #include "monster_generated.h"
 #include "event_header_generated.h"
@@ -33,6 +37,7 @@
 #include <thread>
 #include <chrono>
 
+
 using namespace knight;
 using namespace foundation;
 //using namespace knight::events;
@@ -51,6 +56,11 @@ void GlfwKeyCallback(GLFWwindow *window, int key, int scancode, int action, int 
 void GlfwScrollCallback(GLFWwindow *window, double xoffset, double yoffset);
 void GlfwCharCallback(GLFWwindow *window, unsigned int c);
 
+struct Foo {
+  int print() const { return 0; }
+  void change(int value) { }
+};
+
 int main(int argc, char *argv[]) {
   memory_globals::init();
 
@@ -60,68 +70,54 @@ int main(int argc, char *argv[]) {
     logog::ColorFormatter formatter;
     out.SetFormatter(formatter);
 
-    if (Initialize()) {
-      // flatbuffers::FlatBufferBuilder fbb;
+    // Foo foo;
+    // TypeErasure<AnyFooSpec> any_foo = foo;
 
-      // auto monster_location = CreateMonster(fbb, 100, 20);
+    // if (Initialize()) {
 
-      // auto event_header_location = CreateEventHeader(fbb, Event_Monster, monster_location.Union());
+    //   // Main loop
+    //   while (!glfwWindowShouldClose(window)) {
+    //     ImGuiManager::BeginFrame();
 
-      // fbb.Finish(event_header_location);
+    //     static bool show_test_window = true;
+    //     static bool show_another_window = false;
+    //     static float f;
+    //     ImGui::Text("Hello, world!");
+    //     ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
+    //     show_test_window ^= ImGui::Button("Test Window");
+    //     show_another_window ^= ImGui::Button("Another Window");
 
-      // auto event_header = GetEventHeader(fbb.GetBufferPointer());
+    //     static float ms_per_frame[120] = { 0 };
+    //     static int ms_per_frame_idx = 0;
+    //     static float ms_per_frame_accum = 0.0f;
+    //     ms_per_frame_accum -= ms_per_frame[ms_per_frame_idx];
+    //     ms_per_frame[ms_per_frame_idx] = ImGui::GetIO().DeltaTime * 1000.0f;
+    //     ms_per_frame_accum += ms_per_frame[ms_per_frame_idx];
+    //     ms_per_frame_idx = (ms_per_frame_idx + 1) % 120;
+    //     const float ms_per_frame_avg = ms_per_frame_accum / 120;
+    //     ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", ms_per_frame_avg, 1000.0f / ms_per_frame_avg);
 
-      // auto event_type = event_header->event_type();
+    //     if (show_test_window) {
+    //       ImGui::ShowTestWindow(&show_test_window);
+    //     }
 
-      // if (event_type == Event_Monster) {
-      //   auto *monster = GetMonster(event_header->event());
-      //   DBUG("Monster mana: %d", monster->mana());
-      //   DBUG("Monster foo: %d", monster->foo());
-      // }            
+    //     // Show another simple window
+    //     if (show_another_window) {
+    //       ImGui::Begin("Another Window", &show_another_window, ImVec2(200, 100));
+    //       ImGui::Text("Hello");
+    //       ImGui::End();
+    //     }
 
-      // Main loop
-      while (!glfwWindowShouldClose(window)) {
-        ImGuiManager::BeginFrame();
+    //     glClear(GL_COLOR_BUFFER_BIT);
 
-        static bool show_test_window = true;
-        static bool show_another_window = false;
-        static float f;
-        ImGui::Text("Hello, world!");
-        ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
-        show_test_window ^= ImGui::Button("Test Window");
-        show_another_window ^= ImGui::Button("Another Window");
+    //     ImGuiManager::EndFrame();
 
-        static float ms_per_frame[120] = { 0 };
-        static int ms_per_frame_idx = 0;
-        static float ms_per_frame_accum = 0.0f;
-        ms_per_frame_accum -= ms_per_frame[ms_per_frame_idx];
-        ms_per_frame[ms_per_frame_idx] = ImGui::GetIO().DeltaTime * 1000.0f;
-        ms_per_frame_accum += ms_per_frame[ms_per_frame_idx];
-        ms_per_frame_idx = (ms_per_frame_idx + 1) % 120;
-        const float ms_per_frame_avg = ms_per_frame_accum / 120;
-        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", ms_per_frame_avg, 1000.0f / ms_per_frame_avg);
+    //     glfwSwapBuffers(window);
+    //     glfwPollEvents();
+    //   }
 
-        if (show_test_window) {
-          ImGui::ShowTestWindow(&show_test_window);
-        }
-
-        // Show another simple window
-        if (show_another_window) {
-          ImGui::Begin("Another Window", &show_another_window, ImVec2(200, 100));
-          ImGui::Text("Hello");
-          ImGui::End();
-        }
-
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        ImGuiManager::EndFrame();
-
-        glfwSwapBuffers(window);
-        glfwPollEvents();
-      }
-
-      glfwTerminate();
-    }
+    //   glfwTerminate();
+    // }
   }
   LOGOG_SHUTDOWN();
   memory_globals::shutdown();

@@ -4,7 +4,7 @@ project(knight-engine)
 enable_testing()
 
 message(STATUS ${CMAKE_CXX_COMPILER})
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -std=c++11 -Wall -fdiagnostics-color=always") # -Wno-mismatched-tags -fcolor-diagnostics")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -std=c++11 -Wall -Wno-mismatched-tags -fcolor-diagnostics")
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMakeModules)
 

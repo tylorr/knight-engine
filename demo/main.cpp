@@ -13,9 +13,8 @@
 #include "imgui_manager.h"
 #include "task_manager.h"
 #include "temp_allocator.h"
-#include "AnyFoo.h"
-#include "AnyBar.h"
-//#include "spec.h"
+#include "AnyFooSpec.h"
+// #include "AnyBar.h"
 
 #include "monster_generated.h"
 #include "event_header_generated.h"
@@ -36,7 +35,6 @@
 
 #include <thread>
 #include <chrono>
-
 
 using namespace knight;
 using namespace foundation;
@@ -70,8 +68,8 @@ int main(int argc, char *argv[]) {
     logog::ColorFormatter formatter;
     out.SetFormatter(formatter);
 
-    // Foo foo;
-    // TypeErasure<AnyFooSpec> any_foo = foo;
+    Foo foo;
+    TypeErasure<AnyFooSpec> any_foo = foo;
 
     // if (Initialize()) {
 

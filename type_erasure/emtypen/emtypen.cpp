@@ -209,7 +209,7 @@ member_params (const client_data & data, CXCursor cursor)
 
     free_tokens(data.tu, tokens);
 
-    return {str, args, return_str, function_name, constness};
+    return {{str, args, return_str, function_name, constness}};
 }
 
 void indent (std::vector<std::string> & lines, const client_data & data)

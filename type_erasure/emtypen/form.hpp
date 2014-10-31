@@ -21,7 +21,8 @@
     static std::shared_ptr<Concept> MakeNew(T_T__ &&value, foundation::TempAllocator<Concept::kBufferSize> &allocator) {
       return std::allocate_shared<Model>(
         SmallBufferAllocator<Model, Concept::Concept::kBufferSize>(allocator),
-        std::forward<T_T__>(value)
+        std::forward<T_T__>(value),
+        nullptr
       );
     }
   };

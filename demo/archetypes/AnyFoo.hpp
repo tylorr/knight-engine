@@ -4,7 +4,6 @@
 struct AnyFoo
 {
   int print() const;
-  void foo() const;
   void change(int value);
 };
 

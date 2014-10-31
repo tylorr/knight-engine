@@ -12,13 +12,26 @@ class Holder {
  public:
   using Data = T;
 
-  Holder(T obj) : data_(std::move(obj)) {}
+  template <typename U = T>
+  Holder(T value, typename std::enable_if<std::is_reference<U>::value>::type * = nullptr) 
+    : data_(value) { }
+
+  template <typename U = T>
+  Holder(T value, typename std::enable_if<!std::is_reference<U>::value, int>::type * = nullptr) noexcept
+    : data_(std::move(value)) { }
+
   virtual ~Holder() = default;
+
   T &get() { return data_; }
   const T &get() const { return data_; }
 
  private:
   T data_;
+};
+
+template <typename T>
+struct Holder<std::reference_wrapper<T>> : Holder<T &> {
+  Holder(std::reference_wrapper<T> ref, int *_ = nullptr) : Holder<T &>(ref.get()) { }
 };
 
 template <class Concept_, template <class> class Model>
@@ -47,7 +60,6 @@ class Container {
   {
       Container temp(std::forward<T>(value));
       std::swap(temp.self_, self_);
-      DBUG("Container assign");
       return *this;
   }
 

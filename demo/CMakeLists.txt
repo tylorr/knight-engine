@@ -16,8 +16,12 @@ target_link_libraries(demo imgui)
 register_event_fbs(demo schema/monster.fbs schema/event_header.fbs)
 
 begin_emtypen(demo)
-  emtypen("archetypes/AnyFoo.hpp" "AnyFooSpec.h")
-  emtypen("archetypes/AnyBar.hpp" "AnyBarSpec.h")
+  emtypen("archetypes/any_foo.hpp" "any_foo.h")
+  emtypen("archetypes/any_bar.hpp" "any_bar.h")
 end_emtypen()
 
 cotire(demo)
+
+add_library(script SHARED script.cpp)
+target_link_libraries(script knight-engine)
+target_link_libraries(script imgui)

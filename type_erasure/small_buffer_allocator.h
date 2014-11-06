@@ -2,6 +2,8 @@
 
 #include <temp_allocator.h>
 
+#include <cstddef>
+
 template<typename T, int BUFFER_SIZE>
 struct SmallBufferAllocator {
  public:

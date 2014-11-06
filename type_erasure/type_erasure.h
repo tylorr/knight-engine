@@ -71,6 +71,10 @@ class Container {
     return *self_;
   }
 
+  template<typename T>
+  const T &Cast() const {
+    return std::dynamic_pointer_cast<Model<Holder<T>>>(self_)->get();
+  }
 
  private:
   static bool IsHeapAllocated(const Container &container) {

@@ -13,8 +13,8 @@
 #include "imgui_manager.h"
 #include "task_manager.h"
 #include "temp_allocator.h"
-#include "AnyFooSpec.h"
-// #include "AnyBar.h"
+#include "any_foo.h"
+#include "slot_map.h"
 
 #include "monster_generated.h"
 #include "event_header_generated.h"
@@ -35,10 +35,12 @@
 
 #include <thread>
 #include <chrono>
+#include <windows.h>
+#include <cerrno>
+#include <cstring>
 
 using namespace knight;
 using namespace foundation;
-//using namespace knight::events;
 
 int current_width = 1280,
     current_height = 720;
@@ -54,12 +56,27 @@ void GlfwKeyCallback(GLFWwindow *window, int key, int scancode, int action, int 
 void GlfwScrollCallback(GLFWwindow *window, double xoffset, double yoffset);
 void GlfwCharCallback(GLFWwindow *window, unsigned int c);
 
-struct Foo {
-  int print() const { return 0; }
-  void change(int value) { }
-};
+void LoadScript();
+void UnloadScript();
+
+typedef void (__cdecl *ScriptInitFunc)(void);
+typedef void (__cdecl *ScriptUpdateFunc)(double);
+typedef void (__cdecl *ScriptRenderFunc)(void);
+typedef void (__cdecl *ScriptShutdownFunc)(void);
+
+std::string script_name = "lib/libscript.dll";
+
+HMODULE script_module;
+ScriptInitFunc script_init;
+ScriptUpdateFunc script_update;
+ScriptRenderFunc script_render;
+ScriptShutdownFunc script_shutdown;
 
 int main(int argc, char *argv[]) {
+
+  // line buffering not supported on win32
+  setvbuf(stdout, nullptr, _IONBF, BUFSIZ);
+
   memory_globals::init();
 
   LOGOG_INITIALIZE();
@@ -68,54 +85,54 @@ int main(int argc, char *argv[]) {
     logog::ColorFormatter formatter;
     out.SetFormatter(formatter);
 
-    Foo foo;
-    TypeErasure<AnyFooSpec> any_foo = foo;
+    //Allocator &allocator = memory_globals::default_allocator();
 
-    // if (Initialize()) {
+    if (Initialize()) {
 
-    //   // Main loop
-    //   while (!glfwWindowShouldClose(window)) {
-    //     ImGuiManager::BeginFrame();
+      LoadScript();
 
-    //     static bool show_test_window = true;
-    //     static bool show_another_window = false;
-    //     static float f;
-    //     ImGui::Text("Hello, world!");
-    //     ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
-    //     show_test_window ^= ImGui::Button("Test Window");
-    //     show_another_window ^= ImGui::Button("Another Window");
+      if (script_init != nullptr) {
+        script_init();
+      }
 
-    //     static float ms_per_frame[120] = { 0 };
-    //     static int ms_per_frame_idx = 0;
-    //     static float ms_per_frame_accum = 0.0f;
-    //     ms_per_frame_accum -= ms_per_frame[ms_per_frame_idx];
-    //     ms_per_frame[ms_per_frame_idx] = ImGui::GetIO().DeltaTime * 1000.0f;
-    //     ms_per_frame_accum += ms_per_frame[ms_per_frame_idx];
-    //     ms_per_frame_idx = (ms_per_frame_idx + 1) % 120;
-    //     const float ms_per_frame_avg = ms_per_frame_accum / 120;
-    //     ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", ms_per_frame_avg, 1000.0f / ms_per_frame_avg);
+      while (!glfwWindowShouldClose(window)) {
+        ImGuiManager::BeginFrame();
 
-    //     if (show_test_window) {
-    //       ImGui::ShowTestWindow(&show_test_window);
-    //     }
+        if (script_module != nullptr) {
+          if (ImGui::Button("Unload Script")) {
+            UnloadScript();
+          }
+        } else {
+          if (ImGui::Button("Load Script")) {
+            LoadScript();
+          }
+        }
 
-    //     // Show another simple window
-    //     if (show_another_window) {
-    //       ImGui::Begin("Another Window", &show_another_window, ImVec2(200, 100));
-    //       ImGui::Text("Hello");
-    //       ImGui::End();
-    //     }
+        if (script_update != nullptr) {
+          script_update(0);
+        }
 
-    //     glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT);
 
-    //     ImGuiManager::EndFrame();
+        if (script_render != nullptr) {
+          script_render();
+        }
 
-    //     glfwSwapBuffers(window);
-    //     glfwPollEvents();
-    //   }
+        ImGuiManager::EndFrame();
 
-    //   glfwTerminate();
-    // }
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+      }
+
+      if (script_shutdown != nullptr) {
+        script_shutdown();
+      }
+
+      UnloadScript();
+
+      glfwTerminate();
+    }
+
   }
   LOGOG_SHUTDOWN();
   memory_globals::shutdown();
@@ -140,17 +157,15 @@ bool Initialize()
   }
 
   const GLenum error_value = glGetError();
-
-  if (error_value != GL_NO_ERROR && error_value != GL_INVALID_ENUM)
-  {
+  if (error_value != GL_NO_ERROR && error_value != GL_INVALID_ENUM) {
     ERR("%s", "Glew init error");
     exit(EXIT_FAILURE);
   }
 
-  ImGuiManager::Initialize(window, &uniform_factory);
-
   INFO("OpenGL Version: %s", glGetString(GL_VERSION));
 
+  ImGuiManager::Initialize(window, &uniform_factory);
+  
   glClearColor(0.8f, 0.6f, 0.6f, 1.0f);
 
   return true;
@@ -162,8 +177,8 @@ bool InitWindow() {
     return false;
   }
 
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 4);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
   glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
@@ -181,6 +196,27 @@ bool InitWindow() {
   glfwSetCharCallback(window, GlfwCharCallback);
 
   return true;
+}
+
+void LoadScript() {
+  script_module = LoadLibraryA(script_name.c_str());
+  XASSERT(script_module, "Failed to load script: %s", script_name.c_str());
+
+  script_init = (ScriptInitFunc)GetProcAddress(script_module, "Init");
+  script_update = (ScriptUpdateFunc)GetProcAddress(script_module, "Update");
+  script_render = (ScriptRenderFunc)GetProcAddress(script_module, "Render");
+  script_shutdown = (ScriptShutdownFunc)GetProcAddress(script_module, "Shutdown");
+}
+
+void UnloadScript() {
+  if (script_module == nullptr) return;
+
+  FreeLibrary(script_module);
+  script_module =  nullptr;
+  script_init = nullptr;
+  script_update = nullptr;
+  script_render = nullptr;
+  script_shutdown = nullptr;
 }
 
 void GlfwKeyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {

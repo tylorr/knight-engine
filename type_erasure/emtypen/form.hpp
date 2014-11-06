@@ -1,4 +1,4 @@
-%struct_prefix%Spec {
+%struct_prefix% {
  public:
   struct Concept {
     static const int kBufferSize = 64;

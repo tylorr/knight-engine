@@ -2,7 +2,10 @@
 
 #include "common.h"
 
+#include <memory.h>
+
 #include <limits>
+#include <thread>
 
 namespace knight {
 
@@ -43,7 +46,7 @@ struct Task {
 
 namespace TaskManager {
 
-void Start(const unsigned int &thread_count);
+void Start(foundation::Allocator &allocator, const unsigned int &thread_count = std::thread::hardware_concurrency());
 void Stop();
 
 Task::ID BeginAdd(const WorkItem &work_item);

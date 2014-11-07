@@ -25,6 +25,7 @@ target_link_libraries(knight-engine glfw ${GLFW_LIBRARIES})
 target_link_libraries(knight-engine ${GLEW_LIBRARIES})
 target_link_libraries(knight-engine logog)
 target_link_libraries(knight-engine foundation)
+target_link_libraries(knight-engine enet)
 # target_link_libraries(demo stb_image)
 # target_link_libraries(demo ${LUA_LIBRARIES})
 

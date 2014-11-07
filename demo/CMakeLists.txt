@@ -25,3 +25,6 @@ cotire(demo)
 add_library(script SHARED script.cpp)
 target_link_libraries(script knight-engine)
 target_link_libraries(script imgui)
+
+add_executable(client client.cpp)
+target_link_libraries(client knight-engine)

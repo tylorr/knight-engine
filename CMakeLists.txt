@@ -4,7 +4,7 @@ project(knight-engine)
 enable_testing()
 
 message(STATUS ${CMAKE_CXX_COMPILER})
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -std=c++11 -Wall -Wno-mismatched-tags -fcolor-diagnostics")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wno-mismatched-tags -Wno-switch -fcolor-diagnostics")
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMakeModules)
 
@@ -55,6 +55,7 @@ set(KNIGHT_ENGINE_INCLUDES
   ${PROJECT_SOURCE_DIR}/third-party/imgui
   ${PROJECT_SOURCE_DIR}/third-party/flatbuffers/include
   ${PROJECT_SOURCE_DIR}/third-party/foundation
+  ${PROJECT_SOURCE_DIR}/third-party/enet/include
   #${LUA_INCLUDE_DIR}
 )
 
@@ -63,6 +64,7 @@ add_subdirectory(third-party/logog)
 add_subdirectory(third-party/imgui)
 add_subdirectory(third-party/flatbuffers)
 add_subdirectory(third-party/foundation)
+add_subdirectory(third-party/enet)
 add_subdirectory(type_erasure)
 add_subdirectory(src)
 add_subdirectory(demo)
@@ -80,7 +82,7 @@ if (FBSCHEMAS)
       OUTPUT ${FBSCHEMA_HEADERS}
       COMMAND flatc -c -o "${FBSCHEMA_OUTPUT}" ${FBSCHEMAS}
       WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-      DEPENDS ${FBSCHEMAS})
+      DEPENDS ${FBSCHEMAS} flatc)
 
   add_custom_target(fbschema DEPENDS ${FBSCHEMA_HEADERS})
   add_dependencies(fbschema flatc)

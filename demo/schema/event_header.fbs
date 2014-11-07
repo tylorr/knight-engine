@@ -2,12 +2,8 @@ namespace knight.events;
 
 union Event { Monster }
 
-table EventWrapper {
-  event:Event;
-}
-
 table EventHeader {
-  events:[EventWrapper];
+  event:Event;
 }
 
 root_type EventHeader;

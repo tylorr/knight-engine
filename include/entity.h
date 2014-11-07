@@ -14,15 +14,11 @@ class Entity {
  public:
   typedef ID64<Entity>::ID ID;
 
-  Entity() : id_(0) { }
-
-  ID id() const { return id_; }
+  ID id;
+  
+  Entity() : id(0) { }
 
  private:
-  friend class SlotMap<Entity, Entity::ID>;
-
-  ID id_;
-
   KNIGHT_DISALLOW_COPY_AND_ASSIGN(Entity);
 };
 

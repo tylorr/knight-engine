@@ -9,11 +9,10 @@ using namespace foundation;
 struct Object {
   typedef ID32<Object>::ID ID;
 
-  ID id_;
+  ID id;
 };
 
 TEST_CASE("Slot Map") {
-  memory_globals::init();
   Allocator &a = memory_globals::default_allocator();
   {
     SlotMap<Object, Object::ID> slot_map(a);
@@ -32,7 +31,7 @@ TEST_CASE("Slot Map") {
       object = slot_map.Get(id);
 
       REQUIRE(object != nullptr);
-      CHECK(id == object->id_);
+      CHECK(id == object->id);
     }
 
     slot_map.Destroy(id);
@@ -50,5 +49,4 @@ TEST_CASE("Slot Map") {
       CHECK(new_id.version == id.version + 1);
     }
   }
-  memory_globals::shutdown();
 }

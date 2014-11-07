@@ -22,10 +22,6 @@ namespace knight {
 template<typename Owner, typename T, size_t index_bits, size_t version_bits>
 union ID {
   typedef T type;
-
-  static constexpr T max() noexcept { 
-    return std::numeric_limits<T>::max(); 
-  }
   
   T id;
   struct {

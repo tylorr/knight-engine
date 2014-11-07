@@ -23,7 +23,6 @@ struct TestComponent2 : public Component<TestComponent2> {
 };
 
 TEST_CASE("Entity Manager Test") {
-  memory_globals::init();
   Allocator &a = memory_globals::default_allocator();
   {
     EntityManager entity_manager_(a);

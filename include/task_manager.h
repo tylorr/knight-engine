@@ -26,21 +26,21 @@ struct WorkItem {
 struct Task {
   typedef ID32<Task>::ID ID;
 
-  Task::ID id_;
-  WorkItem work_item_;
-  Task::ID parent_id_;
-  Task::ID dependency_id_;
-  int open_work_items_;
-  int priority_;
+  Task::ID id;
+  WorkItem work_item;
+  Task::ID parent_id;
+  Task::ID dependency_id;
+  int open_work_items;
+  int priority;
 
-  Task() : id_(0),
-           parent_id_(ID::max()),
-           dependency_id_(ID::max()),
-           open_work_items_(1),
-           priority_(0) { }
+  Task() : id(0),
+           parent_id(0),
+           dependency_id(0),
+           open_work_items(1),
+           priority(0) { }
 
   int operator<(const Task &other) const {
-    return priority_ > other.priority_;
+    return priority > other.priority;
   }
 };
 
@@ -49,8 +49,7 @@ namespace TaskManager {
 void Start(foundation::Allocator &allocator, const unsigned int &thread_count = std::thread::hardware_concurrency());
 void Stop();
 
-Task::ID BeginAdd(const WorkItem &work_item);
-Task::ID BeginAddWithDependency(const WorkItem &work_item, const Task::ID &dependency_id);
+Task::ID BeginAdd(const WorkItem &work_item, const Task::ID &dependency_id = 0);
 Task::ID BeginAddEmpty();
 
 void FinishAdd(const Task::ID &task_id);

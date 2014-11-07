@@ -40,8 +40,6 @@
 #include <windows.h>
 #include <cerrno>
 #include <cstring>
-#include <atomic>
-#include <thread>
 
 using namespace knight;
 using namespace knight::events;
@@ -81,8 +79,6 @@ void PollNetwork();
 
 ENetAddress address;
 ENetHost *server = nullptr;
-std::thread *server_thread_;
-std::atomic_bool stop_server_;
 
 void StartServer() {
   int result = enet_initialize();
@@ -93,71 +89,52 @@ void StartServer() {
   server = enet_host_create(&address, 32, 2, 0, 0);
 
   XASSERT(server != nullptr, "An error occurred while trying to create an ENet server host");
-
-  stop_server_ = false;
-
-  Allocator &allocator = memory_globals::default_allocator();
-  server_thread_ = allocator.make_new<std::thread>(PollNetwork);
 }
 
 void PollNetwork() {
   ENetEvent event;
 
-  while (!stop_server_) {
-    /* Wait up to 1000 milliseconds for an event. */
-    while (enet_host_service(server, &event, 1000) > 0) {
-      switch (event.type) {
-        case ENET_EVENT_TYPE_CONNECT:
-          INFO("A new client connected from %x:%u.", 
-                  event.peer->address.host,
-                  event.peer->address.port);
-          /* Store any relevant client information here. */
-          event.peer->data = (void *)"Client";
-          break;
-        case ENET_EVENT_TYPE_RECEIVE:
-          {
-            auto event_header = GetEventHeader(event.packet->data);
-            auto event_type = event_header->event_type();
+  while (enet_host_service(server, &event, 0) > 0) {
+    switch (event.type) {
+      case ENET_EVENT_TYPE_CONNECT:
+        INFO("A new client connected from %x:%u.", 
+                event.peer->address.host,
+                event.peer->address.port);
+        /* Store any relevant client information here. */
+        event.peer->data = (void *)"Client";
+        break;
+      case ENET_EVENT_TYPE_RECEIVE:
+        {
+          auto event_header = GetEventHeader(event.packet->data);
+          auto event_type = event_header->event_type();
 
-            if (event_type == Event_Monster) {
-              auto monster = reinterpret_cast<const Monster *>(event_header->event());
+          if (event_type == Event_Monster) {
+            auto monster = reinterpret_cast<const Monster *>(event_header->event());
 
-              INFO("Received monster event mana: %d foo: %d", monster->mana(), monster->foo());
-            }
-
-            /* Clean up the packet now that we're done using it. */
-            enet_packet_destroy(event.packet);
+            INFO("Received monster event mana: %d foo: %d", monster->mana(), monster->foo());
           }
-          break;
-        case ENET_EVENT_TYPE_DISCONNECT:
-          INFO("%s disconnected.", event.peer->data);
-          /* Reset the peer's client information. */
-          event.peer->data = NULL;
-        case ENET_EVENT_TYPE_NONE:
-          break;
-      }
+
+          /* Clean up the packet now that we're done using it. */
+          enet_packet_destroy(event.packet);
+        }
+        break;
+      case ENET_EVENT_TYPE_DISCONNECT:
+        INFO("%s disconnected.", event.peer->data);
+        /* Reset the peer's client information. */
+        event.peer->data = NULL;
+      case ENET_EVENT_TYPE_NONE:
+        break;
     }
   }
-
-  DBUG("Server stopping...");
 }
 
 void ShutdownServer() {
-  stop_server_ = true;
-  server_thread_->join();
-
-  DBUG("Server stopped");
-
-  Allocator &allocator = memory_globals::default_allocator();
-  allocator.make_delete(server_thread_);
-  server_thread_ = nullptr;
-
   enet_host_destroy(server);
   enet_deinitialize();
 }
 
 int main(int argc, char *argv[]) {
-
+  
   // line buffering not supported on win32
   setvbuf(stdout, nullptr, _IONBF, BUFSIZ);
 
@@ -193,6 +170,8 @@ int main(int argc, char *argv[]) {
             LoadScript();
           }
         }
+
+        PollNetwork();
 
         if (script_update != nullptr) {
           script_update(0);

@@ -6,8 +6,12 @@
 
 #include <logog.hpp>
 
+#include <memory.h>
+
 int main(int argc, char **argv) {
   int result;
+
+  foundation::memory_globals::init();
 
   LOGOG_INITIALIZE();
   {
@@ -18,6 +22,8 @@ int main(int argc, char **argv) {
     result = Catch::Session().run( argc, argv );
   }
   LOGOG_SHUTDOWN();
+
+  foundation::memory_globals::shutdown();
 
   return result;
 }

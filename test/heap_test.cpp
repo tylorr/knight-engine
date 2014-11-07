@@ -7,7 +7,6 @@
 using namespace foundation;
 
 TEST_CASE("Heapify an array") {
-  memory_globals::init();
   Allocator &a = memory_globals::default_allocator();
   {
     Array<int> v(a);
@@ -59,5 +58,4 @@ TEST_CASE("Heapify an array") {
       CHECK(heap::is_valid(array::begin(v), array::end(v)));
     }
   }
-  memory_globals::shutdown();
 }

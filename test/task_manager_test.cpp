@@ -1,81 +1,90 @@
-// #include "common.h"
-// #include "task_manager.h"
+#include "common.h"
+#include "task_manager.h"
 
-// #include <catch.hpp>
+#include <catch.hpp>
 
-// #include <vector>
+#include <vector>
+#include <chrono>
+#include <thread>
+#include <atomic>
 
-// using namespace knight;
-// using std::vector;
+using namespace knight;
+using namespace foundation;
+using std::vector;
 
-// void DoWork(const WorkItem &work_item) {
-//   auto *completed = (vector<int> *)work_item.arg1.ptr;
-//   completed->push_back(work_item.arg2.i);
-// }
+void DoWork(const WorkItem &work_item) {
+  auto *completed = (vector<int> *)work_item.arg1.ptr;
+  completed->push_back(work_item.arg2.i);
 
-// TEST_CASE("Task Manager") {
-//   TaskManager::Start(1);
+  std::chrono::milliseconds dura(work_item.arg3.i);
+  std::this_thread::sleep_for(dura);
+}
 
-//   vector<int> completed_tasks;
+void DependeeWork(const WorkItem &work_item) {
+  std::chrono::milliseconds dura(100);
+  std::this_thread::sleep_for(dura);
 
-//   WorkItem work_item(DoWork);
+  auto *completed = (vector<int> *)work_item.arg1.ptr;
+  CHECK(completed->size() == 0);
+}
 
-//   work_item.arg1.ptr = (void *)&completed_tasks;
+void DependentWork(const WorkItem &work_item) {
+  auto *completed = (vector<int> *)work_item.arg1.ptr;
+  completed->push_back(10);
+}
 
-//   // SECTION("Tasks complete work") {
-//   //   work_item.arg2.i = 10;
-//   //   auto task_id = TaskManager::BeginAdd(work_item);
-//   //   TaskManager::FinishAdd(task_id);
+TEST_CASE("Task Manager") {
+  TaskManager::Start(memory_globals::default_allocator());
 
-//   //   TaskManager::Wait(task_id);
+  vector<int> completed_tasks;
 
-//   //   CHECK(completed_tasks[0] == 10);
-//   // }
+  WorkItem work_item(DoWork);
+  work_item.arg3.i = 100;
+  work_item.arg1.ptr = (void *)&completed_tasks;
 
-//   SECTION("A task is not finished until all it's children are finished") {
-//     //auto task_id = TaskManager::BeginAddEmpty();
+  SECTION("Tasks complete work") {
+    work_item.arg2.i = 10;
+    auto task_id = TaskManager::BeginAdd(work_item);
+    TaskManager::FinishAdd(task_id);
 
-//     // work_item.arg2.i = 0;
-//     auto child1_id = TaskManager::BeginAdd(work_item);
-//     auto child2_id = TaskManager::BeginAdd(work_item);
+    TaskManager::Wait(task_id);
 
-//     // TaskManager::AddChild(task_id, child1_id);
-//     // TaskManager::AddChild(task_id, child2_id);
+    CHECK(completed_tasks[0] == 10);
+  }
 
-//     TaskManager::FinishAdd(child1_id);
-//     TaskManager::FinishAdd(child2_id);
+  SECTION("A task is not finished until all it's children are finished") {
+    auto parent_task_id = TaskManager::BeginAddEmpty();
 
-//     //TaskManager::FinishAdd(task_id);
+      auto child_id_1 = TaskManager::BeginAdd(work_item);
+      TaskManager::FinishAdd(child_id_1);
+      TaskManager::AddChild(parent_task_id, child_id_1);
 
-//     // TaskManager::Wait(task_id);
+      auto child_id_2 = TaskManager::BeginAdd(work_item);
+      TaskManager::FinishAdd(child_id_2);
+      TaskManager::AddChild(parent_task_id, child_id_2);
 
-//     // CHECK(completed_tasks.size() == 2u);
-//   }
+    TaskManager::FinishAdd(parent_task_id);
 
-//   // work_item.arg1.i = 1;
-//   // work_item.arg2.i = 700;
-//   // auto task_id = TaskManager::BeginAdd(work_item);
+    TaskManager::Wait(parent_task_id);
 
-//   // work_item.arg1.i = 10;
-//   // work_item.arg2.i = 800;
-//   // auto child_id = TaskManager::BeginAdd(work_item);
+    CHECK(completed_tasks.size() == 2u);
+  }
 
-//   // TaskManager::AddChild(task_id, child_id);
+  SECTION("A task with dependency does not start until dependee has finished") {
+    WorkItem dependee_work(DependeeWork);
+    dependee_work.arg1.ptr = (void *)&completed_tasks;
 
-//   // TaskManager::FinishAdd(child_id);
+    auto dependee_task = TaskManager::BeginAdd(dependee_work);
+    TaskManager::FinishAdd(dependee_task);
 
-//   // work_item.arg1.i = 1;
-//   // work_item.arg2.i = 500;
-//   // auto d_task_id = TaskManager::BeginAddWithDependency(work_item, task_id);
+    WorkItem dependent_work(DependentWork);
+    dependent_work.arg1.ptr = (void *)&completed_tasks;
+    
+    auto dependent_task = TaskManager::BeginAdd(dependent_work, dependee_task);
+    TaskManager::FinishAdd(dependent_task);
 
-//   // TaskManager::FinishAdd(d_task_id);
-//   // TaskManager::FinishAdd(task_id);
+    TaskManager::Wait(dependent_task);
+  }
 
-//   // work_item.arg1.i = 2;
-//   // work_item.arg2.i = 0;
-//   // TaskManager::Add(1, &work_item);
-
-//   // TaskManager::Wait(d_task_id);
-
-//   TaskManager::Stop();
-// }
+  TaskManager::Stop();
+}

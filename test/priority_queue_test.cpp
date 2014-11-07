@@ -7,7 +7,6 @@
 using namespace foundation;
 
 TEST_CASE("Priority Queue") {
-  memory_globals::init();
   Allocator &a = memory_globals::default_allocator();
   {
     Array<int> v(a);
@@ -37,5 +36,4 @@ TEST_CASE("Priority Queue") {
 
     CHECK(priority_queue::top(pq) == 4);
   }
-  memory_globals::shutdown();
 }

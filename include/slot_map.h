@@ -57,6 +57,12 @@ ID SlotMap<T, ID>::Create() {
 
     // Add new chunk to table
     foundation::array::emplace_back(slot_table_, new T[kChunkSize]);
+
+    // Reserve ID 0.0 (index.version) as 'null' ID
+    if (foundation::array::size(slot_table_) == 1) {
+      T &first_object = slot_table_[0][0];
+      first_object.id.version = 1;
+    }
   }
 
   // get first free index
@@ -65,9 +71,9 @@ ID SlotMap<T, ID>::Create() {
 
   // get object at index and update it's index
   T *object = &slot_table_[free_index / kChunkSize][free_index % kChunkSize];
-  object->id_.index = free_index;
+  object->id.index = free_index;
 
-  return object->id_;
+  return object->id;
 }
 
 template<typename T, typename ID>
@@ -79,7 +85,7 @@ T *SlotMap<T, ID>::Get(const ID &id) const {
     T *object = &slot_table_[chunkIndex][id.index % kChunkSize];
 
     // If the ids (specifically the versions) match return object else NULL
-    return object->id_ != id ? nullptr : object;
+    return object->id == id ? object : nullptr;
   } else {
 
     // Chunk doesn't exist return NULL
@@ -94,9 +100,9 @@ void SlotMap<T, ID>::Destroy(ID id) {
   XASSERT(object != nullptr, "Trying to delete non-existent object: %lu", id.id);
 
   // Increment version to generate unique id and invalidate old id
-  object->id_.version++;
+  object->id.version++;
 
-  foundation::array::push_back(free_list_, object->id_.index);
+  foundation::array::push_back(free_list_, object->id.index);
 }
 
 } // namespace knight

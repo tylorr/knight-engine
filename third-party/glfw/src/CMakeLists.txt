@@ -79,7 +79,6 @@ if (BUILD_SHARED_LIBS)
     endif()
 
     target_link_libraries(glfw ${glfw_LIBRARIES})
-    target_link_libraries(glfw LINK_INTERFACE_LIBRARIES)
 endif()
 
 if (GLFW_INSTALL)

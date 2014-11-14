@@ -1,6 +1,3 @@
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
-set(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
-
 set(SOURCES
     main.cpp
 )
@@ -11,7 +8,6 @@ include_directories(${KNIGHT_ENGINE_INCLUDES})
 
 add_executable(demo ${SOURCES})
 target_link_libraries(demo knight-engine)
-target_link_libraries(demo imgui)
 
 register_event_fbs(demo schema/monster.fbs schema/event_header.fbs)
 
@@ -24,7 +20,6 @@ cotire(demo)
 
 add_library(script SHARED script.cpp)
 target_link_libraries(script knight-engine)
-target_link_libraries(script imgui)
 
 add_executable(client client.cpp)
 target_link_libraries(client knight-engine)

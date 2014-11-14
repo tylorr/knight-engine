@@ -1,6 +1,3 @@
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
-set(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
-
 set(SOURCES
     common.cpp
     shader_program.cpp
@@ -15,6 +12,7 @@ set(SOURCES
     uniform_factory.cpp
     imgui_manager.cpp
     task_manager.cpp
+    stb_impl.cpp
 )
 
 include_directories(${KNIGHT_ENGINE_INCLUDES})
@@ -26,6 +24,8 @@ target_link_libraries(knight-engine ${GLEW_LIBRARIES})
 target_link_libraries(knight-engine logog)
 target_link_libraries(knight-engine foundation)
 target_link_libraries(knight-engine enet)
+target_link_libraries(knight-engine assimp)
+target_link_libraries(knight-engine imgui)
 # target_link_libraries(demo stb_image)
 # target_link_libraries(demo ${LUA_LIBRARIES})
 

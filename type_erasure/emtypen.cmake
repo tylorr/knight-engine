@@ -30,8 +30,14 @@ function(emtypen _archetype _output)
 
   get_filename_component(_archetype_name "${_archetype}" NAME_WE)
 
+  if(EXECUTABLE_OUTPUT_PATH)
+    set(binary_path ${EXECUTABLE_OUTPUT_PATH})
+  else()
+    set(binary_path ${CMAKE_CURRENT_BINARY_DIR})
+  endif()
+
   # TODO: Right now limited to batch script only
-  set(_script_name "${CMAKE_CURRENT_BINARY_DIR}/${__EMPTYPEN_TARGET}_${_archetype_name}_emtypen_script.bat")
+  set(_script_name "${binary_path}/${__EMPTYPEN_TARGET}_${_archetype_name}_emtypen_script.bat")
 
   file(GENERATE
     OUTPUT ${_script_name}
@@ -48,7 +54,7 @@ function(emtypen _archetype _output)
   set(__EMPTYPEN_OUTPUT ${__EMPTYPEN_OUTPUT} ${_output} PARENT_SCOPE)
 endfunction()
 
-function(end_emtypen)
+function(end_emtypen)  
   include_directories(${CMAKE_CURRENT_BINARY_DIR})
   add_custom_target(${__EMPTYPEN_TARGET}_emtypen DEPENDS ${__EMPTYPEN_OUTPUT})
   add_dependencies(${__EMPTYPEN_TARGET} ${__EMPTYPEN_TARGET}_emtypen)

@@ -34,9 +34,7 @@ void Shader::Compile() {
   glCompileShader(handle_);
   glGetShaderiv(handle_, GL_COMPILE_STATUS, &res);
 
-  if (res == GL_FALSE) {
-    ERR("Failed to compile shader: %s", GetInfoLog().c_str());
-  }
+  XASSERT(res != GL_FALSE, "Failed to compile shader: %s", GetInfoLog().c_str());
 }
 
 string Shader::GetInfoLog() const {

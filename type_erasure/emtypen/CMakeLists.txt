@@ -12,5 +12,9 @@ target_link_libraries(emtypen ${LIBCLANG_LIBRARIES})
 
 cotire(emtypen)
 
-configure_file(headers.hpp headers.hpp COPYONLY)
-configure_file(form.hpp form.hpp COPYONLY)
+if (EXECUTABLE_OUTPUT_PATH)
+  set(output_path "${EXECUTABLE_OUTPUT_PATH}/")
+endif()
+
+configure_file(headers.hpp "${output_path}headers.hpp" COPYONLY)
+configure_file(form.hpp "${output_path}form.hpp" COPYONLY)

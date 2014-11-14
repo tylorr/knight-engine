@@ -3,6 +3,9 @@ project(knight-engine)
 
 enable_testing()
 
+set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
+set(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
+
 message(STATUS ${CMAKE_CXX_COMPILER})
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wno-mismatched-tags -Wno-switch -fcolor-diagnostics")
 
@@ -14,6 +17,7 @@ set(GLFW_BUILD_TESTS OFF)
 set(GLFW_BUILD_DOCS OFF)
 set(GLFW_BUILD_EXAMPLES OFF)
 set(GLFW_INSTALL OFF)
+set(BUILD_SHARED_LIBS ON)
 
 add_definitions(-DGLM_FORCE_RADIANS)
 
@@ -56,6 +60,7 @@ set(KNIGHT_ENGINE_INCLUDES
   ${PROJECT_SOURCE_DIR}/third-party/flatbuffers/include
   ${PROJECT_SOURCE_DIR}/third-party/foundation
   ${PROJECT_SOURCE_DIR}/third-party/enet/include
+  ${PROJECT_SOURCE_DIR}/third-party/assimp/include
   #${LUA_INCLUDE_DIR}
 )
 
@@ -65,6 +70,7 @@ add_subdirectory(third-party/imgui)
 add_subdirectory(third-party/flatbuffers)
 add_subdirectory(third-party/foundation)
 add_subdirectory(third-party/enet)
+add_subdirectory(third-party/assimp)
 add_subdirectory(type_erasure)
 add_subdirectory(src)
 add_subdirectory(demo)

@@ -1,7 +1,6 @@
 set(SOURCES
     common.cpp
     shader_program.cpp
-    shader.cpp
     buffer_object.cpp
     vertex_array.cpp
     entity.cpp

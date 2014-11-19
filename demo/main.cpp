@@ -1,7 +1,6 @@
 #define LOGOG_LEVEL LOGOG_LEVEL_ALL
 
 #include "common.h"
-#include "shader.h"
 #include "shader_program.h"
 #include "buffer_object.h"
 #include "vertex_array.h"
@@ -100,14 +99,8 @@ int main(int argc, char *argv[]) {
         script_init();
       }
 
-      auto vertex_shader = Shader{};
-      vertex_shader.Initialize(ShaderType::VERTEX, GetFileContents("../shaders/simple.vert"));
-
-      auto fragment_shader = Shader{};
-      fragment_shader.Initialize(ShaderType::FRAGMENT, GetFileContents("../shaders/simple.frag"));
-
       auto shader_program = ShaderProgram{};
-      shader_program.Initialize(vertex_shader, fragment_shader, uniform_factory);
+      shader_program.Initialize(uniform_factory, GetFileContents("../shaders/blinn_phong.shader"));
 
       bind_guard<ShaderProgram> shader_program_bind{shader_program};
 

@@ -7,24 +7,59 @@ using std::string;
 
 namespace knight {
 
-void ShaderProgram::Initialize(const Shader &vertex, const Shader &fragment, 
-                               UniformFactory &uniform_factory) {
+void ShaderProgram::Initialize(UniformFactory &uniform_factory, 
+                               const string &source) {
   handle_ = glCreateProgram();
-  Attach(vertex);
-  Attach(fragment);
+  vertex_handle_ = CreateAndAttachShader(GL_VERTEX_SHADER, source);
+  fragment_handle_ = CreateAndAttachShader(GL_FRAGMENT_SHADER, source);
   Link();
 
   ExtractUniforms(uniform_factory);
 }
 
 ShaderProgram::~ShaderProgram() {
+  if (vertex_handle_) {
+    glDeleteShader(vertex_handle_);
+  }
+
+  if (fragment_handle_) {
+    glDeleteShader(fragment_handle_);
+  }
+  
   if (handle_) {
     glDeleteProgram(handle_);
   }
 }
 
-void ShaderProgram::Attach(const Shader &shader) {
-  glAttachShader(handle_, shader.handle());
+GLuint ShaderProgram::CreateAndAttachShader(GLenum type, const string &source) {
+  auto shader_handle = glCreateShader(type);
+
+  auto type_define = string{"#define "};
+
+  switch(type) {
+    case GL_VERTEX_SHADER:
+      type_define += "VERTEX";
+      break;
+    case GL_FRAGMENT_SHADER:
+      type_define += "FRAGMENT";
+      break;
+  }
+
+  type_define += "\n";
+
+  auto source_and_define = (type_define + source).c_str();
+
+  glShaderSource(shader_handle, 1, &source_and_define, nullptr);
+  glCompileShader(shader_handle);
+
+  auto res = GLint{};
+  glGetShaderiv(shader_handle, GL_COMPILE_STATUS, &res);
+
+  XASSERT(res != GL_FALSE, "Failed to compile shader %d: %s", shader_handle, GetShaderInfoLog(shader_handle).c_str());
+
+  glAttachShader(handle_, shader_handle);
+
+  return shader_handle;
 }
 
 void ShaderProgram::Link() {
@@ -33,7 +68,7 @@ void ShaderProgram::Link() {
   glLinkProgram(handle_);
   glGetProgramiv(handle_, GL_LINK_STATUS, &result);
 
-  XASSERT(result != GL_FALSE, "Failed to link program: %s", GetInfoLog().c_str());
+  XASSERT(result != GL_FALSE, "Failed to link program: %s", GetProgramInfoLog().c_str());
 }
 
 void ShaderProgram::Bind() const {
@@ -74,19 +109,6 @@ void ShaderProgram::ExtractUniforms(UniformFactory &uniform_factory) {
   }
 }
 
-string ShaderProgram::GetInfoLog() const {
-  auto length = GLint{};
-  glGetProgramiv(handle_, GL_INFO_LOG_LENGTH, &length);
-
-  if (length) {
-    auto infoLog = string(length, 0);
-    glGetProgramInfoLog(handle_, length, nullptr, &infoLog[0]);
-    return infoLog;
-  } else {
-    return "";
-  }
-}
-
 GLint ShaderProgram::GetAttributeLocation(const GLchar *name) {
   return glGetAttribLocation(handle_, name);
 }
@@ -105,6 +127,32 @@ void ShaderProgram::Update() {
 void ShaderProgram::NotifyDirty(const GLint &location, 
                                 const UniformBase *uniform) {
   dirty_uniforms_[location] = uniform;
+}
+
+string ShaderProgram::GetProgramInfoLog() const {
+  GLint length;
+  glGetProgramiv(handle_, GL_INFO_LOG_LENGTH, &length);
+
+  if (length) {
+    auto infoLog = string(length, 0);
+    glGetProgramInfoLog(handle_, length, nullptr, &infoLog[0]);
+    return infoLog;
+  } else {
+    return "";
+  }
+}
+
+string ShaderProgram::GetShaderInfoLog(GLuint shader_handle) const {
+  GLint length;
+  glGetShaderiv(handle_, GL_INFO_LOG_LENGTH, &length);
+
+  if (length) {
+    string infoLog(length, 0);
+    glGetShaderInfoLog(shader_handle, length, nullptr, &infoLog[0]);
+    return infoLog;
+  } else {
+    return "";
+  }
 }
 
 } // namespace knight

@@ -1,6 +1,5 @@
 #include "imgui_manager.h"
 
-#include "shader.h"
 #include "shader_program.h"
 #include "uniform.h"
 #include "buffer_object.h"
@@ -21,8 +20,9 @@ namespace knight {
 namespace ImGuiManager {
 namespace {
 
-const GLchar *kVertexSource =
+const GLchar *kShaderSource =
   "#version 330\n"
+  "#if defined(VERTEX)\n"
   "uniform mat4 MVP;"
   "layout(location = 0) in vec2 i_pos;"
   "layout(location = 1) in vec2 i_uv;"
@@ -35,10 +35,9 @@ const GLchar *kVertexSource =
   "  pixel_pos = i_pos;"
   "  uv = i_uv;"
   "  gl_Position = MVP * vec4(i_pos.x, i_pos.y, 0.0f, 1.0f);"
-  "}";
-
-const GLchar *kFragmentSource =
-  "#version 330\n"
+  "}\n"
+  "#endif\n"
+  "#if defined(FRAGMENT)\n"
   "uniform sampler2D Tex;"
   "uniform vec4 ClipRect;"
   "in vec4 col;"
@@ -48,13 +47,12 @@ const GLchar *kFragmentSource =
   "void main() {"
   "  o_col = texture(Tex, uv) * col;"
   "  o_col.w *= (step(ClipRect.x,pixel_pos.x) * step(ClipRect.y,pixel_pos.y) * step(pixel_pos.x,ClipRect.z) * step(pixel_pos.y,ClipRect.w));"
-  "}";
+  "}\n"
+  "#endif\n";
 
 struct ImGuiManagerState {
   GLFWwindow *window;
 
-  Shader vert_shader;
-  Shader frag_shader;
   ShaderProgram shader_program;
 
   VertexArray vao;
@@ -212,11 +210,7 @@ void Initialize(GLFWwindow *window, UniformFactory *uniform_factory) {
   stbi_image_free(tex_data);
   glBindTexture(GL_TEXTURE_2D, 0);
 
-  imgui_manager_state.vert_shader.Initialize(ShaderType::VERTEX, kVertexSource);
-  imgui_manager_state.frag_shader.Initialize(ShaderType::FRAGMENT, kFragmentSource);
-  imgui_manager_state.shader_program.Initialize(imgui_manager_state.vert_shader, 
-                                                imgui_manager_state.frag_shader, 
-                                                *uniform_factory);
+  imgui_manager_state.shader_program.Initialize(*uniform_factory, kShaderSource);
 
   glm::mat4 mvp = glm::ortho(0.0f, (float)width, (float)height, 0.0f, -1.0f, +1.0f);
 

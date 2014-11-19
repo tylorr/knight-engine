@@ -8,8 +8,18 @@ extern "C" {
   //void Update(double);
 }
 
+struct Foo { int x; };
+
 void Init() {
-  printf("Initialized script!!!\n");
+  DBUG("Initialized script!!!");
+
+  auto &allocator = foundation::memory_globals::default_allocator();
+
+  auto foo = allocator.make_new<Foo>();
+
+  INFO("%d", foo->x);
+
+  allocator.make_delete(foo);
 }
 
 void Update(double dt) {

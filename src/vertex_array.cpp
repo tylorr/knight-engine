@@ -18,7 +18,11 @@ void VertexArray::Bind() const {
 }
 
 void VertexArray::Unbind() const {
-  glBindVertexArray(0);
+  auto vertex_array_binding = GLint{};
+  glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &vertex_array_binding);
+  if (handle_ == vertex_array_binding) {
+    glBindVertexArray(0);
+  }
 }
 
 void VertexArray::BindAttribute(const GLint &attribute, const GLint &size,

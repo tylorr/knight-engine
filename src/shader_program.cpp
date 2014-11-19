@@ -8,7 +8,7 @@ using std::string;
 namespace knight {
 
 void ShaderProgram::Initialize(const Shader &vertex, const Shader &fragment, 
-                               UniformFactory *uniform_factory) {
+                               UniformFactory &uniform_factory) {
   handle_ = glCreateProgram();
   Attach(vertex);
   Attach(fragment);
@@ -19,7 +19,7 @@ void ShaderProgram::Initialize(const Shader &vertex, const Shader &fragment,
 
 ShaderProgram::~ShaderProgram() {
   if (handle_) {
-  glDeleteProgram(handle_);
+    glDeleteProgram(handle_);
   }
 }
 
@@ -33,9 +33,7 @@ void ShaderProgram::Link() {
   glLinkProgram(handle_);
   glGetProgramiv(handle_, GL_LINK_STATUS, &result);
 
-  if (result == GL_FALSE) {
-    ERR("Failed to link program: %s", GetInfoLog().c_str());
-  }
+  XASSERT(result != GL_FALSE, "Failed to link program: %s", GetInfoLog().c_str());
 }
 
 void ShaderProgram::Bind() const {
@@ -44,37 +42,44 @@ void ShaderProgram::Bind() const {
 }
 
 void ShaderProgram::Unbind() const {
-  glUseProgram(0);
+  XASSERT(handle_, "Trying to unbind an uninitialized shader program");
+  
+  auto current_program = GLint{};
+  glGetIntegerv(GL_CURRENT_PROGRAM, &current_program);
+
+  if (handle_ == current_program) {
+    glUseProgram(0);
+  }
 }
 
-void ShaderProgram::ExtractUniforms(UniformFactory *uniform_factory) {
-  GLint max_uniform_name_length;
+void ShaderProgram::ExtractUniforms(UniformFactory &uniform_factory) {
+  auto max_uniform_name_length = GLint{};
   glGetProgramiv(handle_, GL_ACTIVE_UNIFORM_MAX_LENGTH, &max_uniform_name_length);
 
-  GLint uniform_count;
+  auto uniform_count = GLint{};
   glGetProgramiv(handle_, GL_ACTIVE_UNIFORMS, &uniform_count);
 
-  for (GLint i = 0; i < uniform_count; ++i) {
+  for (auto i = 0; i < uniform_count; ++i) {
     char name[max_uniform_name_length];
 
-    GLint value_size;
-    GLenum value_type;
+    auto value_size = GLint{};
+    auto value_type = GLenum{};
 
     glGetActiveUniform(handle_, i, max_uniform_name_length, nullptr, 
                        &value_size, &value_type, name);
 
-    GLint location = glGetUniformLocation(handle_, name);
+    auto location = glGetUniformLocation(handle_, name);
 
-    uniform_factory->Create(this, location, name, value_type);
+    uniform_factory.Create(*this, location, name, value_type);
   }
 }
 
 string ShaderProgram::GetInfoLog() const {
-  GLint length;
+  auto length = GLint{};
   glGetProgramiv(handle_, GL_INFO_LOG_LENGTH, &length);
 
   if (length) {
-    string infoLog(length, 0);
+    auto infoLog = string(length, 0);
     glGetProgramInfoLog(handle_, length, nullptr, &infoLog[0]);
     return infoLog;
   } else {

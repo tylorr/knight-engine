@@ -23,7 +23,7 @@ class ShaderProgram {
   ~ShaderProgram();
 
   void Initialize(const Shader &vertex, const Shader &fragment,
-                  UniformFactory *uniform_factory);
+                  UniformFactory &uniform_factory);
 
   GLuint handle() const { return handle_; }
 
@@ -48,7 +48,7 @@ class ShaderProgram {
 
   void Attach(const Shader &shader);
   void Link();
-  void ExtractUniforms(UniformFactory *uniform_factory);
+  void ExtractUniforms(UniformFactory &uniform_factory);
 
   KNIGHT_DISALLOW_COPY_AND_ASSIGN(ShaderProgram);
 };

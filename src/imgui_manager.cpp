@@ -5,7 +5,7 @@
 #include "uniform.h"
 #include "buffer_object.h"
 #include "vertex_array.h"
-#include "gl_bind.h"
+#include "bind.h"
 #include "uniform_factory.h"
 
 #include <GL/glew.h>
@@ -85,8 +85,8 @@ void RenderDrawLists(ImDrawList **const cmd_lists, int cmd_lists_count) {
 
   const size_t vbo_size = total_vtx_count * sizeof(ImDrawVert);
 
-  GlBind<VertexArray> vao_bind(imgui_manager_state.vao);
-  GlBind<BufferObject> vbo_bind(imgui_manager_state.vbo);
+  bind_guard<VertexArray> vao_bind(imgui_manager_state.vao);
+  bind_guard<BufferObject> vbo_bind(imgui_manager_state.vbo);
 
   imgui_manager_state.vbo.Data(vbo_size, nullptr, GL_STREAM_DRAW);
 
@@ -111,7 +111,7 @@ void RenderDrawLists(ImDrawList **const cmd_lists, int cmd_lists_count) {
   glDisable(GL_CULL_FACE);
   glDisable(GL_DEPTH_TEST);
 
-  GlBind<ShaderProgram> program_bind(imgui_manager_state.shader_program);
+  bind_guard<ShaderProgram> program_bind(imgui_manager_state.shader_program);
   glBindTexture(GL_TEXTURE_2D, imgui_manager_state.font_texture_handle);
 
   int vtx_offset = 0;
@@ -216,7 +216,7 @@ void Initialize(GLFWwindow *window, UniformFactory *uniform_factory) {
   imgui_manager_state.frag_shader.Initialize(ShaderType::FRAGMENT, kFragmentSource);
   imgui_manager_state.shader_program.Initialize(imgui_manager_state.vert_shader, 
                                                 imgui_manager_state.frag_shader, 
-                                                uniform_factory);
+                                                *uniform_factory);
 
   glm::mat4 mvp = glm::ortho(0.0f, (float)width, (float)height, 0.0f, -1.0f, +1.0f);
 
@@ -228,8 +228,8 @@ void Initialize(GLFWwindow *window, UniformFactory *uniform_factory) {
   imgui_manager_state.vbo.Initialize(GL_ARRAY_BUFFER);
   imgui_manager_state.vao.Initialize();
 
-  GlBind<VertexArray> vao_bind(imgui_manager_state.vao);
-  GlBind<BufferObject> vbo_bind(imgui_manager_state.vbo);
+  bind_guard<VertexArray> vao_bind(imgui_manager_state.vao);
+  bind_guard<BufferObject> vbo_bind(imgui_manager_state.vbo);
 
   imgui_manager_state.vao.BindAttribute(0, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (const GLvoid *)0);
   imgui_manager_state.vao.BindAttribute(1, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (const GLvoid *)(2 * sizeof(float)));

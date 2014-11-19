@@ -13,11 +13,14 @@ set(SOURCES
     imgui_manager.cpp
     task_manager.cpp
     stb_impl.cpp
+    udp_listener.cpp
 )
 
 include_directories(${KNIGHT_ENGINE_INCLUDES})
 
 add_library(knight-engine ${SOURCES})
+
+register_event_fbs(knight-engine ../schema/monster.fbs ../schema/event_header.fbs)
 
 target_link_libraries(knight-engine glfw ${GLFW_LIBRARIES})
 target_link_libraries(knight-engine ${GLEW_LIBRARIES})

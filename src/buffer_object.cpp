@@ -28,7 +28,33 @@ void BufferObject::Bind() const {
 }
 
 void BufferObject::Unbind() const {
-  glBindBuffer(target_, 0);
+  XASSERT(handle_, "Trying to unbind an uninitialized buffer object");
+
+  auto binding_type = GLenum{};
+
+  switch(target_) {
+    case GL_ARRAY_BUFFER:
+      binding_type = GL_ARRAY_BUFFER_BINDING;
+      break;
+    case GL_ELEMENT_ARRAY_BUFFER:
+      binding_type = GL_ELEMENT_ARRAY_BUFFER_BINDING;
+      break;
+    case GL_TEXTURE_BUFFER:
+      binding_type = GL_TEXTURE_BUFFER_BINDING;
+      break;
+    case GL_UNIFORM_BUFFER:
+      binding_type = GL_UNIFORM_BUFFER_BINDING;
+      break;
+    default:
+      XASSERT(target_ != target_, "Current buffer target not supported");
+  }
+
+  auto buffer_binding = GLint{};
+  glGetIntegerv(binding_type, &buffer_binding);
+
+  if (handle_ == buffer_binding) {
+    glBindBuffer(target_, 0);
+  }
 }
 
 void BufferObject::Data(const GLsizeiptr &size, const GLvoid *data, const GLenum &usage) {

@@ -19,14 +19,14 @@ class UniformBase {
  public:
   explicit UniformBase(const std::string &name) : name_(name) { }
 
-  UniformBase(const std::string &name, ShaderProgram *shader_program,
+  UniformBase(const std::string &name, ShaderProgram &shader_program,
               const GLint &location);
 
   virtual ~UniformBase() { }
 
   const std::string &name() const { return name_; }
 
-  void AddShaderProgram(ShaderProgram *shader_program, const GLint &location);
+  void AddShaderProgram(ShaderProgram &shader_program, const GLint &location);
 
   virtual void Update(const GLint &location) const = 0;
 
@@ -44,13 +44,15 @@ class UniformBase {
 template<typename T, size_t row_count, size_t col_count = 1>
 class Uniform : public UniformBase {
  public:
-  typedef T Type;
+  using Type = T;
 
-  explicit Uniform(const std::string &name) : UniformBase(name) { }
+  using UniformBase::UniformBase;
 
-  Uniform(const std::string &name, ShaderProgram *shader_program,
-          const GLint &location) 
-    : UniformBase(name, shader_program, location) { }
+  // explicit Uniform(const std::string &name) : UniformBase(name) { }
+
+  // Uniform(const std::string &name, ShaderProgram *shader_program,
+  //         const GLint &location) 
+  //   : UniformBase(name, shader_program, location) { }
 
   virtual void Update(const GLint &location) const;
 

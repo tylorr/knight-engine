@@ -3,7 +3,7 @@
 
 #include <logog.hpp>
 
-#define KNIGHT_GET_UNIFORM_TYPE(TypeName, row_count, col_count, GLtype, type_string)             \
+#define KNIGHT_GET_UNIFORM_TYPE(TypeName, row_count, col_count, GLtype, type_string)         \
   template<>                                                                                 \
   struct UniformFactory::GetType<TypeName, row_count, col_count> {                           \
     static const GLenum value = GLtype;                                                      \
@@ -18,24 +18,24 @@
 namespace knight {
 
 UniformFactory::UniformFactory() {
-  Register<float, 1>(GL_FLOAT);
-  Register<float, 2>(GL_FLOAT_VEC2);
-  Register<float, 3>(GL_FLOAT_VEC3);
-  Register<float, 4>(GL_FLOAT_VEC4);
+  RegisterUniformType<float, 1>(GL_FLOAT);
+  RegisterUniformType<float, 2>(GL_FLOAT_VEC2);
+  RegisterUniformType<float, 3>(GL_FLOAT_VEC3);
+  RegisterUniformType<float, 4>(GL_FLOAT_VEC4);
 
-  Register<int, 1>(GL_INT);
-  Register<int, 2>(GL_INT_VEC2);
-  Register<int, 3>(GL_INT_VEC3);
-  Register<int, 4>(GL_INT_VEC4);
+  RegisterUniformType<int, 1>(GL_INT);
+  RegisterUniformType<int, 2>(GL_INT_VEC2);
+  RegisterUniformType<int, 3>(GL_INT_VEC3);
+  RegisterUniformType<int, 4>(GL_INT_VEC4);
 
-  Register<bool, 1>(GL_BOOL);
-  Register<bool, 2>(GL_BOOL_VEC2);
-  Register<bool, 3>(GL_BOOL_VEC3);
-  Register<bool, 4>(GL_BOOL_VEC4);
+  RegisterUniformType<bool, 1>(GL_BOOL);
+  RegisterUniformType<bool, 2>(GL_BOOL_VEC2);
+  RegisterUniformType<bool, 3>(GL_BOOL_VEC3);
+  RegisterUniformType<bool, 4>(GL_BOOL_VEC4);
 
-  Register<float, 2, 2>(GL_FLOAT_MAT2);
-  Register<float, 3, 3>(GL_FLOAT_MAT3);
-  Register<float, 4, 4>(GL_FLOAT_MAT4);
+  RegisterUniformType<float, 2, 2>(GL_FLOAT_MAT2);
+  RegisterUniformType<float, 3, 3>(GL_FLOAT_MAT3);
+  RegisterUniformType<float, 4, 4>(GL_FLOAT_MAT4);
 }
 
 UniformFactory::~UniformFactory() {
@@ -44,7 +44,7 @@ UniformFactory::~UniformFactory() {
   }
 }
 
-UniformBase *UniformFactory::Create(ShaderProgram *shader_program, 
+UniformBase *UniformFactory::Create(ShaderProgram &shader_program, 
                                     const GLint &location, 
                                     const char *name, 
                                     const GLenum &type) {

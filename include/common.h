@@ -75,4 +75,8 @@ void error(const int &line_number, const char *filename,
 
 std::string GetFileContents(const char *filename);
 
+void *knight_malloc(size_t size);
+void knight_free(void *ptr);
+void knight_no_memory();
+
 } // namespace knight

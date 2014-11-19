@@ -3,6 +3,7 @@
 #include <logog.hpp>
 
 #include <GL/glew.h>
+#include <memory.h>
 
 #include <fstream>
 #include <cerrno>
@@ -52,6 +53,20 @@ string GetFileContents(const char *filename) {
   in.close();
 
   return contents;
+}
+
+void *knight_malloc(size_t size) {
+  auto &allocator = foundation::memory_globals::default_allocator();
+  return allocator.allocate(size);
+}
+
+void knight_free(void *ptr) {
+  auto &allocator = foundation::memory_globals::default_allocator();
+  allocator.deallocate(ptr);
+}
+
+void knight_no_memory() {
+  XASSERT(false, "Udp packet failed to allocate");
 }
 
 } // namespace knight

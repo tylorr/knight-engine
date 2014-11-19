@@ -3,14 +3,14 @@
 
 namespace knight {
 
-UniformBase::UniformBase(const std::string &name, ShaderProgram *shader_program,
+UniformBase::UniformBase(const std::string &name, ShaderProgram &shader_program,
                          const GLint &location) : name_(name) {
-  program_locations_.push_back(std::make_pair(shader_program, location));
+  program_locations_.push_back(std::make_pair(&shader_program, location));
 }
 
-void UniformBase::AddShaderProgram(ShaderProgram *shader_program, 
+void UniformBase::AddShaderProgram(ShaderProgram &shader_program, 
                                    const GLint &location) {
-  program_locations_.push_back(std::make_pair(shader_program, location));
+  program_locations_.push_back(std::make_pair(&shader_program, location));
 }
 
 void UniformBase::NotifyOwners() const {

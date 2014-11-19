@@ -9,15 +9,9 @@
 #include "cout_flush.h"
 #include "uniform.h"
 #include "uniform_factory.h"
-#include "gl_bind.h"
+#include "bind.h"
 #include "imgui_manager.h"
-#include "task_manager.h"
-#include "temp_allocator.h"
-#include "any_foo.h"
-#include "slot_map.h"
-
-#include "monster_generated.h"
-#include "event_header_generated.h"
+#include "udp_listener.h"
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -34,17 +28,11 @@
 #include <stb_image.h>
 #include <imgui.h>
 
-#include <enet/enet.h>
-
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h> 
 
-#include <thread>
-#include <chrono>
 #include <windows.h>
-#include <cerrno>
-#include <cstring>
 
 using namespace knight;
 using namespace knight::events;
@@ -55,9 +43,7 @@ int current_width = 1280,
 
 GLFWwindow *window;
 
-UniformFactory uniform_factory;
-
-bool Initialize();
+bool Initialize(UniformFactory &);
 bool InitWindow();
 
 void GlfwKeyCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
@@ -67,10 +53,10 @@ void GlfwCharCallback(GLFWwindow *window, unsigned int c);
 void LoadScript();
 void UnloadScript();
 
-typedef void (__cdecl *ScriptInitFunc)(void);
-typedef void (__cdecl *ScriptUpdateFunc)(double);
-typedef void (__cdecl *ScriptRenderFunc)(void);
-typedef void (__cdecl *ScriptShutdownFunc)(void);
+using ScriptInitFunc = void (__cdecl *)(void);
+using ScriptUpdateFunc = void (__cdecl *)(double);
+using ScriptRenderFunc = void (__cdecl *)(void);
+using ScriptShutdownFunc = void (__cdecl *)(void);
 
 std::string script_name = "bin/libscript.dll";
 
@@ -80,67 +66,12 @@ ScriptUpdateFunc script_update;
 ScriptRenderFunc script_render;
 ScriptShutdownFunc script_shutdown;
 
-void PollNetwork();
-
-ENetAddress address;
-ENetHost *server = nullptr;
-
-void StartServer() {
-  int result = enet_initialize();
-  XASSERT(result == 0, "An error occurred while initializing ENet");
-
-  address.host = ENET_HOST_ANY;
-  address.port = 1234;
-  server = enet_host_create(&address, 32, 2, 0, 0);
-
-  XASSERT(server != nullptr, "An error occurred while trying to create an ENet server host");
-}
-
-void PollNetwork() {
-  ENetEvent event;
-
-  while (enet_host_service(server, &event, 0) > 0) {
-    switch (event.type) {
-      case ENET_EVENT_TYPE_CONNECT:
-        INFO("A new client connected from %x:%u.", 
-                event.peer->address.host,
-                event.peer->address.port);
-        /* Store any relevant client information here. */
-        event.peer->data = (void *)"Client";
-        break;
-      case ENET_EVENT_TYPE_RECEIVE:
-        {
-          auto event_header = GetEventHeader(event.packet->data);
-          auto event_type = event_header->event_type();
-
-          if (event_type == Event_Monster) {
-            auto monster = reinterpret_cast<const Monster *>(event_header->event());
-
-            INFO("Received monster event mana: %d foo: %d", monster->mana(), monster->foo());
-          }
-
-          /* Clean up the packet now that we're done using it. */
-          enet_packet_destroy(event.packet);
-        }
-        break;
-      case ENET_EVENT_TYPE_DISCONNECT:
-        INFO("%s disconnected.", event.peer->data);
-        /* Reset the peer's client information. */
-        event.peer->data = NULL;
-      case ENET_EVENT_TYPE_NONE:
-        break;
-    }
-  }
-}
-
-void ShutdownServer() {
-  enet_host_destroy(server);
-  enet_deinitialize();
-}
-
 struct Vertex {
   glm::vec3 position;
   glm::vec3 normal;
+
+  Vertex(const glm::vec3 &position, const glm::vec3 &normal) 
+    : position(position), normal(normal) { }
 };
 
 int main(int argc, char *argv[]) {
@@ -150,43 +81,43 @@ int main(int argc, char *argv[]) {
 
   memory_globals::init();
 
-  LOGOG_INITIALIZE();
+  auto logog_init_params = logog::INIT_PARAMS{knight_malloc, knight_free};
+  LOGOG_INITIALIZE(&logog_init_params);
   {
     logog::CoutFlush out;
     logog::ColorFormatter formatter;
     out.SetFormatter(formatter);
 
-    //Allocator &allocator = memory_globals::default_allocator();
+    auto udp_listener = UdpListener{};
+    udp_listener.Start(1234);
 
-    StartServer();
+    UniformFactory uniform_factory;
 
-    if (Initialize()) {
+    if (Initialize(uniform_factory)) {
       LoadScript();
 
       if (script_init != nullptr) {
         script_init();
       }
 
-      UniformFactory uniform_factory;
-
-      Shader vertex_shader;
+      auto vertex_shader = Shader{};
       vertex_shader.Initialize(ShaderType::VERTEX, GetFileContents("../shaders/simple.vert"));
 
-      Shader fragment_shader;
+      auto fragment_shader = Shader{};
       fragment_shader.Initialize(ShaderType::FRAGMENT, GetFileContents("../shaders/simple.frag"));
 
-      ShaderProgram shader_program;
-      shader_program.Initialize(vertex_shader, fragment_shader, &uniform_factory);
+      auto shader_program = ShaderProgram{};
+      shader_program.Initialize(vertex_shader, fragment_shader, uniform_factory);
 
-      GlBind<ShaderProgram> shader_program_bind(shader_program);
+      bind_guard<ShaderProgram> shader_program_bind{shader_program};
 
-      auto *mvp_uniform = uniform_factory.Get<float, 4, 4>("MVP");
-      auto *mv_matrix_uniform = uniform_factory.Get<float, 4, 4>("ModelView");
-      auto *normal_matrix_uniform = uniform_factory.Get<float, 3, 3>("NormalMatrix");
+      auto mvp_uniform = uniform_factory.Get<float, 4, 4>("MVP");
+      auto mv_matrix_uniform = uniform_factory.Get<float, 4, 4>("ModelView");
+      auto normal_matrix_uniform = uniform_factory.Get<float, 3, 3>("NormalMatrix");
 
-      glm::mat4 model_matrix = glm::mat4(1.0);
-      glm::mat4 view_matrix = glm::translate(glm::mat4(1.0f), glm::vec3(0, -8, -40));
-      glm::mat4 projection_matrix = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 100.f);
+      auto model_matrix = glm::mat4{1.0};
+      auto view_matrix = glm::translate(glm::mat4{1.0f}, glm::vec3{0, -8, -40});
+      auto projection_matrix = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 100.f);
 
       auto model_view_matrix = view_matrix * model_matrix;
       mv_matrix_uniform->SetValue(glm::value_ptr(model_view_matrix));
@@ -199,9 +130,9 @@ int main(int argc, char *argv[]) {
 
       shader_program.Update();
 
-      Assimp::Importer importer;
+      auto importer = Assimp::Importer{};
 
-      const aiScene* scene = importer.ReadFile("../models/bench.obj", 
+      auto scene = importer.ReadFile("../models/bench.obj", 
               aiProcess_CalcTangentSpace       | 
               aiProcess_Triangulate            |
               aiProcess_JoinIdenticalVertices  |
@@ -212,21 +143,19 @@ int main(int argc, char *argv[]) {
       std::vector<Vertex> vertices;
       std::vector<unsigned int> indices;
       
-      const auto *mesh = scene->mMeshes[0];
+      auto mesh = scene->mMeshes[0];
 
-      DBUG("Number of vertices %u", mesh->mNumVertices);
-
-      for (unsigned int j = 0; j < mesh->mNumVertices; ++j) {
-        const auto &pos = mesh->mVertices[j];
-        const auto &normal = mesh->mNormals[j];
-        vertices.emplace_back(Vertex{ 
-          { pos.x, pos.y, pos.z },
-          { normal.x, normal.y, normal.z }
-        });
+      for (auto j = 0; j < mesh->mNumVertices; ++j) {
+        auto pos = mesh->mVertices[j];
+        auto normal = mesh->mNormals[j];
+        vertices.emplace_back(
+          glm::vec3{ pos.x, pos.y, pos.z },
+          glm::vec3{ normal.x, normal.y, normal.z }
+        );
       }
 
-      for (unsigned int j = 0; j < mesh->mNumFaces; ++j) {
-        const auto &face = mesh->mFaces[j];
+      for (auto j = 0; j < mesh->mNumFaces; ++j) {
+        auto face = mesh->mFaces[j];
         XASSERT(face.mNumIndices == 3, "Wrong number of indices");
 
         indices.emplace_back(face.mIndices[0]);
@@ -234,24 +163,24 @@ int main(int argc, char *argv[]) {
         indices.emplace_back(face.mIndices[2]);
       }
 
-      BufferObject vbo;
+      auto vbo = BufferObject{};
       vbo.Initialize(GL_ARRAY_BUFFER, vertices.size() * sizeof(vertices[0]), &vertices[0], GL_STATIC_DRAW);
-      GlBind<BufferObject> vbo_bind(vbo);
+      bind_guard<BufferObject> vbo_bind{vbo};
 
-      VertexArray vao;
+      auto vao = VertexArray{};
       vao.Initialize();
-      GlBind<VertexArray> vao_bind(vao);
+      bind_guard<VertexArray> vao_bind{vao};
 
       vao.BindAttribute(0, 3, GL_FLOAT, GL_FALSE, sizeof(vertices[0]), nullptr);
       vao.BindAttribute(1, 3, GL_FLOAT, GL_FALSE, sizeof(vertices[0]), (void *)sizeof(vertices[0].position));
 
-      BufferObject ibo;
+      auto ibo = BufferObject{};
       ibo.Initialize(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
-      GlBind<BufferObject> ibo_bind(ibo);
+      bind_guard<BufferObject> ibo_bind{ibo};
 
-      double current_time;
-      double prev_time = 0;
-      double delta_time;
+      auto current_time = 0.0;
+      auto prev_time = 0.0;
+      auto delta_time = 0.0;
 
       while (!glfwWindowShouldClose(window)) {
         ImGuiManager::BeginFrame();
@@ -260,7 +189,7 @@ int main(int argc, char *argv[]) {
         delta_time = current_time - prev_time;
         prev_time = current_time;
 
-        PollNetwork();
+        udp_listener.Poll();
 
         if (script_update != nullptr) {
           script_update(0);
@@ -297,37 +226,38 @@ int main(int argc, char *argv[]) {
         script_shutdown();
       }
 
-      UnloadScript();
-
       glfwTerminate();
     }
 
-    ShutdownServer();
-
+    udp_listener.Stop();
   }
   LOGOG_SHUTDOWN();
+
+  // Have to let logog shutdown before unloading the script
+  UnloadScript();
+
   memory_globals::shutdown();
 
   exit(EXIT_SUCCESS);
 }
 
-bool Initialize()
+bool Initialize(UniformFactory &uniform_factory)
 {
-  GLenum GlewInitResult;
+  auto glew_init_result = GLenum{};
 
   if (!InitWindow()) {
     return false;
   }
 
   glewExperimental = GL_TRUE;
-  GlewInitResult = glewInit();
+  glew_init_result = glewInit();
 
-  if (GLEW_OK != GlewInitResult) {
-    ERR("%s", glewGetErrorString(GlewInitResult));
+  if (GLEW_OK != glew_init_result) {
+    ERR("%s", glewGetErrorString(glew_init_result));
     return false;
   }
 
-  const GLenum error_value = glGetError();
+  auto error_value = glGetError();
   if (error_value != GL_NO_ERROR && error_value != GL_INVALID_ENUM) {
     ERR("%s", "Glew init error");
     exit(EXIT_FAILURE);

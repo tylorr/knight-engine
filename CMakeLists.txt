@@ -7,7 +7,7 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 
 message(STATUS ${CMAKE_CXX_COMPILER})
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wno-mismatched-tags -Wno-switch -fcolor-diagnostics")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -Wall -Wno-mismatched-tags -Wno-switch -fcolor-diagnostics")
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMakeModules)
 
@@ -20,6 +20,7 @@ set(GLFW_INSTALL OFF)
 set(BUILD_SHARED_LIBS ON)
 
 add_definitions(-DGLM_FORCE_RADIANS)
+add_definitions(-DDEVELOPMENT)
 
 macro(add_fbs _fb_list_name)
   file(RELATIVE_PATH _relPath "${CMAKE_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}")
@@ -39,7 +40,6 @@ macro(register_event_fbs _target)
   add_fbs(EVENT_FB_SCHEMAS ${ARGN})
   if(EVENT_FB_SCHEMAS)
     add_dependencies(${_target} fbschema)
-    include_directories(${FBSCHEMA_OUTPUT})
   endif()
 endmacro()
 
@@ -61,6 +61,7 @@ set(KNIGHT_ENGINE_INCLUDES
   ${PROJECT_SOURCE_DIR}/third-party/foundation
   ${PROJECT_SOURCE_DIR}/third-party/enet/include
   ${PROJECT_SOURCE_DIR}/third-party/assimp/include
+  ${FBSCHEMA_OUTPUT}
   #${LUA_INCLUDE_DIR}
 )
 

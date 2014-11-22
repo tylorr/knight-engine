@@ -24,7 +24,7 @@ struct WorkItem {
 };
 
 struct Task {
-  typedef ID32<Task>::ID ID;
+  using ID = ID32<Task>::ID;
 
   Task::ID id;
   WorkItem work_item;

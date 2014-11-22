@@ -7,6 +7,10 @@
 #include <limits>
 #include <cstdio>
 
+constexpr std::size_t operator"" _z(unsigned long long n) { 
+  return n; 
+}
+
 namespace knight {
 
 #define KNIGHT_DISALLOW_COPY_AND_ASSIGN(TypeName) \

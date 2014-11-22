@@ -24,7 +24,7 @@ struct WorkItem {
 };
 
 struct Task {
-  using ID = ID32<Task>::ID;
+  using ID = ID64<Task>::ID;
 
   Task::ID id;
   WorkItem work_item;

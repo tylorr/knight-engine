@@ -24,6 +24,8 @@ namespace foundation
     /// Returns the number of items in the queue.
     template <typename T> uint32_t size(const PriorityQueue<T> &q);
 
+    template <typename T> bool empty(const PriorityQueue<T> &q);
+
     /// Inserts a new element in the priority queue
     template<typename T> void push(PriorityQueue<T> &q, const T &item);
 
@@ -32,6 +34,8 @@ namespace foundation
 
     /// Retrieve the element on top of the priority queue
     template<typename T> const T &top(const PriorityQueue<T> &q);
+
+    template<typename T, typename... Args> void emplace(PriorityQueue<T> &q, Args&&... args);
   }
 
   namespace priority_queue 
@@ -39,6 +43,11 @@ namespace foundation
     template<typename T>
     inline uint32_t size(const PriorityQueue<T> &q) {
       return queue::size(q._data);
+    }
+
+    template<typename T>
+    inline bool empty(const PriorityQueue<T> &q) {
+      return queue::size(q._data) == 0;
     }
 
     template<typename T>
@@ -56,6 +65,12 @@ namespace foundation
     template<typename T>
     const T &top(const PriorityQueue<T> &q) {
       return q._data[0];
+    }
+
+    template<typename T, typename... Args>
+    void emplace(PriorityQueue<T> &q, Args&&... args) {
+      queue::emplace(q._data, std::forward<Args>(args)...);
+      heap::push(index_iterator::begin(q._data), index_iterator::end(q._data));
     }
   }
 

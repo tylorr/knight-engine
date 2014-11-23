@@ -3,10 +3,28 @@
 #include "common.h"
 
 #include <enet/enet.h>
+#include <array.h>
 
 namespace knight {
 
 namespace events { class EventHeader; }
+
+class Event {
+ public:
+  const events::EventHeader *header;
+
+  Event() : header{nullptr}, packet_{nullptr} { }
+  Event(const events::EventHeader *event_header, ENetPacket *packet)
+    : header{event_header}, 
+      packet_{packet} { }
+
+  ~Event() {
+    enet_packet_destroy(packet_);
+  }
+
+ private:
+  ENetPacket *packet_;
+};
 
 class UdpListener {
  public:
@@ -14,7 +32,7 @@ class UdpListener {
 
   void Start(int port);
   void Stop();
-  void Poll();
+  bool Poll(foundation::Array<Event> &events);
 
  private:
   ENetAddress address_;

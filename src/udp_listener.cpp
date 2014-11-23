@@ -24,10 +24,12 @@ void UdpListener::Stop() {
   enet_deinitialize();
 }
 
-void UdpListener::Poll() {
+bool UdpListener::Poll(foundation::Array<Event> &events) {
   using namespace knight::events;
 
   auto event = ENetEvent{};
+
+  bool events_received = false;
 
   while (enet_host_service(server_, &event, 0) > 0) {
     switch (event.type) {
@@ -40,17 +42,9 @@ void UdpListener::Poll() {
         break;
       case ENET_EVENT_TYPE_RECEIVE:
         {
-          auto event_header = GetEventHeader(event.packet->data);
-          auto event_type = event_header->event_type();
-
-          if (event_type == Event_Monster) {
-            auto monster = reinterpret_cast<const Monster *>(event_header->event());
-
-            INFO("Received monster event mana: %d foo: %d", monster->mana(), monster->foo());
-          }
-
-          /* Clean up the packet now that we're done using it. */
-          enet_packet_destroy(event.packet);
+          events_received = true;
+          auto *event_header = GetEventHeader(event.packet->data);
+          foundation::array::emplace_back(events, event_header, event.packet);
         }
         break;
       case ENET_EVENT_TYPE_DISCONNECT:
@@ -61,6 +55,8 @@ void UdpListener::Poll() {
         break;
     }
   }
+
+  return events_received;
 }
 
 } // namespace knight

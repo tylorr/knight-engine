@@ -87,6 +87,8 @@ int main(int argc, char *argv[]) {
     logog::ColorFormatter formatter;
     out.SetFormatter(formatter);
 
+    Allocator &a = memory_globals::default_allocator();
+
     auto udp_listener = UdpListener{};
     udp_listener.Start(1234);
 
@@ -182,7 +184,10 @@ int main(int argc, char *argv[]) {
         delta_time = current_time - prev_time;
         prev_time = current_time;
 
-        udp_listener.Poll();
+        Array<Event> events(a);
+        if (udp_listener.Poll(events)) {
+          
+        }
 
         if (script_update != nullptr) {
           script_update(0);

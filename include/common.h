@@ -71,6 +71,7 @@ void ExitOnGLError(const std::string &error_message);
 template<typename... Args>
 void error(const int &line_number, const char *filename, 
            const char *message, Args... args) {
+  // TODO: TR Print stack trace
   printf("%s:%d\n", filename, line_number);
   printf(message, args...);
   printf("\n");

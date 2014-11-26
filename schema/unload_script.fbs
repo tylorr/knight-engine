@@ -1,0 +1,5 @@
+namespace knight.events;
+
+table UnloadScript { }
+
+root_type UnloadScript;

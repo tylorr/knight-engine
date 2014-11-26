@@ -2,8 +2,7 @@
 #define ANY_BAR_
 
 template <typename T>
-class AnyBar
-{
+class AnyBar {
   T get () const;
   T get ();
 };

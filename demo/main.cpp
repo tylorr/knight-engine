@@ -11,6 +11,10 @@
 #include "bind.h"
 #include "imgui_manager.h"
 #include "udp_listener.h"
+#include "task_manager.h"
+
+#include "event_header_generated.h"
+#include "unload_script_generated.h"
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -29,12 +33,13 @@
 
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
-#include <assimp/postprocess.h> 
+#include <assimp/postprocess.h>
+
+#include <temp_allocator.h>
 
 #include <windows.h>
 
 using namespace knight;
-using namespace knight::events;
 using namespace foundation;
 
 int current_width = 1280,
@@ -68,13 +73,10 @@ ScriptShutdownFunc script_shutdown;
 struct Vertex {
   glm::vec3 position;
   glm::vec3 normal;
-
-  Vertex(const glm::vec3 &position, const glm::vec3 &normal) 
-    : position(position), normal(normal) { }
 };
 
 int main(int argc, char *argv[]) {
-  
+
   // line buffering not supported on win32
   setvbuf(stdout, nullptr, _IONBF, BUFSIZ);
 
@@ -143,10 +145,10 @@ int main(int argc, char *argv[]) {
       for (auto j = 0; j < mesh->mNumVertices; ++j) {
         auto pos = mesh->mVertices[j];
         auto normal = mesh->mNormals[j];
-        vertices.emplace_back(
+        vertices.emplace_back(Vertex {
           glm::vec3{ pos.x, pos.y, pos.z },
           glm::vec3{ normal.x, normal.y, normal.z }
-        );
+        });
       }
 
       for (auto j = 0; j < mesh->mNumFaces; ++j) {
@@ -186,7 +188,13 @@ int main(int argc, char *argv[]) {
 
         Array<Event> events(a);
         if (udp_listener.Poll(events)) {
-          
+          auto event_header = events[0].header;
+          auto event_type = event_header->event_type();
+
+          if (event_type == events::EventType_UnloadScript) {
+            //auto monster = reinterpret_cast<const events::UnloadScript *>(event_header->event());
+            //INFO("Received monster event mana: %d foo: %d", monster->mana(), monster->foo());
+          }
         }
 
         if (script_update != nullptr) {

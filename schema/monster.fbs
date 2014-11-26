@@ -1,8 +1,0 @@
-namespace knight.events;
-
-table Monster {
-  mana:int = 150;
-  foo:int;
-}
-
-root_type Monster;

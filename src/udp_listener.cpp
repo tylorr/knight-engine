@@ -1,7 +1,6 @@
 #include "udp_listener.h"
 
-#include "event_header_generated.h"
-#include "monster_generated.h"
+#include "events.h"
 
 #include <logog.hpp>
 

@@ -52,7 +52,7 @@ TEST_CASE("Task Manager") {
     CHECK(completed_tasks[0] == 10);
   }
 
-  SECTION("A task is not finished until all it's children are finished") {
+  SECTION("A task is not finished until all its children are finished") {
     auto parent_task_id = TaskManager::BeginAddEmpty();
 
       auto child_id_1 = TaskManager::BeginAdd(work_item);

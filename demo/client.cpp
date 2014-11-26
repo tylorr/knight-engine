@@ -1,5 +1,4 @@
-#include "monster_generated.h"
-#include "event_header_generated.h"
+#include "events.h"
 
 #include <enet/enet.h>
 
@@ -20,7 +19,7 @@ void Disconnect();
 int main() {
   setvbuf(stdout, nullptr, _IONBF, BUFSIZ);
 
-  int connected = 0;
+  //int connected = 0;
 
   if (enet_initialize() != 0) {
     fprintf(stderr, "An error occurred while initializing ENet.\n");
@@ -53,22 +52,22 @@ int main() {
 
   if (enet_host_service(client, &event, 5000) > 0 && event.type == ENET_EVENT_TYPE_CONNECT) {
 
-    printf("Connection to %s succeeded.\n", HOST);
-    connected++;
+    // printf("Connection to %s succeeded.\n", HOST);
+    // connected++;
 
     flatbuffers::FlatBufferBuilder builder;
 
-    auto monster_location = CreateMonster(builder, 10, 20);
-    auto event_location = CreateEventHeader(builder, Event_Monster, monster_location.Union());
+    // auto monster_location = CreateMonster(builder, 10, 20);
+    // auto event_location = CreateEventHeader(builder, EventType_Monster, monster_location.Union());
 
-    FinishEventHeaderBuffer(builder, event_location);
+    // FinishEventHeaderBuffer(builder, event_location);
 
-    printf("Sending packet\n");
-    ENetPacket * packet = enet_packet_create(builder.GetBufferPointer(), builder.GetSize(), ENET_PACKET_FLAG_RELIABLE);
+    // printf("Sending packet\n");
+    // ENetPacket * packet = enet_packet_create(builder.GetBufferPointer(), builder.GetSize(), ENET_PACKET_FLAG_RELIABLE);
 
-    enet_peer_send(peer, 0, packet);
+    // enet_peer_send(peer, 0, packet);
 
-    enet_host_flush(client);
+    // enet_host_flush(client);
 
     Disconnect();
 

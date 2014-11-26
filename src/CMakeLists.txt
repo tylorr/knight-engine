@@ -19,7 +19,7 @@ include_directories(${KNIGHT_ENGINE_INCLUDES})
 
 add_library(knight-engine ${SOURCES})
 
-register_event_fbs(knight-engine ../schema/monster.fbs ../schema/event_header.fbs)
+register_event_fbs(knight-engine ../schema/unload_script.fbs ../schema/event_header.fbs)
 
 target_link_libraries(knight-engine glfw ${GLFW_LIBRARIES})
 target_link_libraries(knight-engine ${GLEW_LIBRARIES})

@@ -7,11 +7,40 @@ using std::string;
 
 namespace knight {
 
-void ShaderProgram::Initialize(UniformFactory &uniform_factory, 
-                               const string &source) {
+void ShaderProgram::Initialize(UniformFactory &uniform_factory, const string &source) {
   handle_ = glCreateProgram();
-  vertex_handle_ = CreateAndAttachShader(GL_VERTEX_SHADER, source);
-  fragment_handle_ = CreateAndAttachShader(GL_FRAGMENT_SHADER, source);
+
+  auto createAndAttachShader = [this, &source](GLenum type) {
+    auto shader_handle = glCreateShader(type);
+
+    auto type_define = string{"#define "};
+    switch(type) {
+      case GL_VERTEX_SHADER:
+        type_define += "VERTEX";
+        break;
+      case GL_FRAGMENT_SHADER:
+        type_define += "FRAGMENT";
+        break;
+    }
+    type_define += "\n";
+
+    auto source_and_define = (type_define + source).c_str();
+
+    glShaderSource(shader_handle, 1, &source_and_define, nullptr);
+    glCompileShader(shader_handle);
+
+    auto result = GLint{};
+    glGetShaderiv(shader_handle, GL_COMPILE_STATUS, &result);
+    XASSERT(result != GL_FALSE, 
+            "Failed to compile shader %d: %s", 
+            shader_handle, GetShaderInfoLog(shader_handle).c_str());
+
+    glAttachShader(handle_, shader_handle);
+    return shader_handle;
+  };
+
+  vertex_handle_ = createAndAttachShader(GL_VERTEX_SHADER);
+  fragment_handle_ = createAndAttachShader(GL_FRAGMENT_SHADER);
   
   GLint result;
   glLinkProgram(handle_);
@@ -51,37 +80,6 @@ ShaderProgram::~ShaderProgram() {
   if (handle_) {
     glDeleteProgram(handle_);
   }
-}
-
-GLuint ShaderProgram::CreateAndAttachShader(GLenum type, const string &source) {
-  auto shader_handle = glCreateShader(type);
-
-  auto type_define = string{"#define "};
-
-  switch(type) {
-    case GL_VERTEX_SHADER:
-      type_define += "VERTEX";
-      break;
-    case GL_FRAGMENT_SHADER:
-      type_define += "FRAGMENT";
-      break;
-  }
-
-  type_define += "\n";
-
-  auto source_and_define = (type_define + source).c_str();
-
-  glShaderSource(shader_handle, 1, &source_and_define, nullptr);
-  glCompileShader(shader_handle);
-
-  auto res = GLint{};
-  glGetShaderiv(shader_handle, GL_COMPILE_STATUS, &res);
-
-  XASSERT(res != GL_FALSE, "Failed to compile shader %d: %s", shader_handle, GetShaderInfoLog(shader_handle).c_str());
-
-  glAttachShader(handle_, shader_handle);
-
-  return shader_handle;
 }
 
 void ShaderProgram::Bind() const {

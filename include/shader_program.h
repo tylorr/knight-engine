@@ -56,8 +56,6 @@ class ShaderProgram {
   GLuint fragment_handle_;
   std::map<GLint, const UniformBase *> dirty_uniforms_;
 
-  GLuint CreateAndAttachShader(GLenum type, const std::string &source);
-
   std::string GetProgramInfoLog() const;
   std::string GetShaderInfoLog(GLuint shader_handle) const;
 

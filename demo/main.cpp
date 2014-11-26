@@ -8,7 +8,6 @@
 #include "cout_flush.h"
 #include "uniform.h"
 #include "uniform_factory.h"
-#include "bind.h"
 #include "imgui_manager.h"
 #include "udp_listener.h"
 #include "task_manager.h"
@@ -105,8 +104,7 @@ int main(int argc, char *argv[]) {
 
       auto shader_program = ShaderProgram{};
       shader_program.Initialize(uniform_factory, GetFileContents("../shaders/blinn_phong.shader"));
-
-      bind_guard<ShaderProgram> shader_program_bind{shader_program};
+      shader_program.Bind();
 
       auto mvp_uniform = uniform_factory.Get<float, 4, 4>("MVP");
       auto mv_matrix_uniform = uniform_factory.Get<float, 4, 4>("ModelView");
@@ -162,18 +160,18 @@ int main(int argc, char *argv[]) {
 
       auto vbo = BufferObject{};
       vbo.Initialize(GL_ARRAY_BUFFER, vertices.size() * sizeof(vertices[0]), &vertices[0], GL_STATIC_DRAW);
-      bind_guard<BufferObject> vbo_bind{vbo};
+      vbo.Bind();
 
       auto vao = VertexArray{};
       vao.Initialize();
-      bind_guard<VertexArray> vao_bind{vao};
+      vao.Bind();
 
       vao.BindAttribute(0, 3, GL_FLOAT, GL_FALSE, sizeof(vertices[0]), nullptr);
       vao.BindAttribute(1, 3, GL_FLOAT, GL_FALSE, sizeof(vertices[0]), (void *)sizeof(vertices[0].position));
 
       auto ibo = BufferObject{};
       ibo.Initialize(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
-      bind_guard<BufferObject> ibo_bind{ibo};
+      ibo.Bind();
 
       auto current_time = 0.0;
       auto prev_time = 0.0;

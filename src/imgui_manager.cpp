@@ -4,7 +4,6 @@
 #include "uniform.h"
 #include "buffer_object.h"
 #include "vertex_array.h"
-#include "bind.h"
 #include "uniform_factory.h"
 
 #include <GL/glew.h>
@@ -83,8 +82,8 @@ void RenderDrawLists(ImDrawList **const cmd_lists, int cmd_lists_count) {
 
   const size_t vbo_size = total_vtx_count * sizeof(ImDrawVert);
 
-  bind_guard<VertexArray> vao_bind(imgui_manager_state.vao);
-  bind_guard<BufferObject> vbo_bind(imgui_manager_state.vbo);
+  imgui_manager_state.vao.Bind();
+  imgui_manager_state.vbo.Bind();
 
   imgui_manager_state.vbo.Data(vbo_size, nullptr, GL_STREAM_DRAW);
 
@@ -109,7 +108,7 @@ void RenderDrawLists(ImDrawList **const cmd_lists, int cmd_lists_count) {
   glDisable(GL_CULL_FACE);
   glDisable(GL_DEPTH_TEST);
 
-  bind_guard<ShaderProgram> program_bind(imgui_manager_state.shader_program);
+  imgui_manager_state.shader_program.Bind();
   glBindTexture(GL_TEXTURE_2D, imgui_manager_state.font_texture_handle);
 
   int vtx_offset = 0;
@@ -129,6 +128,9 @@ void RenderDrawLists(ImDrawList **const cmd_lists, int cmd_lists_count) {
 
   // Cleanup GL state
   glBindTexture(GL_TEXTURE_2D, 0);
+  imgui_manager_state.vao.Unbind();
+  imgui_manager_state.vbo.Unbind();
+  imgui_manager_state.shader_program.Unbind();
 }
 
 const char *GetClipboardString() {
@@ -222,12 +224,15 @@ void Initialize(GLFWwindow *window, UniformFactory *uniform_factory) {
   imgui_manager_state.vbo.Initialize(GL_ARRAY_BUFFER);
   imgui_manager_state.vao.Initialize();
 
-  bind_guard<VertexArray> vao_bind(imgui_manager_state.vao);
-  bind_guard<BufferObject> vbo_bind(imgui_manager_state.vbo);
+  imgui_manager_state.vao.Bind();
+  imgui_manager_state.vbo.Bind();
 
   imgui_manager_state.vao.BindAttribute(0, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (const GLvoid *)0);
   imgui_manager_state.vao.BindAttribute(1, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (const GLvoid *)(2 * sizeof(float)));
   imgui_manager_state.vao.BindAttribute(2, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(ImDrawVert), (const GLvoid *)(4 * sizeof(float)));
+
+  imgui_manager_state.vao.Unbind();
+  imgui_manager_state.vbo.Unbind();
 }
 
 void BeginFrame() {

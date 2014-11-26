@@ -12,9 +12,31 @@ void ShaderProgram::Initialize(UniformFactory &uniform_factory,
   handle_ = glCreateProgram();
   vertex_handle_ = CreateAndAttachShader(GL_VERTEX_SHADER, source);
   fragment_handle_ = CreateAndAttachShader(GL_FRAGMENT_SHADER, source);
-  Link();
+  
+  GLint result;
+  glLinkProgram(handle_);
+  glGetProgramiv(handle_, GL_LINK_STATUS, &result);
+  XASSERT(result != GL_FALSE, "Failed to link program: %s", GetProgramInfoLog().c_str());
 
-  ExtractUniforms(uniform_factory);
+  auto max_uniform_name_length = GLint{};
+  glGetProgramiv(handle_, GL_ACTIVE_UNIFORM_MAX_LENGTH, &max_uniform_name_length);
+
+  auto uniform_count = GLint{};
+  glGetProgramiv(handle_, GL_ACTIVE_UNIFORMS, &uniform_count);
+
+  for (auto i = 0; i < uniform_count; ++i) {
+    char name[max_uniform_name_length];
+
+    auto value_size = GLint{};
+    auto value_type = GLenum{};
+
+    glGetActiveUniform(handle_, i, max_uniform_name_length, nullptr, 
+                       &value_size, &value_type, name);
+
+    auto location = glGetUniformLocation(handle_, name);
+
+    uniform_factory.Create(*this, location, name, value_type);
+  }
 }
 
 ShaderProgram::~ShaderProgram() {
@@ -62,15 +84,6 @@ GLuint ShaderProgram::CreateAndAttachShader(GLenum type, const string &source) {
   return shader_handle;
 }
 
-void ShaderProgram::Link() {
-  GLint result;
-
-  glLinkProgram(handle_);
-  glGetProgramiv(handle_, GL_LINK_STATUS, &result);
-
-  XASSERT(result != GL_FALSE, "Failed to link program: %s", GetProgramInfoLog().c_str());
-}
-
 void ShaderProgram::Bind() const {
   XASSERT(handle_, "Trying to bind an uninitialized shader program");
   glUseProgram(handle_);
@@ -84,28 +97,6 @@ void ShaderProgram::Unbind() const {
 
   if (handle_ == current_program) {
     glUseProgram(0);
-  }
-}
-
-void ShaderProgram::ExtractUniforms(UniformFactory &uniform_factory) {
-  auto max_uniform_name_length = GLint{};
-  glGetProgramiv(handle_, GL_ACTIVE_UNIFORM_MAX_LENGTH, &max_uniform_name_length);
-
-  auto uniform_count = GLint{};
-  glGetProgramiv(handle_, GL_ACTIVE_UNIFORMS, &uniform_count);
-
-  for (auto i = 0; i < uniform_count; ++i) {
-    char name[max_uniform_name_length];
-
-    auto value_size = GLint{};
-    auto value_type = GLenum{};
-
-    glGetActiveUniform(handle_, i, max_uniform_name_length, nullptr, 
-                       &value_size, &value_type, name);
-
-    auto location = glGetUniformLocation(handle_, name);
-
-    uniform_factory.Create(*this, location, name, value_type);
   }
 }
 

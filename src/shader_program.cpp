@@ -13,26 +13,27 @@ void ShaderProgram::Initialize(UniformFactory &uniform_factory, const string &so
   auto createAndAttachShader = [this, &source](GLenum type) {
     auto shader_handle = glCreateShader(type);
 
-    auto type_define = string{"#define "};
+    auto header = string{"#version 440\n#define "};
     switch(type) {
       case GL_VERTEX_SHADER:
-        type_define += "VERTEX";
+        header += "VERTEX";
         break;
       case GL_FRAGMENT_SHADER:
-        type_define += "FRAGMENT";
+        header += "FRAGMENT";
         break;
     }
-    type_define += "\n";
+    header += "\n";
 
-    auto source_and_define = (type_define + source).c_str();
+    auto source_and_header = header + source;
+    auto source_and_header_array = source_and_header.c_str();
 
-    glShaderSource(shader_handle, 1, &source_and_define, nullptr);
+    glShaderSource(shader_handle, 1, &source_and_header_array, nullptr);
     glCompileShader(shader_handle);
 
     auto result = GLint{};
     glGetShaderiv(shader_handle, GL_COMPILE_STATUS, &result);
     XASSERT(result != GL_FALSE, 
-            "Failed to compile shader %d: %s", 
+            "Failed to compile shader %d:\n%s", 
             shader_handle, GetShaderInfoLog(shader_handle).c_str());
 
     glAttachShader(handle_, shader_handle);

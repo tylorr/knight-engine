@@ -1,5 +1,3 @@
-#version 330
-
 #if defined(VERTEX)
 
 layout(location=0) in vec3 in_Position;

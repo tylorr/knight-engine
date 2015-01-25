@@ -1,11 +1,11 @@
-#include "events.h"
+//#include "events.h"
 
 #include <enet/enet.h>
 
 #include <cstdio>
 
-using namespace knight;
-using namespace knight::events;
+//using namespace knight;
+//using namespace knight::events;
 
 #define HOST "localhost"
 #define PORT 1234
@@ -55,7 +55,7 @@ int main() {
     // printf("Connection to %s succeeded.\n", HOST);
     // connected++;
 
-    flatbuffers::FlatBufferBuilder builder;
+    //flatbuffers::FlatBufferBuilder builder;
 
     // auto monster_location = CreateMonster(builder, 10, 20);
     // auto event_location = CreateEventHeader(builder, EventType_Monster, monster_location.Union());

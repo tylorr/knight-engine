@@ -11,6 +11,7 @@
 #include "imgui_manager.h"
 #include "udp_listener.h"
 #include "task_manager.h"
+#include "game.h"
 
 #include "event_header_generated.h"
 #include "unload_script_generated.h"
@@ -41,6 +42,15 @@
 using namespace knight;
 using namespace foundation;
 
+struct GameCode {
+  HMODULE module;
+  FILETIME dll_last_write_time;
+
+  game_init *Init;
+  game_update_and_render *UpdateAndRender;
+  game_shutdown *Shutdown;
+};
+
 int current_width = 1280,
     current_height = 720;
 
@@ -53,26 +63,20 @@ void GlfwKeyCallback(GLFWwindow *window, int key, int scancode, int action, int 
 void GlfwScrollCallback(GLFWwindow *window, double xoffset, double yoffset);
 void GlfwCharCallback(GLFWwindow *window, unsigned int c);
 
-void LoadScript();
-void UnloadScript();
+GameCode LoadGameCode(const char *source_dll_name, const char *temp_dll_name);
+void UnloadGameCode(GameCode *game_code);
 
-using ScriptInitFunc = void (__cdecl *)(void);
-using ScriptUpdateFunc = void (__cdecl *)(double);
-using ScriptRenderFunc = void (__cdecl *)(void);
-using ScriptShutdownFunc = void (__cdecl *)(void);
+inline FILETIME GetLastWriteTime(const char *filename) {
+    FILETIME last_write_time = {};
 
-std::string script_name = "bin/libscript.dll";
+    WIN32_FILE_ATTRIBUTE_DATA data;
+    if(GetFileAttributesEx(filename, GetFileExInfoStandard, &data))
+    {
+        last_write_time = data.ftLastWriteTime;
+    }
 
-HMODULE script_module;
-ScriptInitFunc script_init;
-ScriptUpdateFunc script_update;
-ScriptRenderFunc script_render;
-ScriptShutdownFunc script_shutdown;
-
-struct Vertex {
-  glm::vec3 position;
-  glm::vec3 normal;
-};
+    return last_write_time;
+}
 
 int main(int argc, char *argv[]) {
 
@@ -88,137 +92,45 @@ int main(int argc, char *argv[]) {
     logog::ColorFormatter formatter;
     out.SetFormatter(formatter);
 
-    Allocator &a = memory_globals::default_allocator();
+    //Allocator &a = memory_globals::default_allocator();
 
     auto udp_listener = UdpListener{};
     udp_listener.Start(1234);
 
     UniformFactory uniform_factory;
-
     if (Initialize(uniform_factory)) {
-      LoadScript();
-
-      if (script_init != nullptr) {
-        script_init();
-      }
-
-      auto shader_program = ShaderProgram{};
-      shader_program.Initialize(uniform_factory, GetFileContents("../shaders/blinn_phong.shader"));
-      shader_program.Bind();
-
-      auto mvp_uniform = uniform_factory.Get<float, 4, 4>("MVP");
-      auto mv_matrix_uniform = uniform_factory.Get<float, 4, 4>("ModelView");
-      auto normal_matrix_uniform = uniform_factory.Get<float, 3, 3>("NormalMatrix");
-
-      auto model_matrix = glm::mat4{1.0};
-      auto view_matrix = glm::translate(glm::mat4{1.0f}, glm::vec3{0, -8, -40});
-      auto projection_matrix = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 100.f);
-
-      auto model_view_matrix = view_matrix * model_matrix;
-      mv_matrix_uniform->SetValue(glm::value_ptr(model_view_matrix));
-
-      auto mvp_matrix = projection_matrix * model_view_matrix;
-      mvp_uniform->SetValue(glm::value_ptr(mvp_matrix));
-
-      auto normal_matrix = glm::inverseTranspose(glm::mat3(model_view_matrix));
-      normal_matrix_uniform->SetValue(glm::value_ptr(normal_matrix));
-
-      shader_program.Update();
-
-      auto importer = Assimp::Importer{};
-
-      auto scene = importer.ReadFile("../models/bench.obj", 
-              aiProcess_CalcTangentSpace       | 
-              aiProcess_Triangulate            |
-              aiProcess_JoinIdenticalVertices  |
-              aiProcess_SortByPType);
-
-      XASSERT(scene != nullptr, "Could not load bench.obj model");
-
-      std::vector<Vertex> vertices;
-      std::vector<unsigned int> indices;
       
-      auto mesh = scene->mMeshes[0];
-
-      for (auto j = 0; j < mesh->mNumVertices; ++j) {
-        auto pos = mesh->mVertices[j];
-        auto normal = mesh->mNormals[j];
-        vertices.emplace_back(Vertex {
-          glm::vec3{ pos.x, pos.y, pos.z },
-          glm::vec3{ normal.x, normal.y, normal.z }
-        });
+      std::string source_dll_name = "bin/libgame.dll";
+      std::string temp_dll_name = "bin/temp_libgame.dll";
+      GameCode game = LoadGameCode(source_dll_name.c_str(), temp_dll_name.c_str());
+      
+      if (game.Init) {
+        game.Init(uniform_factory);
       }
-
-      for (auto j = 0; j < mesh->mNumFaces; ++j) {
-        auto face = mesh->mFaces[j];
-        XASSERT(face.mNumIndices == 3, "Wrong number of indices");
-
-        indices.emplace_back(face.mIndices[0]);
-        indices.emplace_back(face.mIndices[1]);
-        indices.emplace_back(face.mIndices[2]);
-      }
-
-      auto vbo = BufferObject{};
-      vbo.Initialize(GL_ARRAY_BUFFER, vertices.size() * sizeof(vertices[0]), &vertices[0], GL_STATIC_DRAW);
-      vbo.Bind();
-
-      auto vao = VertexArray{};
-      vao.Initialize();
-      vao.Bind();
-
-      vao.BindAttribute(0, 3, GL_FLOAT, GL_FALSE, sizeof(vertices[0]), nullptr);
-      vao.BindAttribute(1, 3, GL_FLOAT, GL_FALSE, sizeof(vertices[0]), (void *)sizeof(vertices[0].position));
-
-      auto ibo = BufferObject{};
-      ibo.Initialize(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
-      ibo.Bind();
-
-      auto current_time = 0.0;
-      auto prev_time = 0.0;
-      auto delta_time = 0.0;
 
       while (!glfwWindowShouldClose(window)) {
+        FILETIME new_dll_write_time = GetLastWriteTime(source_dll_name.c_str());
+        if(CompareFileTime(&new_dll_write_time, &game.dll_last_write_time) != 0) {
+          UnloadGameCode(&game);
+          game = LoadGameCode(source_dll_name.c_str(), temp_dll_name.c_str());
+        }
+
         ImGuiManager::BeginFrame();
 
-        current_time = glfwGetTime();
-        delta_time = current_time - prev_time;
-        prev_time = current_time;
+        // Array<Event> events(a);
+        // if (udp_listener.Poll(events)) {
+        //   auto event_header = events[0].header;
+        //   auto event_type = event_header->event_type();
 
-        Array<Event> events(a);
-        if (udp_listener.Poll(events)) {
-          auto event_header = events[0].header;
-          auto event_type = event_header->event_type();
+        //   if (event_type == events::EventType_UnloadScript) {
+        //     //auto monster = reinterpret_cast<const events::UnloadScript *>(event_header->event());
+        //     //INFO("Received monster event mana: %d foo: %d", monster->mana(), monster->foo());
+        //   }
+        // }
 
-          if (event_type == events::EventType_UnloadScript) {
-            //auto monster = reinterpret_cast<const events::UnloadScript *>(event_header->event());
-            //INFO("Received monster event mana: %d foo: %d", monster->mana(), monster->foo());
-          }
+        if (game.UpdateAndRender) {
+          game.UpdateAndRender();
         }
-
-        if (script_update != nullptr) {
-          script_update(0);
-        }
-
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        if (script_render != nullptr) {
-          script_render();
-        }
-
-        model_matrix = glm::rotate(model_matrix, (float)delta_time, glm::vec3(0.0f, 1.0f, 0.0f));
-
-        model_view_matrix = view_matrix * model_matrix;
-        mv_matrix_uniform->SetValue(glm::value_ptr(model_view_matrix));
-
-        mvp_matrix = projection_matrix * model_view_matrix;
-        mvp_uniform->SetValue(glm::value_ptr(mvp_matrix));
-
-        normal_matrix = glm::inverseTranspose(glm::mat3(model_view_matrix));
-        normal_matrix_uniform->SetValue(glm::value_ptr(normal_matrix));
-
-        shader_program.Update();
-
-        glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, nullptr);
 
         ImGuiManager::EndFrame();
 
@@ -226,8 +138,8 @@ int main(int argc, char *argv[]) {
         glfwPollEvents();
       }
 
-      if (script_shutdown != nullptr) {
-        script_shutdown();
+      if (game.Shutdown) {
+        game.Shutdown();
       }
 
       glfwTerminate();
@@ -236,9 +148,6 @@ int main(int argc, char *argv[]) {
     udp_listener.Stop();
   }
   LOGOG_SHUTDOWN();
-
-  // Have to let logog shutdown before unloading the script
-  UnloadScript();
 
   memory_globals::shutdown();
 
@@ -303,25 +212,41 @@ bool InitWindow() {
   return true;
 }
 
-void LoadScript() {
-  script_module = LoadLibraryA(script_name.c_str());
-  XASSERT(script_module, "Failed to load script: %s", script_name.c_str());
+GameCode LoadGameCode(const char *source_dll_name, const char *temp_dll_name) {
+  GameCode result;
 
-  script_init = (ScriptInitFunc)GetProcAddress(script_module, "Init");
-  script_update = (ScriptUpdateFunc)GetProcAddress(script_module, "Update");
-  script_render = (ScriptRenderFunc)GetProcAddress(script_module, "Render");
-  script_shutdown = (ScriptShutdownFunc)GetProcAddress(script_module, "Shutdown");
+  CopyFile(source_dll_name, temp_dll_name, false);
+
+  result.module = LoadLibraryA(temp_dll_name);
+
+  result.dll_last_write_time = GetLastWriteTime(source_dll_name);
+
+  bool is_valid = false;
+  if (result.module) {
+    result.Init = (game_init *)GetProcAddress(result.module, "Init");
+    result.UpdateAndRender = (game_update_and_render *)GetProcAddress(result.module, "UpdateAndRender");
+    result.Shutdown = (game_shutdown *)GetProcAddress(result.module, "Shutdown");
+    is_valid = (result.Init && result.UpdateAndRender && result.Shutdown);
+  }
+
+  if (!is_valid) {
+    result.Init = nullptr;
+    result.UpdateAndRender = nullptr;
+    result.Shutdown = nullptr;
+  }
+
+  return result;
 }
 
-void UnloadScript() {
-  if (script_module == nullptr) return;
+void UnloadGameCode(GameCode *game_code) {
+  if (game_code->module) {
+    FreeLibrary(game_code->module);
+    game_code->module = nullptr;
+  }
 
-  FreeLibrary(script_module);
-  script_module =  nullptr;
-  script_init = nullptr;
-  script_update = nullptr;
-  script_render = nullptr;
-  script_shutdown = nullptr;
+  game_code->Init = nullptr;
+  game_code->UpdateAndRender = nullptr;
+  game_code->Shutdown = nullptr;
 }
 
 void GlfwKeyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {

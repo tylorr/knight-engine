@@ -14,8 +14,8 @@ end_emtypen()
 
 cotire(demo)
 
-add_library(script SHARED script.cpp)
-target_link_libraries(script knight-engine)
+add_library(game SHARED game.cpp)
+target_link_libraries(game knight-engine)
 
 add_executable(client client.cpp)
 target_link_libraries(client knight-engine)

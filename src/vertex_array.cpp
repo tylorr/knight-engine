@@ -10,6 +10,7 @@ VertexArray::~VertexArray() {
 
 void VertexArray::Initialize() {
   glGenVertexArrays(1, &handle_);
+  Bind();
 }
 
 void VertexArray::Bind() const {

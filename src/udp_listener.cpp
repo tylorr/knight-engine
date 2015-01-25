@@ -1,6 +1,6 @@
 #include "udp_listener.h"
 
-#include "events.h"
+//#include "events.h"
 
 #include <logog.hpp>
 
@@ -30,30 +30,30 @@ bool UdpListener::Poll(foundation::Array<Event> &events) {
 
   bool events_received = false;
 
-  while (enet_host_service(server_, &event, 0) > 0) {
-    switch (event.type) {
-      case ENET_EVENT_TYPE_CONNECT:
-        INFO("A new client connected from %x:%u.", 
-                event.peer->address.host,
-                event.peer->address.port);
-        /* Store any relevant client information here. */
-        event.peer->data = (void *)"Client";
-        break;
-      case ENET_EVENT_TYPE_RECEIVE:
-        {
-          events_received = true;
-          auto *event_header = GetEventHeader(event.packet->data);
-          foundation::array::emplace_back(events, event_header, event.packet);
-        }
-        break;
-      case ENET_EVENT_TYPE_DISCONNECT:
-        INFO("%s disconnected.", event.peer->data);
-        /* Reset the peer's client information. */
-        event.peer->data = NULL;
-      case ENET_EVENT_TYPE_NONE:
-        break;
-    }
-  }
+  // while (enet_host_service(server_, &event, 0) > 0) {
+  //   switch (event.type) {
+  //     case ENET_EVENT_TYPE_CONNECT:
+  //       INFO("A new client connected from %x:%u.", 
+  //               event.peer->address.host,
+  //               event.peer->address.port);
+  //       /* Store any relevant client information here. */
+  //       event.peer->data = (void *)"Client";
+  //       break;
+  //     case ENET_EVENT_TYPE_RECEIVE:
+  //       {
+  //         events_received = true;
+  //         auto *event_header = GetEventHeader(event.packet->data);
+  //         foundation::array::emplace_back(events, event_header, event.packet);
+  //       }
+  //       break;
+  //     case ENET_EVENT_TYPE_DISCONNECT:
+  //       INFO("%s disconnected.", event.peer->data);
+  //       /* Reset the peer's client information. */
+  //       event.peer->data = NULL;
+  //     case ENET_EVENT_TYPE_NONE:
+  //       break;
+  //   }
+  // }
 
   return events_received;
 }

@@ -19,7 +19,6 @@ void BufferObject::Initialize(const GLenum &target, const GLsizeiptr &size,
   glGenBuffers(1, &handle_);
   Bind();
   Data(size, data, usage);
-  Unbind();
 }
 
 void BufferObject::Bind() const {

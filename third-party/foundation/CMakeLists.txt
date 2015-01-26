@@ -6,6 +6,7 @@ set(SOURCES
     memory.cpp
     murmur_hash.cpp
     string_stream.cpp
+    dlmalloc.cpp
 )
 
 add_library(foundation ${SOURCES})

@@ -57,7 +57,6 @@ namespace foundation
 	    Allocator(const Allocator& other) = delete;
 	    Allocator& operator=(const Allocator& other) = delete;
 	};
-
 	
 	template<typename T, typename... Args>
 	T *Allocator::make_new(Args&&... args) {
@@ -72,6 +71,38 @@ namespace foundation
 		}
 	}
 
+	class HeapAllocator : public Allocator {
+	 public:
+	 	HeapAllocator(void *buffer, uint32_t size);
+	 	HeapAllocator(Allocator &backing_allocator);
+	 	~HeapAllocator();
+
+	 	virtual void *allocate(uint32_t size, uint32_t align);
+	 	virtual void deallocate(void *p);
+
+	 	virtual uint32_t allocated_size(void *p);
+		virtual uint32_t total_allocated();
+
+	 private:
+	 	void *_memory_space;
+	 	uint32_t _total_allocated;
+	};
+
+	class PageAllocator : public Allocator {
+	 public:
+	 	PageAllocator();
+	 	~PageAllocator();
+
+	 	virtual void *allocate(uint32_t size, uint32_t align);
+	 	virtual void deallocate(void *p);
+
+	 	virtual uint32_t allocated_size(void *p);
+		virtual uint32_t total_allocated();
+
+	 private:
+	 	uint32_t _total_allocated;
+	};
+
 	/// Functions for accessing global memory data.
 	namespace memory_globals {
 		/// Initializes the global memory allocators. scratch_buffer_size is the size of the
@@ -82,6 +113,9 @@ namespace foundation
 		///
 		/// You need to call init() for this allocator to be available.
 		Allocator &default_allocator();
+
+		/// Allocator that uses the systems specific page allocations
+		Allocator &default_page_allocator();
 
 		/// Returns a "scratch" allocator that can be used for temporary short-lived memory
 		/// allocations. The scratch allocator uses a ring buffer of size scratch_buffer_size

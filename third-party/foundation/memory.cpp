@@ -1,4 +1,5 @@
 #include "memory.h"
+#include "dlmalloc.h"
 
 #include <stdlib.h>
 #include <assert.h>
@@ -41,58 +42,6 @@ namespace {
 		while (p < data)
 			*p++ = HEADER_PAD_VALUE;
 	}
-
-	/// An allocator that uses the default system malloc(). Allocations are
-	/// padded so that we can store the size of each allocation and align them
-	/// to the desired alignment.
-	///
-	/// (Note: An OS-specific allocator that can do alignment and tracks size
-	/// does need this padding and can thus be more efficient than the
-	/// MallocAllocator.)
-	class MallocAllocator : public Allocator
-	{
-		uint32_t _total_allocated;
-
-		// Returns the size to allocate from malloc() for a given size and align.		
-		static inline uint32_t size_with_padding(uint32_t size, uint32_t align) {
-			return size + align + sizeof(Header);
-		}
-
-	public:
-		MallocAllocator() : _total_allocated(0) {}
-
-		~MallocAllocator() {
-			// Check that we don't have any memory leaks when allocator is
-			// destroyed.
-			assert(_total_allocated == 0);
-		}
-
-		virtual void *allocate(uint32_t size, uint32_t align) {
-			const uint32_t ts = size_with_padding(size, align);
-			Header *h = (Header *)malloc(ts);
-			void *p = data_pointer(h, align);
-			fill(h, p, ts);
-			_total_allocated += ts;
-			return p;
-		}
-
-		virtual void deallocate(void *p) {
-			if (!p)
-				return;
-
-			Header *h = header(p);
-			_total_allocated -= h->size;
-			free(h);
-		}
-
-		virtual uint32_t allocated_size(void *p) {
-			return header(p)->size;
-		}
-
-		virtual uint32_t total_allocated() {
-			return _total_allocated;
-		}
-	};
 
 	/// An allocator used to allocate temporary "scratch" memory. The allocator
 	/// uses a fixed size ring buffer to services the requests.
@@ -211,13 +160,16 @@ namespace {
 	};
 
 	struct MemoryGlobals {
-		static const int ALLOCATOR_MEMORY = sizeof(MallocAllocator) + sizeof(ScratchAllocator);
+		//static const int ALLOCATOR_MEMORY = sizeof(HeapAllocator) + sizeof(ScratchAllocator);
+		static const int ALLOCATOR_MEMORY = 1024;
 		char buffer[ALLOCATOR_MEMORY];
 
-		MallocAllocator *default_allocator;
+		HeapAllocator *static_heap;
+		PageAllocator *default_page_allocator;
+		HeapAllocator *default_allocator;
 		ScratchAllocator *default_scratch_allocator;
 
-		MemoryGlobals() : default_allocator(0), default_scratch_allocator(0) {}
+		MemoryGlobals() : static_heap(0), default_page_allocator(0), default_allocator(0), default_scratch_allocator(0) {}
 	};
 
 	MemoryGlobals _memory_globals;
@@ -225,17 +177,105 @@ namespace {
 
 namespace foundation
 {
+
+	///
+	/// Heap Allocator
+	///
+
+	HeapAllocator::HeapAllocator(void *buffer, uint32_t size) 
+			: _total_allocated(0) {
+		_memory_space = create_mspace_with_base(nullptr, buffer, size, false);
+		assert(_memory_space);
+	}
+
+	HeapAllocator::HeapAllocator(Allocator &backing_allocator)
+			: _total_allocated(0) {
+		_memory_space = create_mspace(&backing_allocator, 0, false);
+		assert(_memory_space);
+	}
+
+	HeapAllocator::~HeapAllocator() {
+		destroy_mspace(_memory_space);
+		assert(_total_allocated == 0);
+	}
+
+ 	void *HeapAllocator::allocate(uint32_t size, uint32_t align) {
+ 		void *p = mspace_memalign(_memory_space, align, size);
+ 		_total_allocated += allocated_size(p);
+ 		return p;
+ 	}
+
+ 	void HeapAllocator::deallocate(void *p) {
+ 		_total_allocated -= allocated_size(p);
+ 		mspace_free(_memory_space, p);
+ 	}
+
+ 	uint32_t HeapAllocator::allocated_size(void *p) {
+ 		return dlallocated_size(p);
+ 	}
+
+	uint32_t HeapAllocator::total_allocated() {
+		return _total_allocated;
+	}
+
+	///
+	/// Page Allocator
+	///
+
+	// TODO: TR This is currently windows specific, add linux support
+	PageAllocator::PageAllocator() 
+			: _total_allocated(0) {
+	}
+
+	PageAllocator::~PageAllocator() {
+		assert(_total_allocated == 0);
+	}
+
+ 	void *PageAllocator::allocate(uint32_t size, uint32_t align) {
+ 		void *ptr = VirtualAlloc(0, size, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
+ 		auto rs = allocated_size(ptr);
+ 		_total_allocated += rs;
+ 		return ptr;
+ 	}
+
+ 	void PageAllocator::deallocate(void *p) {
+ 		_total_allocated -= allocated_size(p);
+ 		VirtualFree(p, 0, MEM_RELEASE);
+ 	}
+
+ 	uint32_t PageAllocator::allocated_size(void *p) {
+ 		MEMORY_BASIC_INFORMATION minfo;
+ 		VirtualQuery(p, &minfo, sizeof(minfo));
+ 		return minfo.RegionSize;
+ 	}
+
+	uint32_t PageAllocator::total_allocated() {
+		return _total_allocated;
+	}
+
+	///
+	/// Memory globals
+	///
+
 	namespace memory_globals
 	{
 		void init(uint32_t temporary_memory) {
-			char *p = _memory_globals.buffer;
-			_memory_globals.default_allocator = new (p) MallocAllocator();
-			p += sizeof(MallocAllocator);
-			_memory_globals.default_scratch_allocator = new (p) ScratchAllocator(*_memory_globals.default_allocator, temporary_memory);
+			char *buffer = _memory_globals.buffer;
+
+			auto static_heap = new (buffer) HeapAllocator(buffer + sizeof(HeapAllocator), _memory_globals.ALLOCATOR_MEMORY - sizeof(HeapAllocator));
+			_memory_globals.static_heap = static_heap;
+
+			_memory_globals.default_page_allocator = static_heap->make_new<PageAllocator>();
+			_memory_globals.default_allocator = static_heap->make_new<HeapAllocator>(*_memory_globals.default_page_allocator);
+			_memory_globals.default_scratch_allocator = static_heap->make_new<ScratchAllocator>(*_memory_globals.default_allocator, temporary_memory);
 		}
 
 		Allocator &default_allocator() {
 			return *_memory_globals.default_allocator;
+		}
+
+		Allocator &default_page_allocator() {
+			return *_memory_globals.default_page_allocator;
 		}
 
 		Allocator &default_scratch_allocator() {
@@ -243,8 +283,11 @@ namespace foundation
 		}
 
 		void shutdown() {
-			_memory_globals.default_scratch_allocator->~ScratchAllocator();
-			_memory_globals.default_allocator->~MallocAllocator();
+			_memory_globals.static_heap->make_delete(_memory_globals.default_scratch_allocator);
+			_memory_globals.static_heap->make_delete(_memory_globals.default_allocator);
+			_memory_globals.static_heap->make_delete(_memory_globals.default_page_allocator);
+			_memory_globals.static_heap->~HeapAllocator();
+
 			_memory_globals = MemoryGlobals();
 		}
 	}

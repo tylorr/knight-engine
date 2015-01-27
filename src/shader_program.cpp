@@ -1,5 +1,6 @@
 #include "shader_program.h"
 #include "uniform_factory.h"
+#include "uniform.h"
 
 #include <logog.hpp>
 

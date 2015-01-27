@@ -1,37 +1,36 @@
 #pragma once
 
 #include "common.h"
+#include "shader_types.h"
 
 #include <logog.hpp>
 
-#include <GL/glew.h>
-
-#include <string>
-#include <cstring>
 #include <vector>
 #include <utility>
 
 namespace knight {
 
-class ShaderProgram;
+namespace uniform {
+  uint64_t hash(const char *name, GLenum type);
+}
 
 class UniformBase {
  public:
-  explicit UniformBase(const std::string &name) : name_(name) { }
+  explicit UniformBase(const char *name) : name_(name) { }
 
-  UniformBase(const std::string &name, ShaderProgram &shader_program,
+  UniformBase(const char *name, ShaderProgram &shader_program,
               const GLint &location);
 
   virtual ~UniformBase() { }
 
-  const std::string &name() const { return name_; }
+  const char *name() const { return name_; }
 
   void AddShaderProgram(ShaderProgram &shader_program, const GLint &location);
 
   virtual void Update(const GLint &location) const = 0;
 
  protected:
-  std::string name_;
+  const char *name_;
   std::vector<std::pair<ShaderProgram *, GLint>> program_locations_;
 
   void NotifyOwners() const;

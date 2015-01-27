@@ -5,15 +5,12 @@
 #include <GL/glew.h>
 #include <memory.h>
 
-#include <fstream>
 #include <cerrno>
-
-using std::string;
-using std::ifstream;
+#include <windows.h>
 
 namespace knight {
 
-const char *getErrorString(GLenum error) {
+const char *glErrorString(GLenum error) {
   switch (error)
   {
     case GL_INVALID_ENUM:
@@ -29,30 +26,50 @@ const char *getErrorString(GLenum error) {
   return "ERROR: UNKNOWN ERROR TOKEN";
 }
 
-void ExitOnGLError(const std::string &error_message) {
+void ExitOnGLError(const char *error_message) {
   const GLenum error_value = glGetError();
 
   if (error_value != GL_NO_ERROR)
   {
-    ERR("%s: %s", error_message.c_str(), getErrorString(error_value));
+    ERR("%s: %s", error_message, glErrorString(error_value));
     exit(EXIT_FAILURE);
   }
 }
 
-string GetFileContents(const char *filename) {
+// TODO: TR This is windows only
+ReadFileResult ReadEntireFile(foundation::Allocator &allocator, const char *filename) {
+  auto result = ReadFileResult{};
+  auto file_handle = CreateFile(filename, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+  if (file_handle != INVALID_HANDLE_VALUE) {
+    LARGE_INTEGER file_size;
+    if(GetFileSizeEx(file_handle, &file_size)) {
+      XASSERT(file_size.QuadPart <= 0xFFFFFFFF, "Filesize too big for int32");
+      uint32_t file_size32 = file_size.LowPart;
 
-  ifstream in(filename, std::ios::in);
+      result.content = allocator.allocate(file_size32);
+      if (result.content) {
+        DWORD bytes_read;
+        if(ReadFile(file_handle, result.content, file_size32, &bytes_read, nullptr) &&
+           file_size32 == bytes_read) {
+          result.content_size = file_size32;
+        } else {
+          FreeFileMemory(allocator, result.content);
+          result.content = nullptr;
+        }
+      } else {
+        ERR("Failed to allocate memory for file read: %s", filename);
+      }
+    } else {
+      ERR("Failed to get file size: %s", filename);
+    }
+  } else {
+    ERR("Failed to open file for reading: %s", filename);
+  }
+  return result;
+}
 
-  XASSERT(in, "Could not find file '%s'", filename);
-
-  string contents;
-  in.seekg(0, std::ios::end);
-  contents.resize(in.tellg());
-  in.seekg(0, std::ios::beg);
-  in.read(&contents[0], contents.size());
-  in.close();
-
-  return contents;
+void FreeFileMemory(foundation::Allocator &allocator, void *file_memory) {
+  allocator.deallocate(file_memory);
 }
 
 void *knight_malloc(size_t size) {

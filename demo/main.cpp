@@ -1,13 +1,9 @@
 #define LOGOG_LEVEL LOGOG_LEVEL_ALL
 
 #include "common.h"
-#include "shader_program.h"
-#include "buffer_object.h"
-#include "vertex_array.h"
 #include "color_formatter.h"
 #include "cout_flush.h"
-#include "uniform.h"
-#include "uniform_factory.h"
+#include "shader_types.h"
 #include "imgui_manager.h"
 #include "udp_listener.h"
 #include "task_manager.h"
@@ -92,12 +88,12 @@ int main(int argc, char *argv[]) {
     logog::ColorFormatter formatter;
     out.SetFormatter(formatter);
 
-    //Allocator &a = memory_globals::default_allocator();
+    Allocator &a = memory_globals::default_allocator();
 
     auto udp_listener = UdpListener{};
     udp_listener.Start(1234);
 
-    UniformFactory uniform_factory;
+    UniformFactory uniform_factory(a);
     if (Initialize(uniform_factory)) {
       
       std::string source_dll_name = "bin/libgame.dll";

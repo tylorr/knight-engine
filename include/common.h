@@ -1,8 +1,9 @@
 #pragma once
 
+#include <memory.h>
+
 #include <bitset>
 #include <cstdint>
-#include <string>
 #include <cstdlib>
 #include <limits>
 #include <cstdio>
@@ -59,7 +60,7 @@ static const uint64_t kMaxComponents = 64;
 
 typedef std::bitset<kMaxComponents> ComponentMask;
 
-void ExitOnGLError(const std::string &error_message);
+void ExitOnGLError(const char *error_message);
 
 #if defined(DEVELOPMENT)
   #define XASSERT(test, msg, ...) do {if (!(test)) error(__LINE__, __FILE__, \
@@ -78,7 +79,13 @@ void error(const int &line_number, const char *filename,
   abort();
 }
 
-std::string GetFileContents(const char *filename);
+struct ReadFileResult {
+  uint32_t content_size;
+  void *content;
+};
+
+ReadFileResult ReadEntireFile(foundation::Allocator &allocator, const char *filename);
+void FreeFileMemory(foundation::Allocator &allocator, void *file_memory);
 
 void *knight_malloc(size_t size);
 void knight_free(void *ptr);

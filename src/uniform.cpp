@@ -1,9 +1,21 @@
 #include "uniform.h"
 #include "shader_program.h"
 
+#include <murmur_hash.h>
+
 namespace knight {
 
-UniformBase::UniformBase(const std::string &name, ShaderProgram &shader_program,
+namespace uniform {
+
+uint64_t hash(const char *name, GLenum type) {
+  auto name_hash = foundation::murmur_hash_64(name, strlen(name), 0);
+  auto name_type_hash = foundation::murmur_hash_64((void *)&type, sizeof(type), name_hash);
+  return name_type_hash;
+}
+
+}
+
+UniformBase::UniformBase(const char *name, ShaderProgram &shader_program,
                          const GLint &location) : name_(name) {
   program_locations_.push_back(std::make_pair(&shader_program, location));
 }

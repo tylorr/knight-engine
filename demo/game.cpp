@@ -45,8 +45,10 @@ std::vector<Vertex> vertices;
 std::vector<unsigned int> indices;
 
 extern "C" GAME_INIT(Init) {
-  shader_program.Initialize(uniform_factory, GetFileContents("../shaders/blinn_phong.shader"));
-  shader_program.Bind();
+  auto &allocator = memory_globals::default_allocator();
+  auto read_result = ReadEntireFile(allocator, "../shaders/blinn_phong.shader");
+  shader_program.Initialize(uniform_factory, (char *)read_result.content);
+  FreeFileMemory(allocator, read_result.content);
 
   mvp_uniform = uniform_factory.Get<float, 4, 4>("MVP");
   mv_matrix_uniform = uniform_factory.Get<float, 4, 4>("ModelView");

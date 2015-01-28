@@ -137,6 +137,8 @@ int main(int argc, char *argv[]) {
       if (game.Shutdown) {
         game.Shutdown();
       }
+      
+      ImGuiManager::Shutdown();
 
       glfwTerminate();
     }

@@ -9,6 +9,7 @@ class UniformFactory;
 namespace ImGuiManager {
 
 void Initialize(GLFWwindow *window, UniformFactory *uniform_factory);
+void Shutdown();
 
 void BeginFrame();
 void EndFrame();

@@ -3,6 +3,7 @@
 #include "common.h"
 
 #include <collection_types.h>
+#include <memory_types.h>
 
 #include <GL/glew.h>
 

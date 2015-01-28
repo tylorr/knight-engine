@@ -14,6 +14,8 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include <memory.h>
+
 namespace knight {
 
 namespace ImGuiManager {
@@ -52,16 +54,17 @@ struct ImGuiManagerState {
   GLFWwindow *window;
 
   ShaderProgram shader_program;
-
   VertexArray vao;
   BufferObject vbo;
 
   GLuint font_texture_handle;
 
   Uniform<float, 4> *clip_rect_uniform;
+
+  ImGuiManagerState(foundation::Allocator &allocator) : shader_program(allocator) { }
 };
 
-ImGuiManagerState imgui_manager_state;
+ImGuiManagerState *imgui_manager_state;
 
 void RenderDrawLists(ImDrawList **const cmd_lists, int cmd_lists_count);
 
@@ -81,10 +84,10 @@ void RenderDrawLists(ImDrawList **const cmd_lists, int cmd_lists_count) {
 
   const size_t vbo_size = total_vtx_count * sizeof(ImDrawVert);
 
-  imgui_manager_state.vao.Bind();
-  imgui_manager_state.vbo.Bind();
+  imgui_manager_state->vao.Bind();
+  imgui_manager_state->vbo.Bind();
 
-  imgui_manager_state.vbo.Data(vbo_size, nullptr, GL_STREAM_DRAW);
+  imgui_manager_state->vbo.Data(vbo_size, nullptr, GL_STREAM_DRAW);
 
   unsigned char *buffer_data = (unsigned char *)glMapBufferRange(
       GL_ARRAY_BUFFER, 0, vbo_size, 
@@ -107,8 +110,8 @@ void RenderDrawLists(ImDrawList **const cmd_lists, int cmd_lists_count) {
   glDisable(GL_CULL_FACE);
   glDisable(GL_DEPTH_TEST);
 
-  imgui_manager_state.shader_program.Bind();
-  glBindTexture(GL_TEXTURE_2D, imgui_manager_state.font_texture_handle);
+  imgui_manager_state->shader_program.Bind();
+  glBindTexture(GL_TEXTURE_2D, imgui_manager_state->font_texture_handle);
 
   int vtx_offset = 0;
   for (int n = 0; n < cmd_lists_count; n++)
@@ -117,8 +120,8 @@ void RenderDrawLists(ImDrawList **const cmd_lists, int cmd_lists_count) {
     const ImDrawCmd* pcmd_end = cmd_list->commands.end();
     for (const ImDrawCmd* pcmd = cmd_list->commands.begin(); pcmd != pcmd_end; pcmd++)
     {
-      imgui_manager_state.clip_rect_uniform->SetValue((float *)&pcmd->clip_rect);
-      imgui_manager_state.shader_program.Update();
+      imgui_manager_state->clip_rect_uniform->SetValue((float *)&pcmd->clip_rect);
+      imgui_manager_state->shader_program.PushUniforms();
 
       glDrawArrays(GL_TRIANGLES, vtx_offset, pcmd->vtx_count);
       vtx_offset += pcmd->vtx_count;
@@ -127,13 +130,13 @@ void RenderDrawLists(ImDrawList **const cmd_lists, int cmd_lists_count) {
 
   // Cleanup GL state
   glBindTexture(GL_TEXTURE_2D, 0);
-  imgui_manager_state.vao.Unbind();
-  imgui_manager_state.vbo.Unbind();
-  imgui_manager_state.shader_program.Unbind();
+  imgui_manager_state->vao.Unbind();
+  imgui_manager_state->vbo.Unbind();
+  imgui_manager_state->shader_program.Unbind();
 }
 
 const char *GetClipboardString() {
-  return glfwGetClipboardString(imgui_manager_state.window);
+  return glfwGetClipboardString(imgui_manager_state->window);
 }
 
 void SetClipboardString(const char *text, const char *text_end) {
@@ -142,7 +145,7 @@ void SetClipboardString(const char *text, const char *text_end) {
   }
 
   if (*text_end == '\0') {
-    glfwSetClipboardString(imgui_manager_state.window, text);
+    glfwSetClipboardString(imgui_manager_state->window, text);
   } else {
     // String needs to be null terminated so thatt glfw knows how long it is
     size_t text_length = text_end - text;
@@ -151,7 +154,7 @@ void SetClipboardString(const char *text, const char *text_end) {
     memcpy(buf, text, text_length);
     buf[text_end-text] = '\0';
 
-    glfwSetClipboardString(imgui_manager_state.window, buf);
+    glfwSetClipboardString(imgui_manager_state->window, buf);
 
     free(buf);
   }
@@ -160,10 +163,13 @@ void SetClipboardString(const char *text, const char *text_end) {
 } // namespace
 
 void Initialize(GLFWwindow *window, UniformFactory *uniform_factory) {
-  imgui_manager_state.window = window;
+  foundation::Allocator &allocator = foundation::memory_globals::default_allocator();
+  imgui_manager_state = allocator.make_new<ImGuiManagerState>(allocator);
+
+  imgui_manager_state->window = window;
 
   int width, height;
-  glfwGetWindowSize(imgui_manager_state.window, &width, &height);
+  glfwGetWindowSize(imgui_manager_state->window, &width, &height);
 
   ImGuiIO &io = ImGui::GetIO();
 
@@ -192,8 +198,8 @@ void Initialize(GLFWwindow *window, UniformFactory *uniform_factory) {
   io.GetClipboardTextFn = GetClipboardString;
   io.SetClipboardTextFn = SetClipboardString;
 
-  glGenTextures(1, &imgui_manager_state.font_texture_handle);
-  glBindTexture(GL_TEXTURE_2D, imgui_manager_state.font_texture_handle);
+  glGenTextures(1, &imgui_manager_state->font_texture_handle);
+  glBindTexture(GL_TEXTURE_2D, imgui_manager_state->font_texture_handle);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
@@ -211,27 +217,32 @@ void Initialize(GLFWwindow *window, UniformFactory *uniform_factory) {
   stbi_image_free(tex_data);
   glBindTexture(GL_TEXTURE_2D, 0);
 
-  imgui_manager_state.shader_program.Initialize(*uniform_factory, kShaderSource);
+  imgui_manager_state->shader_program.Initialize(*uniform_factory, kShaderSource);
 
   glm::mat4 mvp = glm::ortho(0.0f, (float)width, (float)height, 0.0f, -1.0f, +1.0f);
 
   auto mvp_uniform = uniform_factory->Get<float, 4, 4>("MVP");
   mvp_uniform->SetValue(glm::value_ptr(mvp));
 
-  imgui_manager_state.clip_rect_uniform = uniform_factory->Get<float, 4>("ClipRect");
+  imgui_manager_state->clip_rect_uniform = uniform_factory->Get<float, 4>("ClipRect");
   
-  imgui_manager_state.vbo.Initialize(GL_ARRAY_BUFFER);
-  imgui_manager_state.vao.Initialize();
+  imgui_manager_state->vbo.Initialize(GL_ARRAY_BUFFER);
+  imgui_manager_state->vao.Initialize();
 
-  imgui_manager_state.vao.Bind();
-  imgui_manager_state.vbo.Bind();
+  imgui_manager_state->vao.Bind();
+  imgui_manager_state->vbo.Bind();
 
-  imgui_manager_state.vao.BindAttribute(0, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (const GLvoid *)0);
-  imgui_manager_state.vao.BindAttribute(1, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (const GLvoid *)(2 * sizeof(float)));
-  imgui_manager_state.vao.BindAttribute(2, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(ImDrawVert), (const GLvoid *)(4 * sizeof(float)));
+  imgui_manager_state->vao.BindAttribute(0, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (const GLvoid *)0);
+  imgui_manager_state->vao.BindAttribute(1, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (const GLvoid *)(2 * sizeof(float)));
+  imgui_manager_state->vao.BindAttribute(2, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(ImDrawVert), (const GLvoid *)(4 * sizeof(float)));
 
-  imgui_manager_state.vao.Unbind();
-  imgui_manager_state.vbo.Unbind();
+  imgui_manager_state->vao.Unbind();
+  imgui_manager_state->vbo.Unbind();
+}
+
+void Shutdown() {
+  foundation::Allocator &allocator = foundation::memory_globals::default_allocator();
+  allocator.make_delete(imgui_manager_state);
 }
 
 void BeginFrame() {
@@ -243,10 +254,10 @@ void BeginFrame() {
   previous_time = current_time;
 
   double mouse_x, mouse_y;
-  glfwGetCursorPos(imgui_manager_state.window, &mouse_x, &mouse_y);
+  glfwGetCursorPos(imgui_manager_state->window, &mouse_x, &mouse_y);
   io.MousePos = ImVec2((float)mouse_x, (float)mouse_y);
-  io.MouseDown[0] = glfwGetMouseButton(imgui_manager_state.window, GLFW_MOUSE_BUTTON_LEFT) != 0;
-  io.MouseDown[1] = glfwGetMouseButton(imgui_manager_state.window, GLFW_MOUSE_BUTTON_RIGHT) != 0;
+  io.MouseDown[0] = glfwGetMouseButton(imgui_manager_state->window, GLFW_MOUSE_BUTTON_LEFT) != 0;
+  io.MouseDown[1] = glfwGetMouseButton(imgui_manager_state->window, GLFW_MOUSE_BUTTON_RIGHT) != 0;
 
   ImGui::NewFrame();
 }

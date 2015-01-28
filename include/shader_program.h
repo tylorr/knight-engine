@@ -1,38 +1,20 @@
 #pragma once
 
-#include "common.h"
-
-#include <GL/glew.h>
-
-#include <map>
+#include "shader_types.h"
 
 namespace knight {
 
-class UniformFactory;
-class UniformBase;
+namespace shader_program {
+  foundation::Array<char> GetProgramInfoLog(GLuint program_handle);
+  foundation::Array<char> GetShaderInfoLog(GLuint program_handle, GLuint shader_handle);
+} // namespace shader_program
 
 class ShaderProgram {
  public:
-  ShaderProgram() 
-    : handle_{}, 
-      vertex_handle_{}, 
-      fragment_handle_{}, 
-      dirty_uniforms_{} { }
-
-  ShaderProgram(ShaderProgram &&other)
-    : handle_(std::move(other.handle_)),
-      vertex_handle_(std::move(other.vertex_handle_)),
-      fragment_handle_(std::move(other.fragment_handle_)),
-      dirty_uniforms_(std::move(other.dirty_uniforms_)) {
-    other.handle_ = 0;
-    other.vertex_handle_ = 0;
-    other.fragment_handle_ = 0;
-    other.dirty_uniforms_.clear(); 
-  }
-
+  ShaderProgram(foundation::Allocator &allocator);
   ~ShaderProgram();
 
-  void Initialize(UniformFactory &uniform_factory, const std::string &source);
+  void Initialize(UniformFactory &uniform_factory, const char *source);
 
   GLuint handle() const { return handle_; }
 
@@ -41,23 +23,14 @@ class ShaderProgram {
   
   GLint GetAttributeLocation(const GLchar *name);
 
-  void Update();
+  void PushUniforms();
   void NotifyDirty(const GLint &location, const UniformBase *uniform);
-
-  ShaderProgram &operator=(ShaderProgram &&other) {
-    handle_ = std::move(other.handle_);
-    dirty_uniforms_ = std::move(other.dirty_uniforms_);
-    return *this;
-  }
 
  private:
   GLuint handle_;
   GLuint vertex_handle_;
   GLuint fragment_handle_;
-  std::map<GLint, const UniformBase *> dirty_uniforms_;
-
-  std::string GetProgramInfoLog() const;
-  std::string GetShaderInfoLog(GLuint shader_handle) const;
+  foundation::Hash<const UniformBase *> dirty_uniforms_;
 
   KNIGHT_DISALLOW_COPY_AND_ASSIGN(ShaderProgram);
 };

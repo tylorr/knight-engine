@@ -4,6 +4,7 @@
 
 #include <logog.hpp>
 #include <hash.h>
+#include <memory.h>
 
 #define KNIGHT_GET_UNIFORM_TYPE(TypeName, row_count, col_count, GLtype, type_string)         \
   template<>                                                                                 \
@@ -26,8 +27,8 @@
 namespace knight {
 
 UniformFactory::UniformFactory(foundation::Allocator &allocator) 
-    : uniforms_(allocator), 
-      allocator_(allocator) { }
+    : uniforms_{allocator}, 
+      allocator_{allocator} { }
 
 UniformFactory::~UniformFactory() {
   auto it = foundation::hash::begin(uniforms_);

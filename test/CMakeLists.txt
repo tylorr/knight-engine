@@ -3,9 +3,10 @@ set(SOURCES
     slot_map_test.cpp
     entity_manager_test.cpp
     index_iterator_test.cpp
-    task_manager_test.cpp
+    # task_manager_test.cpp
     heap_test.cpp
     priority_queue_test.cpp
+    string_test.cpp
 )
 
 add_definitions(-DLOGOG_USE_PREFIX)

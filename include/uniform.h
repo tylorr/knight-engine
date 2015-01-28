@@ -27,7 +27,7 @@ class UniformBase {
 
   void AddShaderProgram(ShaderProgram &shader_program, const GLint &location);
 
-  virtual void Update(const GLint &location) const = 0;
+  virtual void Push(const GLint &location) const = 0;
 
  protected:
   const char *name_;
@@ -47,14 +47,7 @@ class Uniform : public UniformBase {
 
   using UniformBase::UniformBase;
 
-  // explicit Uniform(const std::string &name) : UniformBase(name) { }
-
-  // Uniform(const std::string &name, ShaderProgram *shader_program,
-  //         const GLint &location) 
-  //   : UniformBase(name, shader_program, location) { }
-
-  virtual void Update(const GLint &location) const;
-
+  virtual void Push(const GLint &location) const;
   void SetValue(const T *values);
 
  private:

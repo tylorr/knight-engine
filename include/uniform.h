@@ -5,35 +5,29 @@
 
 #include <logog.hpp>
 
-#include <vector>
-#include <utility>
-
 namespace knight {
-
-namespace uniform {
-  uint64_t hash(const char *name, GLenum type);
-}
 
 class UniformBase {
  public:
-  explicit UniformBase(const char *name) : name_(name) { }
-
-  UniformBase(const char *name, ShaderProgram &shader_program,
-              const GLint &location);
+  UniformBase(foundation::Allocator &allocator, UniformManager &manager, const char *name)
+      : manager_{manager},
+        program_locations_{allocator},
+        name_{name} { }
 
   virtual ~UniformBase() { }
 
   const char *name() const { return name_; }
 
-  void AddShaderProgram(ShaderProgram &shader_program, const GLint &location);
+  void AddShaderProgram(GLuint program_handle, GLint location);
 
-  virtual void Push(const GLint &location) const = 0;
+  virtual void Push(GLint location) const = 0;
 
- protected:
+  void NotifyManager() const;
+  GLint GetLocation(GLuint program_handle) const;
+
+  UniformManager &manager_;
+  foundation::Hash<GLint> program_locations_;
   const char *name_;
-  std::vector<std::pair<ShaderProgram *, GLint>> program_locations_;
-
-  void NotifyOwners() const;
  
  private:
   KNIGHT_DISALLOW_COPY_AND_ASSIGN(UniformBase);
@@ -47,16 +41,16 @@ class Uniform : public UniformBase {
 
   using UniformBase::UniformBase;
 
-  virtual void Push(const GLint &location) const;
+  virtual void Push(GLint location) const;
   void SetValue(const T *values);
 
- private:
   static const size_t kElementCount = row_count * col_count;
   static const size_t kElementSize = sizeof(T);
   static const size_t kTotalElementSize = kElementCount * kElementSize;
 
   T elements_[kElementCount];
 
+ private:
   KNIGHT_DISALLOW_COPY_AND_ASSIGN(Uniform);
   KNIGHT_DISALLOW_MOVE_AND_ASSIGN(Uniform);
 };
@@ -65,7 +59,10 @@ template<typename T, size_t row_count, size_t col_count>
 void Uniform<T, row_count, col_count>::SetValue(const T *values) {
   if (std::memcmp(elements_, values, kTotalElementSize) != 0) {
     std::memcpy(elements_, values, kTotalElementSize);
-    NotifyOwners();
+    NotifyManager();
+
+    //manager_->NotifyDirty()
+    //NotifyOwners();
   }
 }
 

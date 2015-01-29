@@ -1,8 +1,8 @@
+#include "shader_types.h"
+
 namespace knight {
 
-class UniformFactory;
-
-#define GAME_INIT(name) void name(UniformFactory &uniform_factory)
+#define GAME_INIT(name) void name(UniformManager &uniform_manager)
 typedef GAME_INIT(game_init);
 
 #define GAME_UPDATE_AND_RENDER(name) void name()

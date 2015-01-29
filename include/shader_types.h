@@ -15,30 +15,57 @@ class UniformBase;
 template<typename T, size_t row_count, size_t col_count>
 class Uniform;
 
-class UniformFactory {
+class UniformManager;
+
+class ShaderProgram {
  public:
-  UniformFactory(foundation::Allocator &allocator);
-  ~UniformFactory();
+  ShaderProgram() 
+    : handle_{0}, 
+      vertex_handle_{0}, 
+      fragment_handle_{0} { }
+  ~ShaderProgram();
 
-  UniformBase *Create(ShaderProgram &shader_program, const GLint &location, 
-                      const char *name, const GLenum &type);
+  void Initialize(UniformManager &uniform_manager, const char *source);
+
+  GLuint handle() const { return handle_; }
+
+  void Bind() const;
+  void Unbind() const;
+  
+  GLint GetUniformLocation(const GLchar *name) const;
+  GLint GetAttributeLocation(const GLchar *name) const;
+
+ private:
+  GLuint handle_;
+  GLuint vertex_handle_;
+  GLuint fragment_handle_;
+
+  KNIGHT_DISALLOW_COPY_AND_ASSIGN(ShaderProgram);
+};
+
+class UniformManager {
+ public:
+  UniformManager(foundation::Allocator &allocator);
+  ~UniformManager();
+
+  UniformBase *Create(ShaderProgram &shader_program, GLint location, 
+                      const char *name, GLenum type);
 
   template<typename T, size_t row_count, size_t col_count = 1>
-  Uniform<T, row_count, col_count> *Get(const char *name) const;
+  Uniform<T, row_count, col_count> *Get(const ShaderProgram &shader_program, const char *name) const;
+  UniformBase *TryGet(const ShaderProgram &shader_program, GLint location) const;
 
-  UniformBase *TryGet(const char *name, GLenum type) const;
+  void NotifyDirty(GLuint program_handle, const UniformBase *uniform);
 
-  template<typename T, size_t row_count, size_t col_count = 1>
-  struct GetType {
-    static const GLenum value;
-    static const char *name;
-  };
+  void PushUniforms(const ShaderProgram &shader_program);
 
-  foundation::Hash<UniformBase *> uniforms_;
   foundation::Allocator &allocator_;
+  foundation::Hash<UniformBase *> uniforms_;
+  foundation::Hash<const UniformBase *> dirty_uniforms_;
 
-  KNIGHT_DISALLOW_COPY_AND_ASSIGN(UniformFactory);
-  KNIGHT_DISALLOW_MOVE_AND_ASSIGN(UniformFactory);
+ private:
+  KNIGHT_DISALLOW_COPY_AND_ASSIGN(UniformManager);
+  KNIGHT_DISALLOW_MOVE_AND_ASSIGN(UniformManager);
 };
 
 } // namespace knight

@@ -1,14 +1,14 @@
 #pragma once
 
+#include "shader_types.h"
+
 struct GLFWwindow;
 
 namespace knight {
 
-class UniformFactory;
-
 namespace ImGuiManager {
 
-void Initialize(GLFWwindow *window, UniformFactory *uniform_factory);
+void Initialize(GLFWwindow *window, UniformManager *uniform_manager);
 void Shutdown();
 
 void BeginFrame();

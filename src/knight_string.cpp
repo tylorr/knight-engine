@@ -1,6 +1,7 @@
 #include "knight_string.h"
 
 #include <array.h>
+#include <murmur_hash.h>
 #include <logog.hpp>
 
 #include <cstring>
@@ -52,6 +53,10 @@ const char *c_str(const foundation::Array<char> &string) {
   } else {
     return "";
   }
+}
+
+uint64_t hash(const char *string, uint64_t seed) {
+  return foundation::murmur_hash_64(string, strlen(string), seed);
 }
 
 }

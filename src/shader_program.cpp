@@ -1,50 +1,15 @@
 #include "shader_program.h"
-#include "uniform_factory.h"
+#include "uniform_manager.h"
 #include "uniform.h"
 #include "knight_string.h"
 
 #include <logog.hpp>
 #include <hash.h>
+#include <temp_allocator.h>
+
+using namespace foundation;
 
 namespace knight {
-
-namespace shader_program {
-
-  foundation::Array<char> GetProgramInfoLog(GLuint program_handle) {
-    GLint length;
-    glGetProgramiv(program_handle, GL_INFO_LOG_LENGTH, &length);
-
-    auto info_string= foundation::Array<char>{foundation::memory_globals::default_allocator()};
-    if (length) {
-      char info_log[length];
-      glGetProgramInfoLog(program_handle, length, nullptr, info_log);
-      string::append(info_string, info_log);
-    }
-    return info_string;
-  }
-
-  foundation::Array<char> GetShaderInfoLog(
-      GLuint program_handle, 
-      GLuint shader_handle) {
-    GLint length;
-    glGetShaderiv(program_handle, GL_INFO_LOG_LENGTH, &length);
-
-    auto info_string= foundation::Array<char>{foundation::memory_globals::default_allocator()};
-    if (length) {
-      char info_log[length];
-      glGetShaderInfoLog(shader_handle, length, nullptr, info_log);
-      string::append(info_string, info_log);
-    }
-    return info_string;
-  }
-
-} // namespace shader_program
-
-ShaderProgram::ShaderProgram(foundation::Allocator &allocator) 
-    : handle_{}, 
-      vertex_handle_{}, 
-      fragment_handle_{}, 
-      dirty_uniforms_{allocator} { }
 
 ShaderProgram::~ShaderProgram() {
   if (vertex_handle_) {
@@ -60,13 +25,14 @@ ShaderProgram::~ShaderProgram() {
   }
 }
 
-void ShaderProgram::Initialize(UniformFactory &uniform_factory, const char *source) {
+void ShaderProgram::Initialize(UniformManager &uniform_manager, const char *source) {
   handle_ = glCreateProgram();
 
   auto createAndAttachShader = [this, &source](GLenum type) {
     auto shader_handle = glCreateShader(type);
 
-    auto full_source = foundation::Array<char>(foundation::memory_globals::default_allocator());
+    TempAllocator4096 temp_allocator;
+    auto full_source = Array<char>{temp_allocator};
     string::append(full_source, "#version 440\n");
     switch(type) {
       case GL_VERTEX_SHADER:
@@ -115,9 +81,8 @@ void ShaderProgram::Initialize(UniformFactory &uniform_factory, const char *sour
     glGetActiveUniform(handle_, i, max_uniform_name_length, nullptr, 
                        &value_size, &value_type, name);
 
-    auto location = glGetUniformLocation(handle_, name);
-
-    uniform_factory.Create(*this, location, name, value_type);
+    auto location = GetUniformLocation(name);
+    uniform_manager.Create(*this, location, name, value_type);
   }
 }
 
@@ -137,22 +102,44 @@ void ShaderProgram::Unbind() const {
   }
 }
 
-GLint ShaderProgram::GetAttributeLocation(const GLchar *name) {
+GLint ShaderProgram::GetUniformLocation(const GLchar *name) const {
+  return glGetUniformLocation(handle_, name);
+}
+
+GLint ShaderProgram::GetAttributeLocation(const GLchar *name) const {
   return glGetAttribLocation(handle_, name);
 }
 
-void ShaderProgram::PushUniforms() {
-  auto end = foundation::hash::end(dirty_uniforms_);
-  for (auto it = foundation::hash::begin(dirty_uniforms_); it != end; ++it) {
-    it->value->Push(it->key);
+namespace shader_program {
+
+  Array<char> GetProgramInfoLog(GLuint program_handle) {
+    GLint length;
+    glGetProgramiv(program_handle, GL_INFO_LOG_LENGTH, &length);
+
+    auto info_string= Array<char>{memory_globals::default_scratch_allocator()};
+    if (length) {
+      char info_log[length];
+      glGetProgramInfoLog(program_handle, length, nullptr, info_log);
+      string::append(info_string, info_log);
+    }
+    return info_string;
   }
 
-  foundation::hash::clear(dirty_uniforms_);
-}
+  Array<char> GetShaderInfoLog(
+      GLuint program_handle, 
+      GLuint shader_handle) {
+    GLint length;
+    glGetShaderiv(program_handle, GL_INFO_LOG_LENGTH, &length);
 
-void ShaderProgram::NotifyDirty(const GLint &location, 
-                                const UniformBase *uniform) {
-  foundation::hash::set(dirty_uniforms_, location, uniform);
-}
+    auto info_string= Array<char>{memory_globals::default_scratch_allocator()};
+    if (length) {
+      char info_log[length];
+      glGetShaderInfoLog(shader_handle, length, nullptr, info_log);
+      string::append(info_string, info_log);
+    }
+    return info_string;
+  }
+
+} // namespace shader_program
 
 } // namespace knight

@@ -8,7 +8,7 @@ set(SOURCES
     system.cpp
     component.cpp
     uniform.cpp
-    uniform_factory.cpp
+    uniform_manager.cpp
     imgui_manager.cpp
     task_manager.cpp
     stb_impl.cpp

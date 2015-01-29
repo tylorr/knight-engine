@@ -4,7 +4,7 @@
 #include "buffer_object.h"
 #include "vertex_array.h"
 #include "uniform.h"
-#include "uniform_factory.h"
+#include "uniform_manager.h"
 
 #include <logog.hpp>
 #include <memory.h>
@@ -32,7 +32,8 @@ struct Vertex {
 };
 
 Allocator *allocator;
-ShaderProgram *program;
+UniformManager *uniform_manager;
+ShaderProgram program;
 BufferObject vbo;
 BufferObject ibo;
 VertexArray vao;
@@ -46,16 +47,17 @@ std::vector<Vertex> vertices;
 std::vector<unsigned int> indices;
 
 extern "C" GAME_INIT(Init) {
+  ::uniform_manager = &uniform_manager;
   allocator = &memory_globals::default_allocator();
   auto read_result = ReadEntireFile(*allocator, "../shaders/blinn_phong.shader");
 
-  program = allocator->make_new<ShaderProgram>(*allocator);
-  program->Initialize(uniform_factory, (char *)read_result.content);
+  //program = allocator->make_new<ShaderProgram>(*allocator);
+  program.Initialize(uniform_manager, (char *)read_result.content);
   FreeFileMemory(*allocator, read_result.content);
 
-  mvp_uniform = uniform_factory.Get<float, 4, 4>("MVP");
-  mv_matrix_uniform = uniform_factory.Get<float, 4, 4>("ModelView");
-  normal_matrix_uniform = uniform_factory.Get<float, 3, 3>("NormalMatrix");
+  mvp_uniform = uniform_manager.Get<float, 4, 4>(program, "MVP");
+  mv_matrix_uniform = uniform_manager.Get<float, 4, 4>(program, "ModelView");
+  normal_matrix_uniform = uniform_manager.Get<float, 3, 3>(program, "NormalMatrix");
 
   model_matrix = glm::mat4{1.0};
 
@@ -71,7 +73,7 @@ extern "C" GAME_INIT(Init) {
   // auto normal_matrix = glm::inverseTranspose(glm::mat3(model_view_matrix));
   // normal_matrix_uniform->SetValue(glm::value_ptr(normal_matrix));
 
-  program->PushUniforms();
+  uniform_manager.PushUniforms(program);
 
   auto importer = Assimp::Importer{};
 
@@ -114,7 +116,7 @@ extern "C" GAME_INIT(Init) {
   vao.Unbind();
   vbo.Unbind();
   ibo.Unbind();
-  program->Unbind();
+  program.Unbind();
 }
 
 auto current_time = 0.0;
@@ -142,13 +144,13 @@ extern "C" GAME_UPDATE_AND_RENDER(UpdateAndRender) {
   auto normal_matrix = glm::inverseTranspose(glm::mat3(model_view_matrix));
   normal_matrix_uniform->SetValue(glm::value_ptr(normal_matrix));
 
-  program->PushUniforms();
-  program->Bind();
+  ::uniform_manager->PushUniforms(program);
+  program.Bind();
   vao.Bind();
 
   glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, nullptr);
 }
 
 extern "C" GAME_SHUTDOWN(Shutdown) {
-  allocator->make_delete(program);
+  // allocator->make_delete(program);
 }

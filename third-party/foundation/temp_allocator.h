@@ -44,13 +44,13 @@ namespace foundation
 
 	// If possible, use one of these predefined sizes for the TempAllocator to avoid
 	// unnecessary template instantiation.
-	typedef TempAllocator<64> TempAllocator64;
-	typedef TempAllocator<128> TempAllocator128;
-	typedef TempAllocator<256> TempAllocator256;
-	typedef TempAllocator<512> TempAllocator512;
-	typedef TempAllocator<1024> TempAllocator1024;
-	typedef TempAllocator<2048> TempAllocator2048;
-	typedef TempAllocator<4096> TempAllocator4096;
+	using TempAllocator64 = TempAllocator<64>;
+	using TempAllocator128 = TempAllocator<128>;
+	using TempAllocator256 = TempAllocator<256>;
+	using TempAllocator512 = TempAllocator<512>;
+	using TempAllocator1024 = TempAllocator<1024>;
+	using TempAllocator2048 = TempAllocator<2048>;
+	using TempAllocator4096 = TempAllocator<4096>;
 
 	// ---------------------------------------------------------------
 	// Inline function implementations

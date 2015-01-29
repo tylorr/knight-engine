@@ -1,9 +1,9 @@
 #include "uniform_manager.h"
 #include "shader_program.h"
 #include "uniform.h"
+#include "iterators.h"
 
 #include <logog.hpp>
-#include <hash.h>
 #include <memory.h>
 #include <murmur_hash.h>
 #include <temp_allocator.h>
@@ -24,10 +24,8 @@ UniformManager::UniformManager(Allocator &allocator)
       dirty_uniforms_{allocator} { }
 
 UniformManager::~UniformManager() {
-  auto it = hash::begin(uniforms_);
-  auto end = hash::end(uniforms_);
-  for (; it != end; ++it) {
-    allocator_.make_delete(it->value);
+  for (auto &item : uniforms_) {
+    allocator_.make_delete(item.value);
   }
   hash::clear(uniforms_);
 }
@@ -80,9 +78,7 @@ void UniformManager::PushUniforms(const ShaderProgram &shader_program) {
   auto program_handle = shader_program.handle();
   multi_hash::get(dirty_uniforms_, program_handle, dirty_unforms_for_program);
 
-  auto end = array::end(dirty_unforms_for_program);
-  for (auto it = array::begin(dirty_unforms_for_program); it != end; ++it) {
-    auto uniform = *it;
+  for (auto &uniform : dirty_unforms_for_program) {
     auto uniform_location = uniform->GetLocation(program_handle);
     uniform->Push(uniform_location);
   }

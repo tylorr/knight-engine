@@ -11,6 +11,7 @@ BufferObject::~BufferObject() {
 void BufferObject::Initialize(const GLenum &target) {
   target_ = target;
   glGenBuffers(1, &handle_);
+  Bind();
 }
 
 void BufferObject::Initialize(const GLenum &target, const GLsizeiptr &size, 

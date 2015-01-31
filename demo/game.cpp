@@ -9,6 +9,8 @@
 #include <logog.hpp>
 #include <memory.h>
 
+#include <imgui.h>
+
 #include <GLFW/glfw3.h>
 
 #include <glm/glm.hpp>
@@ -122,6 +124,8 @@ auto current_time = 0.0;
 auto prev_time = 0.0;
 auto delta_time = 0.0;
 
+bool show_test_window = true;
+
 extern "C" GAME_UPDATE_AND_RENDER(UpdateAndRender) {
   current_time = glfwGetTime();
   delta_time = current_time - prev_time;
@@ -129,25 +133,36 @@ extern "C" GAME_UPDATE_AND_RENDER(UpdateAndRender) {
 
   glClear(GL_COLOR_BUFFER_BIT);
 
-  model_matrix = glm::rotate(model_matrix, (float)delta_time, glm::vec3(0.0f, 1.0f, 0.0f));
+  ImGui::Text("Hello, world!");
+  ImGui::Text("This one too!");
 
-  auto view_matrix = glm::translate(glm::mat4{1.0f}, glm::vec3{0, -8, -40});
-  auto projection_matrix = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 100.f);
+  if (show_test_window) {
+    ImGui::ShowTestWindow(&show_test_window);
+  }
 
-  auto model_view_matrix = view_matrix * model_matrix;
-  mv_matrix_uniform->SetValue(glm::value_ptr(model_view_matrix));
+  // model_matrix = glm::rotate(model_matrix, (float)delta_time, glm::vec3(0.0f, 1.0f, 0.0f));
 
-  auto mvp_matrix = projection_matrix * model_view_matrix;
-  mvp_uniform->SetValue(glm::value_ptr(mvp_matrix));
+  // auto view_matrix = glm::translate(glm::mat4{1.0f}, glm::vec3{0, -8, -40});
+  // auto projection_matrix = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 100.f);
 
-  auto normal_matrix = glm::inverseTranspose(glm::mat3(model_view_matrix));
-  normal_matrix_uniform->SetValue(glm::value_ptr(normal_matrix));
+  // auto model_view_matrix = view_matrix * model_matrix;
+  // mv_matrix_uniform->SetValue(glm::value_ptr(model_view_matrix));
 
-  ::uniform_manager->PushUniforms(program);
-  program.Bind();
-  vao.Bind();
+  // auto mvp_matrix = projection_matrix * model_view_matrix;
+  // mvp_uniform->SetValue(glm::value_ptr(mvp_matrix));
 
-  glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, nullptr);
+  // auto normal_matrix = glm::inverseTranspose(glm::mat3(model_view_matrix));
+  // normal_matrix_uniform->SetValue(glm::value_ptr(normal_matrix));
+
+  // program.Bind();
+  // ::uniform_manager->PushUniforms(program);
+  
+  // vao.Bind();
+
+  // glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, nullptr);
+
+  // program.Unbind();
+  // vao.Unbind();
 }
 
 extern "C" GAME_SHUTDOWN(Shutdown) {

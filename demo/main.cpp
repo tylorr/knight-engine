@@ -55,6 +55,7 @@ GLFWwindow *window;
 bool Initialize();
 bool InitWindow();
 
+void GlfwMouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
 void GlfwKeyCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
 void GlfwScrollCallback(GLFWwindow *window, double xoffset, double yoffset);
 void GlfwCharCallback(GLFWwindow *window, unsigned int c);
@@ -63,15 +64,14 @@ GameCode LoadGameCode(const char *source_dll_name, const char *temp_dll_name);
 void UnloadGameCode(GameCode *game_code);
 
 inline FILETIME GetLastWriteTime(const char *filename) {
-    FILETIME last_write_time = {};
+  FILETIME last_write_time;
 
-    WIN32_FILE_ATTRIBUTE_DATA data;
-    if(GetFileAttributesEx(filename, GetFileExInfoStandard, &data))
-    {
-        last_write_time = data.ftLastWriteTime;
-    }
+  WIN32_FILE_ATTRIBUTE_DATA data;
+  if(GetFileAttributesEx(filename, GetFileExInfoStandard, &data)) {
+    last_write_time = data.ftLastWriteTime;
+  }
 
-    return last_write_time;
+  return last_write_time;
 }
 
 int main(int argc, char *argv[]) {
@@ -112,18 +112,11 @@ int main(int argc, char *argv[]) {
           game = LoadGameCode(source_dll_name.c_str(), temp_dll_name.c_str());
         }
 
+        int display_w, display_h;
+        glfwGetFramebufferSize(window, &display_w, &display_h);
+        glViewport(0, 0, display_w, display_h);
+
         ImGuiManager::BeginFrame();
-
-        // Array<Event> events(a);
-        // if (udp_listener.Poll(events)) {
-        //   auto event_header = events[0].header;
-        //   auto event_type = event_header->event_type();
-
-        //   if (event_type == events::EventType_UnloadScript) {
-        //     //auto monster = reinterpret_cast<const events::UnloadScript *>(event_header->event());
-        //     //INFO("Received monster event mana: %d foo: %d", monster->mana(), monster->foo());
-        //   }
-        // }
 
         if (game.UpdateAndRender) {
           game.UpdateAndRender();
@@ -202,6 +195,7 @@ bool InitWindow() {
 
   glfwMakeContextCurrent(window);
 
+  glfwSetMouseButtonCallback(window, GlfwMouseButtonCallback);
   glfwSetKeyCallback(window, GlfwKeyCallback);
   glfwSetScrollCallback(window, GlfwScrollCallback);
   glfwSetCharCallback(window, GlfwCharCallback);
@@ -244,6 +238,10 @@ void UnloadGameCode(GameCode *game_code) {
   game_code->Init = nullptr;
   game_code->UpdateAndRender = nullptr;
   game_code->Shutdown = nullptr;
+}
+
+void GlfwMouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
+  ImGuiManager::OnMouse(button, action);
 }
 
 void GlfwKeyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {

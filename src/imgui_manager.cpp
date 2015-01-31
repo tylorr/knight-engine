@@ -9,6 +9,7 @@
 #include <stb_image.h>
 #include <imgui.h>
 #include <GLFW/glfw3.h>
+
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -22,30 +23,25 @@ namespace {
 
 const GLchar *kShaderSource =
   "#if defined(VERTEX)\n"
-  "uniform mat4 MVP; "
-  "layout(location = 0) in vec2 i_pos; "
-  "layout(location = 1) in vec2 i_uv; "
-  "layout(location = 2) in vec4 i_col; "
-  "out vec4 col; "
-  "out vec2 pixel_pos; "
-  "out vec2 uv; "
-  "void main() { "
-  "  col = i_col; "
-  "  pixel_pos = i_pos; "
-  "  uv = i_uv; "
-  "  gl_Position = MVP * vec4(i_pos.x, i_pos.y, 0.0f, 1.0f); "
+  "uniform mat4 projection;"
+  "layout(location = 0) in vec2 position;"
+  "layout(location = 1) in vec2 uv;"
+  "layout(location = 2) in vec4 color;"
+  "out vec4 frag_color;"
+  "out vec2 frag_uv;"
+  "void main() {"
+  "  frag_uv = uv;"
+  "  frag_color = color;"
+  "  gl_Position = projection * vec4(position.xy, 0.0f, 1.0f);"
   "}\n"
   "#endif\n"
   "#if defined(FRAGMENT)\n"
-  "uniform sampler2D Tex; "
-  "uniform vec4 ClipRect; "
-  "in vec4 col; "
-  "in vec2 pixel_pos; "
-  "in vec2 uv ;"
-  "layout(location = 0) out vec4 o_col; "
+  "uniform sampler2D Texture;"
+  "in vec2 frag_uv;"
+  "in vec4 frag_color;"
+  "layout(location = 0) out vec4 out_color;"
   "void main() { "
-  "  o_col = texture(Tex, uv) * col; "
-  "  o_col.w *= (step(ClipRect.x,pixel_pos.x) * step(ClipRect.y,pixel_pos.y) * step(pixel_pos.x,ClipRect.z) * step(pixel_pos.y,ClipRect.w)); "
+  "  out_color = texture(Texture, frag_uv) * frag_color;"
   "}\n"
   "#endif\n";
 
@@ -56,10 +52,11 @@ struct ImGuiManagerState {
   ShaderProgram shader_program;
   VertexArray vao;
   BufferObject vbo;
-
+  size_t buffer_size = 20000;
   GLuint font_texture_handle;
+  Uniform<float, 4, 4> *projection_uniform;
 
-  Uniform<float, 4> *clip_rect_uniform;
+  bool mouse_pressed[2] = { false, false };
 };
 
 ImGuiManagerState imgui_manager_state;
@@ -67,96 +64,96 @@ ImGuiManagerState imgui_manager_state;
 void RenderDrawLists(ImDrawList **const cmd_lists, int cmd_lists_count);
 
 const char *GetClipboardString();
-void SetClipboardString(const char *text, const char *text_end);
+void SetClipboardString(const char *text);
 
 void RenderDrawLists(ImDrawList **const cmd_lists, int cmd_lists_count) {
-  size_t total_vtx_count = 0;
-
-  for (int n = 0; n < cmd_lists_count; n++) {
-    total_vtx_count += cmd_lists[n]->vtx_buffer.size();
-  }
-
-  if (total_vtx_count == 0) {
+  if (cmd_lists_count == 0) {
     return;
   }
 
-  const size_t vbo_size = total_vtx_count * sizeof(ImDrawVert);
+  glEnable(GL_BLEND);
+  glBlendEquation(GL_FUNC_ADD);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  glDisable(GL_CULL_FACE);
+  glDisable(GL_DEPTH_TEST);
+  glEnable(GL_SCISSOR_TEST);
 
-  imgui_manager_state.vao.Bind();
-  imgui_manager_state.vbo.Bind();
+  auto &program = imgui_manager_state.shader_program;
+  program.Bind();
 
-  imgui_manager_state.vbo.Data(vbo_size, nullptr, GL_STREAM_DRAW);
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, imgui_manager_state.font_texture_handle);
+  glUniform1i(program.GetUniformLocation("Texture"), 0);
 
-  unsigned char *buffer_data = (unsigned char *)glMapBufferRange(
-      GL_ARRAY_BUFFER, 0, vbo_size, 
-      GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+  const auto width = ImGui::GetIO().DisplaySize.x;
+  const auto height = ImGui::GetIO().DisplaySize.y;
+  const auto projection = glm::ortho(0.0f, width, height, 0.0f, -1.0f, 1.0f);
+  imgui_manager_state.projection_uniform->SetValue(glm::value_ptr(projection));
 
-  if (!buffer_data) {
-    return;
+  imgui_manager_state.uniform_manager->PushUniforms(program);
+
+  auto total_vertex_count = 0_z;
+  for (int n = 0; n < cmd_lists_count; n++) {
+    total_vertex_count += cmd_lists[n]->vtx_buffer.size();
   }
 
-  for (int n = 0; n < cmd_lists_count; n++) {
-    const ImDrawList* cmd_list = cmd_lists[n];
-    memcpy(buffer_data, &cmd_list->vtx_buffer[0], cmd_list->vtx_buffer.size() * sizeof(ImDrawVert));
+  auto &vbo = imgui_manager_state.vbo;
+  vbo.Bind();
+
+  // Grow buffer if too small
+  auto needed_buffer_size = total_vertex_count * sizeof(ImDrawVert);
+  if (needed_buffer_size > imgui_manager_state.buffer_size) {
+      imgui_manager_state.buffer_size = needed_buffer_size + 5000;  
+      vbo.Data(imgui_manager_state.buffer_size, nullptr, GL_DYNAMIC_DRAW);
+  }
+
+  auto *buffer_data = static_cast<char *>(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY));
+  if (!buffer_data)
+    return;
+
+  for (int i = 0; i < cmd_lists_count; i++) {
+    const auto* cmd_list = cmd_lists[i];
+    memcpy(buffer_data, 
+           &cmd_list->vtx_buffer[0], 
+           cmd_list->vtx_buffer.size() * sizeof(ImDrawVert));
     buffer_data += cmd_list->vtx_buffer.size() * sizeof(ImDrawVert);
   }
 
   glUnmapBuffer(GL_ARRAY_BUFFER);
+  vbo.Unbind();
 
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  glDisable(GL_CULL_FACE);
-  glDisable(GL_DEPTH_TEST);
+  auto &vao = imgui_manager_state.vao;
+  vao.Bind();
 
-  imgui_manager_state.shader_program.Bind();
-  glBindTexture(GL_TEXTURE_2D, imgui_manager_state.font_texture_handle);
-
-  int vtx_offset = 0;
-  for (int n = 0; n < cmd_lists_count; n++)
-  {
-    const ImDrawList* cmd_list = cmd_lists[n];
+  auto previous_vertex_offset = 0;
+  for (auto i = 0; i < cmd_lists_count; i++) {
+    const ImDrawList* cmd_list = cmd_lists[i];
+    auto vertex_offset = previous_vertex_offset;
     const ImDrawCmd* pcmd_end = cmd_list->commands.end();
-    for (const ImDrawCmd* pcmd = cmd_list->commands.begin(); pcmd != pcmd_end; pcmd++)
-    {
-      imgui_manager_state.clip_rect_uniform->SetValue((float *)&pcmd->clip_rect);
-      //imgui_manager_state.shader_program.PushUniforms();
-      imgui_manager_state.uniform_manager->PushUniforms(imgui_manager_state.shader_program);
-
-      glDrawArrays(GL_TRIANGLES, vtx_offset, pcmd->vtx_count);
-      vtx_offset += pcmd->vtx_count;
+    for (const ImDrawCmd* pcmd = cmd_list->commands.begin(); pcmd != pcmd_end; pcmd++) {
+      glScissor(pcmd->clip_rect.x, 
+                height - pcmd->clip_rect.w, 
+                pcmd->clip_rect.z - pcmd->clip_rect.x, 
+                pcmd->clip_rect.w - pcmd->clip_rect.y);
+      glDrawArrays(GL_TRIANGLES, vertex_offset, pcmd->vtx_count);
+      vertex_offset += pcmd->vtx_count;
     }
+    previous_vertex_offset = vertex_offset;
   }
 
   // Cleanup GL state
+  vao.Unbind();
+  program.Unbind();
+  glDisable(GL_SCISSOR_TEST);
   glBindTexture(GL_TEXTURE_2D, 0);
-  imgui_manager_state.vao.Unbind();
-  imgui_manager_state.vbo.Unbind();
-  imgui_manager_state.shader_program.Unbind();
 }
 
 const char *GetClipboardString() {
   return glfwGetClipboardString(imgui_manager_state.window);
 }
 
-void SetClipboardString(const char *text, const char *text_end) {
-  if (!text_end) {
-    text_end = text + strlen(text);
-  }
-
-  if (*text_end == '\0') {
-    glfwSetClipboardString(imgui_manager_state.window, text);
-  } else {
-    // String needs to be null terminated so thatt glfw knows how long it is
-    size_t text_length = text_end - text;
-
-    char *buf = (char *)malloc(text_length + 1);
-    memcpy(buf, text, text_length);
-    buf[text_end-text] = '\0';
-
-    glfwSetClipboardString(imgui_manager_state.window, buf);
-
-    free(buf);
-  }
+void SetClipboardString(const char *text) {
+  glfwSetClipboardString(imgui_manager_state.window, text);
 }
 
 } // namespace
@@ -212,29 +209,36 @@ void Initialize(GLFWwindow *window, UniformManager *uniform_manager) {
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tex_x, tex_y, 
                0, GL_RGBA, GL_UNSIGNED_BYTE, tex_data);
   stbi_image_free(tex_data);
-  glBindTexture(GL_TEXTURE_2D, 0);
 
-  imgui_manager_state.shader_program.Initialize(*uniform_manager, kShaderSource);
+  ExitOnGLError("Texture load");
+  //glBindTexture(GL_TEXTURE_2D, 0);
 
-  glm::mat4 mvp = glm::ortho(0.0f, (float)width, (float)height, 0.0f, -1.0f, +1.0f);
+  auto &program = imgui_manager_state.shader_program;
+  program.Initialize(*uniform_manager, kShaderSource);
 
-  auto mvp_uniform = uniform_manager->Get<float, 4, 4>(imgui_manager_state.shader_program, "MVP");
-  mvp_uniform->SetValue(glm::value_ptr(mvp));
+  // glm::mat4 mvp = glm::ortho(0.0f, (float)width, (float)height, 0.0f, -1.0f, +1.0f);
 
-  imgui_manager_state.clip_rect_uniform = uniform_manager->Get<float, 4>(imgui_manager_state.shader_program, "ClipRect");
+  // auto mvp_uniform = uniform_manager->Get<float, 4, 4>(program, "MVP");
+  // mvp_uniform->SetValue(glm::value_ptr(mvp));
+
+  imgui_manager_state.projection_uniform = uniform_manager->Get<float, 4, 4>(program, "projection");
   
-  imgui_manager_state.vbo.Initialize(GL_ARRAY_BUFFER);
-  imgui_manager_state.vao.Initialize();
 
-  imgui_manager_state.vao.Bind();
-  imgui_manager_state.vbo.Bind();
+  auto &vbo = imgui_manager_state.vbo;
+  vbo.Initialize(GL_ARRAY_BUFFER);
+  vbo.Data(imgui_manager_state.buffer_size, nullptr, GL_DYNAMIC_DRAW);
 
-  imgui_manager_state.vao.BindAttribute(0, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (const GLvoid *)0);
-  imgui_manager_state.vao.BindAttribute(1, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (const GLvoid *)(2 * sizeof(float)));
-  imgui_manager_state.vao.BindAttribute(2, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(ImDrawVert), (const GLvoid *)(4 * sizeof(float)));
+  auto &vao = imgui_manager_state.vao;
+  vao.Initialize();
 
-  imgui_manager_state.vao.Unbind();
-  imgui_manager_state.vbo.Unbind();
+  vao.BindAttribute(0, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (const GLvoid *)0);
+  vao.BindAttribute(1, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), 
+                    (const GLvoid *)(2 * sizeof(float)));
+  vao.BindAttribute(2, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(ImDrawVert), 
+                    (const GLvoid *)(4 * sizeof(float)));
+
+  vao.Unbind();
+  vbo.Unbind();
 }
 
 void Shutdown() { }
@@ -242,16 +246,26 @@ void Shutdown() { }
 void BeginFrame() {
   ImGuiIO &io = ImGui::GetIO();
 
+  int display_w, display_h;
+  glfwGetFramebufferSize(imgui_manager_state.window, &display_w, &display_h);
+  io.DisplaySize = ImVec2((float)display_w, (float)display_h); 
+
+  // TODO: TR Pass in delta time
   static double previous_time = 0.0f;
   const double current_time =  glfwGetTime();
   io.DeltaTime = (float)(current_time - previous_time);
   previous_time = current_time;
 
+  int w, h;
+  glfwGetWindowSize(imgui_manager_state.window, &w, &h);
+
   double mouse_x, mouse_y;
   glfwGetCursorPos(imgui_manager_state.window, &mouse_x, &mouse_y);
-  io.MousePos = ImVec2((float)mouse_x, (float)mouse_y);
-  io.MouseDown[0] = glfwGetMouseButton(imgui_manager_state.window, GLFW_MOUSE_BUTTON_LEFT) != 0;
-  io.MouseDown[1] = glfwGetMouseButton(imgui_manager_state.window, GLFW_MOUSE_BUTTON_RIGHT) != 0;
+  mouse_x *= (float)display_w / w;                                                               // Convert mouse coordinates to pixels
+  mouse_y *= (float)display_h / h;
+  io.MousePos = ImVec2((float)mouse_x, (float)mouse_y);                                          // Mouse position, in pixels (set to -1,-1 if no mouse / on another screen, etc.)
+  io.MouseDown[0] = imgui_manager_state.mouse_pressed[0] || glfwGetMouseButton(imgui_manager_state.window, GLFW_MOUSE_BUTTON_LEFT) != 0;  // If a mouse press event came, always pass it as "mouse held this frame", so we don't miss click-release events that are shorter than 1 frame.
+  io.MouseDown[1] = imgui_manager_state.mouse_pressed[1] || glfwGetMouseButton(imgui_manager_state.window, GLFW_MOUSE_BUTTON_RIGHT) != 0;
 
   ImGui::NewFrame();
 }
@@ -261,6 +275,15 @@ void EndFrame() {
 
   ImGuiIO &io = ImGui::GetIO();
   io.MouseWheel = 0;
+
+  imgui_manager_state.mouse_pressed[0] = false;
+  imgui_manager_state.mouse_pressed[1] = false;
+}
+
+void OnMouse(int button, int action) {
+  if (action == GLFW_PRESS && button >= 0 && button < 2) {
+    imgui_manager_state.mouse_pressed[button] = true;
+  }
 }
 
 void OnKey(const int &key, const int &action, const int &mods) {
@@ -279,7 +302,7 @@ void OnKey(const int &key, const int &action, const int &mods) {
 
 void OnCharacter(const unsigned int &character) {
   if (character > 0 && character <= 255) {
-    ImGui::GetIO().AddInputCharacter((char)character);
+    ImGui::GetIO().AddInputCharacter((unsigned short)character);
   }
 }
 

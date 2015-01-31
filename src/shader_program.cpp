@@ -1,7 +1,5 @@
-#include "shader_program.h"
 #include "uniform_manager.h"
 #include "uniform.h"
-#include "knight_string.h"
 
 #include <logog.hpp>
 #include <hash.h>
@@ -26,45 +24,57 @@ ShaderProgram::~ShaderProgram() {
 }
 
 void ShaderProgram::Initialize(UniformManager &uniform_manager, const char *source) {
-  handle_ = glCreateProgram();
+  auto getDefine = [](GLenum type) {
+    switch (type) {
+      case GL_VERTEX_SHADER: return "#define VERTEX\n";
+      case GL_FRAGMENT_SHADER: return "#define FRAGMENT\n";
+      default: return "";
+    }
+  };
 
-  auto createAndAttachShader = [this, &source](GLenum type) {
+  auto createAndAttachShader = [this, &getDefine, &source](GLenum type) {
     auto shader_handle = glCreateShader(type);
 
-    TempAllocator4096 temp_allocator;
-    auto full_source = Array<char>{temp_allocator};
-    string::append(full_source, "#version 440\n");
-    switch(type) {
-      case GL_VERTEX_SHADER:
-        string::append(full_source, "#define VERTEX\n");
-        break;
-      case GL_FRAGMENT_SHADER:
-        string::append(full_source, "#define FRAGMENT\n");
-        break;
-    }
-    string::append(full_source, source);
+    const char *full_source[3] = { "#version 440\n", getDefine(type), source };
 
-    auto c_full_source = string::c_str(full_source);
-    glShaderSource(shader_handle, 1, &c_full_source, nullptr);
+    glShaderSource(shader_handle, 3, full_source, nullptr);
     glCompileShader(shader_handle);
 
     auto result = GLint{};
     glGetShaderiv(shader_handle, GL_COMPILE_STATUS, &result);
-    XASSERT(result != GL_FALSE, 
-            "Failed to compile shader %d:\n%s", 
-            shader_handle, string::c_str(shader_program::GetShaderInfoLog(handle_, shader_handle)));
+    if (result == GL_FALSE) {
+      auto length = GLint{};
+      glGetShaderiv(shader_handle, GL_INFO_LOG_LENGTH, &length);
+
+      if (length) {
+        char info_log[length];
+        glGetShaderInfoLog(shader_handle, length, nullptr, info_log);
+        XASSERT(result != GL_FALSE, "Shader compile error:\n%s", info_log);
+      }
+    }
 
     glAttachShader(handle_, shader_handle);
     return shader_handle;
   };
 
+  handle_ = glCreateProgram();
+
   vertex_handle_ = createAndAttachShader(GL_VERTEX_SHADER);
   fragment_handle_ = createAndAttachShader(GL_FRAGMENT_SHADER);
   
-  GLint result;
+  auto result = GLint{};
   glLinkProgram(handle_);
   glGetProgramiv(handle_, GL_LINK_STATUS, &result);
-  XASSERT(result != GL_FALSE, "Failed to link program: %s", string::c_str(shader_program::GetProgramInfoLog(handle_)));
+  if (result == GL_FALSE) {
+    auto length = GLint{};
+    glGetProgramiv(handle_, GL_INFO_LOG_LENGTH, &length);
+
+    if (length) {
+      char info_log[length];
+      glGetProgramInfoLog(handle_, length, nullptr, info_log);
+      XASSERT(result != GL_FALSE, "Shader program link error:\n%s", info_log);
+    }
+  }
 
   auto max_uniform_name_length = GLint{};
   glGetProgramiv(handle_, GL_ACTIVE_UNIFORM_MAX_LENGTH, &max_uniform_name_length);
@@ -109,37 +119,5 @@ GLint ShaderProgram::GetUniformLocation(const GLchar *name) const {
 GLint ShaderProgram::GetAttributeLocation(const GLchar *name) const {
   return glGetAttribLocation(handle_, name);
 }
-
-namespace shader_program {
-
-  Array<char> GetProgramInfoLog(GLuint program_handle) {
-    GLint length;
-    glGetProgramiv(program_handle, GL_INFO_LOG_LENGTH, &length);
-
-    auto info_string= Array<char>{memory_globals::default_scratch_allocator()};
-    if (length) {
-      char info_log[length];
-      glGetProgramInfoLog(program_handle, length, nullptr, info_log);
-      string::append(info_string, info_log);
-    }
-    return info_string;
-  }
-
-  Array<char> GetShaderInfoLog(
-      GLuint program_handle, 
-      GLuint shader_handle) {
-    GLint length;
-    glGetShaderiv(program_handle, GL_INFO_LOG_LENGTH, &length);
-
-    auto info_string= Array<char>{memory_globals::default_scratch_allocator()};
-    if (length) {
-      char info_log[length];
-      glGetShaderInfoLog(shader_handle, length, nullptr, info_log);
-      string::append(info_string, info_log);
-    }
-    return info_string;
-  }
-
-} // namespace shader_program
 
 } // namespace knight

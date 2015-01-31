@@ -1,5 +1,4 @@
 #include "uniform.h"
-#include "shader_program.h"
 
 #include <hash.h>
 

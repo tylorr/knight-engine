@@ -1,6 +1,6 @@
 #include "game.h"
 #include "common.h"
-#include "shader_program.h"
+#include "shader_types.h"
 #include "buffer_object.h"
 #include "vertex_array.h"
 #include "uniform.h"
@@ -50,7 +50,6 @@ extern "C" GAME_INIT(Init) {
   ::uniform_manager = &uniform_manager;
   allocator = &memory_globals::default_allocator();
   auto read_result = ReadEntireFile(*allocator, "../shaders/blinn_phong.shader");
-
   //program = allocator->make_new<ShaderProgram>(*allocator);
   program.Initialize(uniform_manager, (char *)read_result.content);
   FreeFileMemory(*allocator, read_result.content);

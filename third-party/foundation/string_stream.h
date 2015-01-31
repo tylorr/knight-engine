@@ -14,7 +14,7 @@ namespace foundation
 	/// useful for string formatting, etc.
 	namespace string_stream
 	{
-		typedef Array<char> Buffer;
+		using Buffer = Array<char>;
 
 		/// Dumps the item to the stream using a default formatting.
 		Buffer & operator<<(Buffer &b, char c);
@@ -25,7 +25,8 @@ namespace foundation
 		Buffer & operator<<(Buffer &b, uint64_t i);
 
 		/// Uses printf to print formatted data to the stream.
-		Buffer & printf(Buffer &b, const char *format, ...);
+		template<typename... Args>
+		Buffer & printf(Buffer &b, const char *format, Args... args);
 
 		/// Pushes the raw data to the stream.
 		Buffer & push(Buffer &b, const char *data, uint32_t n);
@@ -88,6 +89,20 @@ namespace foundation
 		inline Buffer & operator<<(Buffer &b, uint64_t i)
 		{
 			return string_stream_internal::printf_small(b, "%01llx", i);
+		}
+
+		template<typename... Args>
+		Buffer & printf(Buffer &b, const char *format, Args... args)
+		{
+			int n = snprintf(NULL, 0, format, args...);
+			uint32_t end = array::size(b);
+
+			array::resize(b, end + n + 1);
+			snprintf(array::begin(b) + end, n + 1, format, args...);
+			
+			array::resize(b, end + n);
+
+			return b;
 		}
 
 		inline Buffer & push(Buffer &b, const char *data, uint32_t n)

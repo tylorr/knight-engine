@@ -1,5 +1,4 @@
 #include "uniform_manager.h"
-#include "shader_program.h"
 #include "uniform.h"
 #include "iterators.h"
 

@@ -1285,7 +1285,7 @@ typedef void* mspace;
   compiling with a different DEFAULT_GRANULARITY or dynamically
   setting with mallopt(M_GRANULARITY, value).
 */
-DLMALLOC_EXPORT mspace create_mspace(foundation::Allocator *allocator, size_t capacity, int locked);
+DLMALLOC_EXPORT mspace create_mspace(foundation::Allocator *backing, size_t capacity, int locked);
 
 /*
   destroy_mspace destroys the given space, and attempts to return all
@@ -1304,7 +1304,7 @@ DLMALLOC_EXPORT size_t destroy_mspace(mspace msp);
   Destroying this space will deallocate all additionally allocated
   space (if possible) but not the initial base.
 */
-DLMALLOC_EXPORT mspace create_mspace_with_base(foundation::Allocator *allocator, void* base, size_t capacity, int locked);
+DLMALLOC_EXPORT mspace create_mspace_with_base(foundation::Allocator *backing, void* base, size_t capacity, int locked);
 
 /*
   mspace_track_large_chunks controls whether requests for large chunks
@@ -1384,8 +1384,6 @@ DLMALLOC_EXPORT size_t mspace_footprint(mspace msp);
   system for this space.
 */
 DLMALLOC_EXPORT size_t mspace_max_footprint(mspace msp);
-
-DLMALLOC_EXPORT size_t dlallocated_size(void *mem);
 
 
 #if !NO_MALLINFO

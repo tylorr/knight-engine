@@ -1,6 +1,5 @@
 #include "imgui_manager.h"
 
-#include "shader_program.h"
 #include "uniform.h"
 #include "buffer_object.h"
 #include "vertex_array.h"

@@ -35,11 +35,11 @@ class ShaderProgram {
   GLint GetUniformLocation(const GLchar *name) const;
   GLint GetAttributeLocation(const GLchar *name) const;
 
- private:
   GLuint handle_;
   GLuint vertex_handle_;
   GLuint fragment_handle_;
-
+  
+ private:
   KNIGHT_DISALLOW_COPY_AND_ASSIGN(ShaderProgram);
 };
 

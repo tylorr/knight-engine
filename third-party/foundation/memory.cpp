@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <new>
+#include <cstdio>
 
 namespace {
 	using namespace foundation;
@@ -157,6 +158,8 @@ namespace {
 		virtual uint32_t total_allocated() {
 			return _end - _begin;
 		}
+
+		virtual void *allocation_base(void *p) { return nullptr; }
 	};
 
 	struct MemoryGlobals {
@@ -191,6 +194,7 @@ namespace foundation
 	HeapAllocator::HeapAllocator(Allocator &backing_allocator)
 			: _total_allocated(0) {
 		_memory_space = create_mspace(&backing_allocator, 0, false);
+		mspace_track_large_chunks(_memory_space, true);
 		assert(_memory_space);
 	}
 
@@ -201,7 +205,8 @@ namespace foundation
 
  	void *HeapAllocator::allocate(uint32_t size, uint32_t align) {
  		void *p = mspace_memalign(_memory_space, align, size);
- 		_total_allocated += allocated_size(p);
+ 		auto as = allocated_size(p);
+ 		_total_allocated += as;
  		return p;
  	}
 
@@ -211,7 +216,7 @@ namespace foundation
  	}
 
  	uint32_t HeapAllocator::allocated_size(void *p) {
- 		return dlallocated_size(p);
+ 		return mspace_usable_size(p);
  	}
 
 	uint32_t HeapAllocator::total_allocated() {
@@ -233,8 +238,8 @@ namespace foundation
 
  	void *PageAllocator::allocate(uint32_t size, uint32_t align) {
  		void *ptr = VirtualAlloc(0, size, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
- 		auto rs = allocated_size(ptr);
- 		_total_allocated += rs;
+ 		auto as = allocated_size(ptr);
+ 		_total_allocated += as;
  		return ptr;
  	}
 
@@ -251,6 +256,12 @@ namespace foundation
 
 	uint32_t PageAllocator::total_allocated() {
 		return _total_allocated;
+	}
+
+	void *PageAllocator::allocation_base(void *p) {
+		MEMORY_BASIC_INFORMATION minfo;
+ 		VirtualQuery(p, &minfo, sizeof(minfo));
+ 		return minfo.AllocationBase;
 	}
 
 	///

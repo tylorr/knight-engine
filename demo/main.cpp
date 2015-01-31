@@ -52,7 +52,7 @@ int current_width = 1280,
 
 GLFWwindow *window;
 
-bool Initialize(UniformManager &);
+bool Initialize();
 bool InitWindow();
 
 void GlfwKeyCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
@@ -92,9 +92,10 @@ int main(int argc, char *argv[]) {
 
     auto udp_listener = UdpListener{};
     udp_listener.Start(1234);
-
-    UniformManager uniform_manager(a);
-    if (Initialize(uniform_manager)) {
+    
+    if (Initialize()) {
+      UniformManager uniform_manager(a);
+      ImGuiManager::Initialize(window, &uniform_manager);
       
       std::string source_dll_name = "bin/libgame.dll";
       std::string temp_dll_name = "bin/temp_libgame.dll";
@@ -152,7 +153,7 @@ int main(int argc, char *argv[]) {
   exit(EXIT_SUCCESS);
 }
 
-bool Initialize(UniformManager &uniform_manager)
+bool Initialize()
 {
   auto glew_init_result = GLenum{};
 
@@ -175,8 +176,6 @@ bool Initialize(UniformManager &uniform_manager)
   }
 
   INFO("OpenGL Version: %s", glGetString(GL_VERSION));
-
-  ImGuiManager::Initialize(window, &uniform_manager);
   
   glClearColor(0.8f, 0.6f, 0.6f, 1.0f);
 

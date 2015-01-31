@@ -6,26 +6,6 @@ namespace foundation
 {
 	namespace string_stream
 	{
-		Buffer & printf(Buffer &b, const char *format, ...)
-		{
-			va_list args;
-			
-			va_start(args, format);
-			int n = vsnprintf(NULL, 0, format, args);
-			va_end(args);
-
-			uint32_t end = array::size(b);
-			array::resize(b, end + n + 1);
-			
-			va_start(args, format);
-			vsnprintf(array::begin(b) + end, n + 1, format, args);
-			va_end(args);
-			
-			array::resize(b, end + n);
-
-			return b;
-		}
-
 		Buffer & tab(Buffer &b, uint32_t column)
 		{
 			uint32_t current_column = 0;

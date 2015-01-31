@@ -44,6 +44,9 @@ namespace foundation
 		/// If the allocator doesn't track memory, this function returns SIZE_NOT_TRACKED.
 		virtual uint32_t total_allocated() = 0;
 
+		/// Returns base address of an allocation or nullptr if not supported
+		virtual void *allocation_base(void *p) = 0;
+
 		/// Creates a new object of type T using the allocator to allocate the memory.
 		template<typename T, typename... Args>
 		T *make_new(Args&&... args);
@@ -83,6 +86,8 @@ namespace foundation
 	 	virtual uint32_t allocated_size(void *p);
 		virtual uint32_t total_allocated();
 
+		virtual void *allocation_base(void *p) { return nullptr; }
+
 	 private:
 	 	void *_memory_space;
 	 	uint32_t _total_allocated;
@@ -98,6 +103,8 @@ namespace foundation
 
 	 	virtual uint32_t allocated_size(void *p);
 		virtual uint32_t total_allocated();
+
+		virtual void *allocation_base(void *p);
 
 	 private:
 	 	uint32_t _total_allocated;

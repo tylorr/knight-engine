@@ -209,15 +209,45 @@ unsigned char _BitScanReverse(unsigned long *index, unsigned long mask);
 
 #if HAVE_MMAP
 
+
+static FORCEINLINE void* backing_mmap(foundation::Allocator *backing, size_t size) {
+  if (backing == nullptr)
+    return MFAIL;
+
+  void *ptr = backing->allocate(size);
+  return (ptr != 0) ? ptr : MFAIL;
+}
+
+static FORCEINLINE int backing_munmap(foundation::Allocator *backing, void* ptr, size_t size) {
+  if (backing == nullptr)
+    return -1;
+
+  char* cptr = (char*)ptr;
+  while (size) {
+    if (backing->allocation_base(cptr) != cptr)
+      return -1;
+
+    auto region_size = backing->allocated_size(cptr);
+    backing->deallocate(cptr);
+    cptr += region_size;
+    size -= region_size;
+  }
+  return 0;
+}
+
+#define MMAP_DEFAULT(b, s)          backing_mmap((b), (s))
+#define MUNMAP_DEFAULT(b, a, s)     backing_munmap((b), (a), (s))
+#define DIRECT_MMAP_DEFAULT(b, s)   backing_mmap((b), (s))
+
 #ifndef WIN32
-#define MUNMAP_DEFAULT(a, s)  munmap((a), (s))
+// #define MUNMAP_DEFAULT(a, s)  munmap((a), (s))
 #define MMAP_PROT            (PROT_READ|PROT_WRITE)
 #if !defined(MAP_ANONYMOUS) && defined(MAP_ANON)
 #define MAP_ANONYMOUS        MAP_ANON
 #endif /* MAP_ANON */
 #ifdef MAP_ANONYMOUS
 #define MMAP_FLAGS           (MAP_PRIVATE|MAP_ANONYMOUS)
-#define MMAP_DEFAULT(s)       mmap(0, (s), MMAP_PROT, MMAP_FLAGS, -1, 0)
+// #define MMAP_DEFAULT(s)       mmap(0, (s), MMAP_PROT, MMAP_FLAGS, -1, 0)
 #else /* MAP_ANONYMOUS */
 /*
    Nearly all versions of mmap support MAP_ANONYMOUS, so the following
@@ -225,13 +255,13 @@ unsigned char _BitScanReverse(unsigned long *index, unsigned long mask);
 */
 #define MMAP_FLAGS           (MAP_PRIVATE)
 static int dev_zero_fd = -1; /* Cached file descriptor for /dev/zero. */
-#define MMAP_DEFAULT(s) ((dev_zero_fd < 0) ? \
-           (dev_zero_fd = open("/dev/zero", O_RDWR), \
-            mmap(0, (s), MMAP_PROT, MMAP_FLAGS, dev_zero_fd, 0)) : \
-            mmap(0, (s), MMAP_PROT, MMAP_FLAGS, dev_zero_fd, 0))
+// #define MMAP_DEFAULT(s) ((dev_zero_fd < 0) ? \
+//            (dev_zero_fd = open("/dev/zero", O_RDWR), \
+//             mmap(0, (s), MMAP_PROT, MMAP_FLAGS, dev_zero_fd, 0)) : \
+//             mmap(0, (s), MMAP_PROT, MMAP_FLAGS, dev_zero_fd, 0))
 #endif /* MAP_ANONYMOUS */
 
-#define DIRECT_MMAP_DEFAULT(s) MMAP_DEFAULT(s)
+// #define DIRECT_MMAP_DEFAULT(s) MMAP_DEFAULT(s)
 
 #else /* WIN32 */
 
@@ -266,9 +296,9 @@ static int dev_zero_fd = -1; /* Cached file descriptor for /dev/zero. */
 //   return 0;
 // }
 
-#define MMAP_DEFAULT(s)             win32mmap(s)
-#define MUNMAP_DEFAULT(a, s)        win32munmap((a), (s))
-#define DIRECT_MMAP_DEFAULT(s)      win32direct_mmap(s)
+// #define MMAP_DEFAULT(s)             win32mmap(s)
+// #define MUNMAP_DEFAULT(a, s)        win32munmap((a), (s))
+// #define DIRECT_MMAP_DEFAULT(s)      win32direct_mmap(s)
 #endif /* WIN32 */
 #endif /* HAVE_MMAP */
 
@@ -297,30 +327,30 @@ static int dev_zero_fd = -1; /* Cached file descriptor for /dev/zero. */
 #if HAVE_MMAP
     #define USE_MMAP_BIT            (SIZE_T_ONE)
 
-    // #ifdef MMAP
-    //     #define CALL_MMAP(s)        MMAP(s)
-    // #else /* MMAP */
-    //     #define CALL_MMAP(s)        MMAP_DEFAULT(s)
-    // #endif /* MMAP */
-    // #ifdef MUNMAP
-    //     #define CALL_MUNMAP(a, s)   MUNMAP((a), (s))
-    // #else  /* MUNMAP */ 
-    //     #define CALL_MUNMAP(a, s)   MUNMAP_DEFAULT((a), (s))
-    // #endif /* MUNMAP */
-    // #ifdef DIRECT_MMAP
-    //     #define CALL_DIRECT_MMAP(s) DIRECT_MMAP(s)
-    // #else  /* DIRECT_MMAP */
-    //     #define CALL_DIRECT_MMAP(s) DIRECT_MMAP_DEFAULT(s)
-    // #endif /* DIRECT_MMAP */
+    #ifdef MMAP
+        #define CALL_MMAP(b, s)        MMAP((b), (s))
+    #else /* MMAP */
+        #define CALL_MMAP(b, s)        MMAP_DEFAULT((b), (s))
+    #endif /* MMAP */
+    #ifdef MUNMAP
+        #define CALL_MUNMAP(b, a, s)   MUNMAP((b), (a), (s))
+    #else /* MUNMAP */
+        #define CALL_MUNMAP(b, a, s)   MUNMAP_DEFAULT((b), (a), (s))
+    #endif /* MUNMAP */
+    #ifdef DIRECT_MMAP
+        #define CALL_DIRECT_MMAP(b, s) DIRECT_MMAP((b), (s))
+    #else /* DIRECT_MMAP */
+        #define CALL_DIRECT_MMAP(b, s) DIRECT_MMAP_DEFAULT((b), (s))
+    #endif /* DIRECT_MMAP */
 #else  /* HAVE_MMAP */
     #define USE_MMAP_BIT            (SIZE_T_ZERO)
 
-    // #define MMAP(s)                 MFAIL
-    // #define MUNMAP(a, s)            (-1)
-    // #define DIRECT_MMAP(s)          MFAIL
-    // #define CALL_DIRECT_MMAP(s)     DIRECT_MMAP(s)
-    // #define CALL_MMAP(s)            MMAP(s)
-    // #define CALL_MUNMAP(a, s)       MUNMAP((a), (s))
+    #define MMAP(b, s)              MFAIL
+    #define MUNMAP(b, a, s)         (-1)
+    #define DIRECT_MMAP(b, s)       MFAIL
+    #define CALL_DIRECT_MMAP(b, s)  DIRECT_MMAP(b, s)
+    #define CALL_MMAP(b, s)         MMAP(b, s)
+    #define CALL_MUNMAP(b, a, s)    MUNMAP((b), (a), (s))
 #endif /* HAVE_MMAP */
 
 /**
@@ -1171,7 +1201,7 @@ struct malloc_state {
   msegment   seg;
   void*      extp;      /* Unused but available for extensions */
   size_t     exts;
-  foundation::Allocator *backing_allocator;
+  foundation::Allocator *backing;
 };
 
 typedef struct malloc_state*    mstate;
@@ -2392,14 +2422,6 @@ static void internal_malloc_stats(mstate m) {
   requirements (especially in memalign).
 */
 
-static void *mmap_with_allocator(mstate m, size_t size) {
-  void *ptr = 0;
-  if (m->backing_allocator) {
-    ptr = m->backing_allocator->allocate(size);
-  }
-  return (ptr != 0) ? ptr : MFAIL;
-}
-
 /* Malloc using mmap */
 static void* mmap_alloc(mstate m, size_t nb) {
   size_t mmsize = mmap_align(nb + SIX_SIZE_T_SIZES + CHUNK_ALIGN_MASK);
@@ -2409,7 +2431,7 @@ static void* mmap_alloc(mstate m, size_t nb) {
       return 0;
   }
   if (mmsize > nb) {     /* Check for wrap around 0 */
-    char* mm = (char*)(mmap_with_allocator(m, mmsize));
+    char* mm = (char*)(CALL_DIRECT_MMAP(m->backing, mmsize));
     if (mm != CMFAIL) {
       size_t offset = align_offset(chunk2mem(mm));
       size_t psize = mmsize - offset - MMAP_FOOT_PAD;
@@ -2720,7 +2742,7 @@ static void* sys_alloc(mstate m, size_t nb) {
   }
 
   if (HAVE_MMAP && tbase == CMFAIL) {  /* Try MMAP */
-    char* mp = (char*)(mmap_with_allocator(m, asize));
+    char* mp = (char*)(CALL_MMAP(m->backing, asize));
     if (mp != CMFAIL) {
       tbase = mp;
       tsize = asize;
@@ -2847,8 +2869,7 @@ static size_t release_unused_segments(mstate m) {
         else {
           unlink_large_chunk(m, tp);
         }
-        if (m->backing_allocator) {
-          m->backing_allocator->deallocate(base);
+        if (CALL_MUNMAP(m->backing, base, size) == 0) {
           released += size;
           m->footprint -= size;
           /* unlink obsoleted record */
@@ -2892,15 +2913,8 @@ static int sys_trim(mstate m, size_t pad) {
             size_t newsize = sp->size - extra;
             (void)newsize; /* placate people compiling -Wunused-variable */
             /* Prefer mremap, fall back to munmap */
-            // if ((CALL_MREMAP(sp->base, sp->size, newsize, 0) != MFAIL) ||
-            //     (CALL_MUNMAP(sp->base + newsize, extra) == 0)) {
-            //   released = extra;
-            // }
-
-            if (CALL_MREMAP(sp->base, sp->size, newsize, 0) != MFAIL) {
-              released = extra;
-            } else if (m->backing_allocator) {
-              m->backing_allocator->deallocate(sp->base + newsize);
+            if ((CALL_MREMAP(sp->base, sp->size, newsize, 0) != MFAIL) ||
+                (CALL_MUNMAP(m->backing, sp->base + newsize, extra) == 0)) {
               released = extra;
             }
           }
@@ -2953,11 +2967,8 @@ static void dispose_chunk(mstate m, mchunkptr p, size_t psize) {
     size_t prevsize = p->prev_foot;
     if (is_mmapped(p)) {
       psize += prevsize + MMAP_FOOT_PAD;
-      //if (CALL_MUNMAP((char*)p - prevsize, psize) == 0) {
-      if (m->backing_allocator) {
-        m->backing_allocator->deallocate((char*)p - prevsize);
+      if (CALL_MUNMAP(m->backing, (char*)p - prevsize, psize) == 0)
         m->footprint -= psize;
-      }
       return;
     }
     prev = chunk_minus_offset(p, prevsize);
@@ -3295,11 +3306,8 @@ void dlfree(void* mem) {
           size_t prevsize = p->prev_foot;
           if (is_mmapped(p)) {
             psize += prevsize + MMAP_FOOT_PAD;
-            //if (CALL_MUNMAP((char*)p - prevsize, psize) == 0)
-            if (m->backing_allocator) {
-              m->backing_allocator->deallocate((char*)p - prevsize);
+            if (CALL_MUNMAP(fm->backing, (char*)p - prevsize, psize) == 0)
               fm->footprint -= psize;
-            }
             goto postaction;
           }
           else {
@@ -3988,7 +3996,7 @@ size_t dlmalloc_usable_size(void* mem) {
 
 #if MSPACES
 
-static mstate init_user_mstate(foundation::Allocator *backing_allocator, char* tbase, size_t tsize) {
+static mstate init_user_mstate(foundation::Allocator *backing, char* tbase, size_t tsize) {
   size_t msize = pad_request(sizeof(struct malloc_state));
   mchunkptr mn;
   mchunkptr msp = align_as_chunk(tbase);
@@ -4003,7 +4011,7 @@ static mstate init_user_mstate(foundation::Allocator *backing_allocator, char* t
   m->mflags = mparams.default_mflags;
   m->extp = 0;
   m->exts = 0;
-  m->backing_allocator = backing_allocator;
+  m->backing = backing;
   disable_contiguous(m);
   init_bins(m);
   mn = next_chunk(mem2chunk(m));
@@ -4012,7 +4020,7 @@ static mstate init_user_mstate(foundation::Allocator *backing_allocator, char* t
   return m;
 }
 
-mspace create_mspace(foundation::Allocator *allocator, size_t capacity, int locked) {
+mspace create_mspace(foundation::Allocator *backing, size_t capacity, int locked) {
   mstate m = 0;
   size_t msize;
   ensure_initialization();
@@ -4021,13 +4029,9 @@ mspace create_mspace(foundation::Allocator *allocator, size_t capacity, int lock
     size_t rs = ((capacity == 0)? mparams.granularity :
                  (capacity + TOP_FOOT_SIZE + msize));
     size_t tsize = granularity_align(rs);
-    char* tbase = CMFAIL;
-    if (allocator) {
-      tbase = (char*)(allocator->allocate(tsize));
-      tbase = (tbase != 0) ? tbase : CMFAIL;
-    }
+    char* tbase = (char*)(CALL_MMAP(backing, tsize));
     if (tbase != CMFAIL) {
-      m = init_user_mstate(allocator, tbase, tsize);
+      m = init_user_mstate(backing, tbase, tsize);
       m->seg.sflags = USE_MMAP_BIT;
       set_lock(m, locked);
     }
@@ -4035,14 +4039,14 @@ mspace create_mspace(foundation::Allocator *allocator, size_t capacity, int lock
   return (mspace)m;
 }
 
-mspace create_mspace_with_base(foundation::Allocator *allocator, void* base, size_t capacity, int locked) {
+mspace create_mspace_with_base(foundation::Allocator *backing, void* base, size_t capacity, int locked) {
   mstate m = 0;
   size_t msize;
   ensure_initialization();
   msize = pad_request(sizeof(struct malloc_state));
   if (capacity > msize + TOP_FOOT_SIZE &&
       capacity < (size_t) -(msize + TOP_FOOT_SIZE + mparams.page_size)) {
-    m = init_user_mstate(allocator, (char*)base, capacity);
+    m = init_user_mstate(backing, (char*)base, capacity);
     m->seg.sflags = EXTERN_BIT;
     set_lock(m, locked);
   }
@@ -4079,10 +4083,8 @@ size_t destroy_mspace(mspace msp) {
       (void)base; /* placate people compiling -Wunused-variable */
       sp = sp->next;
       if ((flag & USE_MMAP_BIT) && !(flag & EXTERN_BIT) &&
-          ms->backing_allocator) {
-        ms->backing_allocator->deallocate(base);
+          CALL_MUNMAP(ms->backing, base, size) == 0)
         freed += size;
-      }
     }
   }
   else {
@@ -4210,15 +4212,6 @@ void* mspace_malloc(mspace msp, size_t bytes) {
   return 0;
 }
 
-size_t dlallocated_size(void *mem) {
-  size_t result = 0;
-  if (mem != 0) {
-    mchunkptr p  = mem2chunk(mem);
-    result = chunksize(p);
-  }
-  return result;
-}
-
 void mspace_free(mspace msp, void* mem) {
   if (mem != 0) {
     mchunkptr p  = mem2chunk(mem);
@@ -4241,11 +4234,8 @@ void mspace_free(mspace msp, void* mem) {
           size_t prevsize = p->prev_foot;
           if (is_mmapped(p)) {
             psize += prevsize + MMAP_FOOT_PAD;
-            //if (CALL_MUNMAP((char*)p - prevsize, psize) == 0)
-            if (fm->backing_allocator) {
-              fm->backing_allocator->deallocate((char*)p - prevsize);
+            if (CALL_MUNMAP(fm->backing, (char*)p - prevsize, psize) == 0)
               fm->footprint -= psize;
-            }
             goto postaction;
           }
           else {

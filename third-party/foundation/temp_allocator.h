@@ -31,6 +31,8 @@ namespace foundation
 		/// Returns SIZE_NOT_TRACKED.
 		virtual uint32_t total_allocated() {return SIZE_NOT_TRACKED;}
 
+		virtual void *allocation_base(void *p) { return nullptr; }
+
 		bool is_buffer_allocated(void *) const;
 
 	private:

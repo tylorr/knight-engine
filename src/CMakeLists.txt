@@ -13,6 +13,8 @@ set(SOURCES
     task_manager.cpp
     stb_impl.cpp
     udp_listener.cpp
+    string_util.cpp
+    win32/file.cpp
 )
 
 include_directories(${KNIGHT_ENGINE_INCLUDES})

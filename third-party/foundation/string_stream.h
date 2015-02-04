@@ -14,7 +14,7 @@ namespace foundation
 	/// useful for string formatting, etc.
 	namespace string_stream
 	{
-		using Buffer = Array<char>;
+		using Buffer = Array<char, 4>;
 
 		/// Dumps the item to the stream using a default formatting.
 		Buffer & operator<<(Buffer &b, char c);

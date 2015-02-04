@@ -13,8 +13,10 @@
 namespace foundation
 {
 	/// Dynamically resizable array of POD objects.
-	template<typename T> struct Array
+	template<typename T, uint32_t align = alignof(T)> struct Array
 	{
+		using value_type = T;
+		
 		Array(Allocator &a);
 		~Array();
 		Array(const Array &other);

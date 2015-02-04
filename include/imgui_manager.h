@@ -9,9 +9,8 @@ namespace knight {
 namespace ImGuiManager {
 
 void Initialize(GLFWwindow *window, UniformManager *uniform_manager);
-void Shutdown();
 
-void BeginFrame();
+void BeginFrame(double delta_time);
 void EndFrame();
 
 void OnMouse(int button, int action);

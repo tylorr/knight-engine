@@ -21,6 +21,8 @@ set(BUILD_SHARED_LIBS ON)
 
 add_definitions(-DGLM_FORCE_RADIANS)
 add_definitions(-DDEVELOPMENT)
+add_definitions(-DUNICODE=1)
+add_definitions(-D_UNICODE=1)
 
 macro(add_fbs _fb_list_name)
   file(RELATIVE_PATH _relPath "${CMAKE_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}")
@@ -61,6 +63,7 @@ set(KNIGHT_ENGINE_INCLUDES
   ${PROJECT_SOURCE_DIR}/third-party/foundation
   ${PROJECT_SOURCE_DIR}/third-party/enet/include
   ${PROJECT_SOURCE_DIR}/third-party/assimp/include
+  ${PROJECT_SOURCE_DIR}/third-party/utf8
   ${FBSCHEMA_OUTPUT}
   #${LUA_INCLUDE_DIR}
 )

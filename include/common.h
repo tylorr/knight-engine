@@ -79,14 +79,6 @@ void error(const int &line_number, const char *filename,
   abort();
 }
 
-struct ReadFileResult {
-  uint32_t content_size;
-  void *content;
-};
-
-ReadFileResult ReadEntireFile(foundation::Allocator &allocator, const char *filename);
-void FreeFileMemory(foundation::Allocator &allocator, void *file_memory);
-
 void *knight_malloc(size_t size);
 void knight_free(void *ptr);
 void knight_no_memory();

@@ -5,9 +5,13 @@
 #include "vertex_array.h"
 #include "uniform.h"
 #include "uniform_manager.h"
+#include "imgui_manager.h"
+#include "platform_types.h"
 
 #include <logog.hpp>
 #include <memory.h>
+#include <string_stream.h>
+#include <temp_allocator.h>
 
 #include <imgui.h>
 
@@ -27,6 +31,7 @@
 
 using namespace knight;
 using namespace foundation;
+using namespace foundation::string_stream;
 
 struct Vertex {
   glm::vec3 position;
@@ -34,7 +39,7 @@ struct Vertex {
 };
 
 Allocator *allocator;
-UniformManager *uniform_manager;
+UniformManager *uniform_manager_;
 ShaderProgram program;
 BufferObject vbo;
 BufferObject ibo;
@@ -49,30 +54,26 @@ std::vector<Vertex> vertices;
 std::vector<unsigned int> indices;
 
 extern "C" GAME_INIT(Init) {
-  ::uniform_manager = &uniform_manager;
+
+  ImGuiManager::Initialize(&window, &uniform_manager);
+
+  uniform_manager_ = &uniform_manager;
   allocator = &memory_globals::default_allocator();
-  auto read_result = ReadEntireFile(*allocator, "../shaders/blinn_phong.shader");
-  //program = allocator->make_new<ShaderProgram>(*allocator);
-  program.Initialize(uniform_manager, (char *)read_result.content);
-  FreeFileMemory(*allocator, read_result.content);
+
+  {
+    TempAllocator4096 temp_allocator;
+    Buffer phong_shader_buffer{temp_allocator};
+
+    File phong_shader{"../shaders/blinn_phong.shader"};
+    phong_shader.Read(phong_shader_buffer);
+    program.Initialize(uniform_manager, c_str(phong_shader_buffer));
+  }
 
   mvp_uniform = uniform_manager.Get<float, 4, 4>(program, "MVP");
   mv_matrix_uniform = uniform_manager.Get<float, 4, 4>(program, "ModelView");
   normal_matrix_uniform = uniform_manager.Get<float, 3, 3>(program, "NormalMatrix");
 
   model_matrix = glm::mat4{1.0};
-
-  // auto view_matrix = glm::translate(glm::mat4{1.0f}, glm::vec3{0, -8, -40});
-  // auto projection_matrix = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 100.f);
-
-  // auto model_view_matrix = view_matrix * model_matrix;
-  // mv_matrix_uniform->SetValue(glm::value_ptr(model_view_matrix));
-
-  // auto mvp_matrix = projection_matrix * model_view_matrix;
-  // mvp_uniform->SetValue(glm::value_ptr(mvp_matrix));
-
-  // auto normal_matrix = glm::inverseTranspose(glm::mat3(model_view_matrix));
-  // normal_matrix_uniform->SetValue(glm::value_ptr(normal_matrix));
 
   uniform_manager.PushUniforms(program);
 
@@ -120,49 +121,57 @@ extern "C" GAME_INIT(Init) {
   program.Unbind();
 }
 
-auto current_time = 0.0;
-auto prev_time = 0.0;
-auto delta_time = 0.0;
-
 bool show_test_window = true;
 
+char string_buff[256];
+char foo_buff[256];
+
 extern "C" GAME_UPDATE_AND_RENDER(UpdateAndRender) {
-  current_time = glfwGetTime();
-  delta_time = current_time - prev_time;
+
+  static auto prev_time = 0.0;
+  auto current_time = glfwGetTime();
+  auto delta_time = current_time - prev_time;
   prev_time = current_time;
 
   glClear(GL_COLOR_BUFFER_BIT);
 
+  ImGuiManager::BeginFrame(delta_time);
+
   ImGui::Text("Hello, world!");
   ImGui::Text("This one too!");
+
+  ImGui::InputText("string", string_buff, 256);
+  ImGui::InputText("foo", foo_buff, 256);
 
   if (show_test_window) {
     ImGui::ShowTestWindow(&show_test_window);
   }
 
-  // model_matrix = glm::rotate(model_matrix, (float)delta_time, glm::vec3(0.0f, 1.0f, 0.0f));
+  model_matrix = glm::rotate(model_matrix, (float)delta_time, glm::vec3(0.0f, 1.0f, 0.0f));
 
-  // auto view_matrix = glm::translate(glm::mat4{1.0f}, glm::vec3{0, -8, -40});
-  // auto projection_matrix = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 100.f);
+  auto view_matrix = glm::translate(glm::mat4{1.0f}, glm::vec3{0, -8, -40});
+  auto projection_matrix = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 100.f);
 
-  // auto model_view_matrix = view_matrix * model_matrix;
-  // mv_matrix_uniform->SetValue(glm::value_ptr(model_view_matrix));
+  auto model_view_matrix = view_matrix * model_matrix;
+  mv_matrix_uniform->SetValue(glm::value_ptr(model_view_matrix));
 
-  // auto mvp_matrix = projection_matrix * model_view_matrix;
-  // mvp_uniform->SetValue(glm::value_ptr(mvp_matrix));
+  auto mvp_matrix = projection_matrix * model_view_matrix;
+  mvp_uniform->SetValue(glm::value_ptr(mvp_matrix));
 
-  // auto normal_matrix = glm::inverseTranspose(glm::mat3(model_view_matrix));
-  // normal_matrix_uniform->SetValue(glm::value_ptr(normal_matrix));
+  auto normal_matrix = glm::inverseTranspose(glm::mat3(model_view_matrix));
+  normal_matrix_uniform->SetValue(glm::value_ptr(normal_matrix));
 
-  // program.Bind();
-  // ::uniform_manager->PushUniforms(program);
+  program.Bind();
+  uniform_manager_->PushUniforms(program);
   
-  // vao.Bind();
+  vao.Bind();
 
-  // glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, nullptr);
+  glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, nullptr);
 
-  // program.Unbind();
-  // vao.Unbind();
+  ImGuiManager::EndFrame();
+
+  program.Unbind();
+  vao.Unbind();
 }
 
 extern "C" GAME_SHUTDOWN(Shutdown) {

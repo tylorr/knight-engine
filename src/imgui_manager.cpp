@@ -61,13 +61,13 @@ struct ImGuiManagerState {
 
 ImGuiManagerState imgui_manager_state;
 
-void RenderDrawLists(ImDrawList **const cmd_lists, int cmd_lists_count);
+void RenderDrawLists(ImDrawList **const cmd_lists, int command_lists_count);
 
 const char *GetClipboardString();
 void SetClipboardString(const char *text);
 
-void RenderDrawLists(ImDrawList **const cmd_lists, int cmd_lists_count) {
-  if (cmd_lists_count == 0) {
+void RenderDrawLists(ImDrawList **const command_lists, int command_lists_count) {
+  if (command_lists_count == 0) {
     return;
   }
 
@@ -93,8 +93,8 @@ void RenderDrawLists(ImDrawList **const cmd_lists, int cmd_lists_count) {
   imgui_manager_state.uniform_manager->PushUniforms(program);
 
   auto total_vertex_count = 0_z;
-  for (int n = 0; n < cmd_lists_count; n++) {
-    total_vertex_count += cmd_lists[n]->vtx_buffer.size();
+  for (int n = 0; n < command_lists_count; n++) {
+    total_vertex_count += command_lists[n]->vtx_buffer.size();
   }
 
   auto &vbo = imgui_manager_state.vbo;
@@ -111,12 +111,12 @@ void RenderDrawLists(ImDrawList **const cmd_lists, int cmd_lists_count) {
   if (!buffer_data)
     return;
 
-  for (int i = 0; i < cmd_lists_count; i++) {
-    const auto* cmd_list = cmd_lists[i];
+  for (int i = 0; i < command_lists_count; i++) {
+    auto *command_list = command_lists[i];
     memcpy(buffer_data, 
-           &cmd_list->vtx_buffer[0], 
-           cmd_list->vtx_buffer.size() * sizeof(ImDrawVert));
-    buffer_data += cmd_list->vtx_buffer.size() * sizeof(ImDrawVert);
+           &command_list->vtx_buffer[0], 
+           command_list->vtx_buffer.size() * sizeof(ImDrawVert));
+    buffer_data += command_list->vtx_buffer.size() * sizeof(ImDrawVert);
   }
 
   glUnmapBuffer(GL_ARRAY_BUFFER);
@@ -126,11 +126,11 @@ void RenderDrawLists(ImDrawList **const cmd_lists, int cmd_lists_count) {
   vao.Bind();
 
   auto previous_vertex_offset = 0;
-  for (auto i = 0; i < cmd_lists_count; i++) {
-    const ImDrawList* cmd_list = cmd_lists[i];
+  for (auto i = 0; i < command_lists_count; i++) {
+    auto  *command_list = command_lists[i];
     auto vertex_offset = previous_vertex_offset;
-    const ImDrawCmd* pcmd_end = cmd_list->commands.end();
-    for (const ImDrawCmd* pcmd = cmd_list->commands.begin(); pcmd != pcmd_end; pcmd++) {
+    const ImDrawCmd* pcmd_end = command_list->commands.end();
+    for (const ImDrawCmd* pcmd = command_list->commands.begin(); pcmd != pcmd_end; pcmd++) {
       glScissor(pcmd->clip_rect.x, 
                 height - pcmd->clip_rect.w, 
                 pcmd->clip_rect.z - pcmd->clip_rect.x, 
@@ -162,13 +162,9 @@ void Initialize(GLFWwindow *window, UniformManager *uniform_manager) {
   imgui_manager_state.uniform_manager = uniform_manager;
   imgui_manager_state.window = window;
 
-  int width, height;
-  glfwGetWindowSize(imgui_manager_state.window, &width, &height);
-
   ImGuiIO &io = ImGui::GetIO();
 
-  io.DisplaySize = ImVec2((float)width, (float)height);
-  io.DeltaTime = 1.0f/60.0f;
+  io.DeltaTime = 1.0f / 60.0f;
   io.PixelCenterOffset = 0.0f;
   io.KeyMap[ImGuiKey_Tab] = GLFW_KEY_TAB;
   io.KeyMap[ImGuiKey_LeftArrow] = GLFW_KEY_LEFT;
@@ -216,45 +212,31 @@ void Initialize(GLFWwindow *window, UniformManager *uniform_manager) {
   auto &program = imgui_manager_state.shader_program;
   program.Initialize(*uniform_manager, kShaderSource);
 
-  // glm::mat4 mvp = glm::ortho(0.0f, (float)width, (float)height, 0.0f, -1.0f, +1.0f);
-
-  // auto mvp_uniform = uniform_manager->Get<float, 4, 4>(program, "MVP");
-  // mvp_uniform->SetValue(glm::value_ptr(mvp));
-
   imgui_manager_state.projection_uniform = uniform_manager->Get<float, 4, 4>(program, "projection");
-  
 
   auto &vbo = imgui_manager_state.vbo;
-  vbo.Initialize(GL_ARRAY_BUFFER);
-  vbo.Data(imgui_manager_state.buffer_size, nullptr, GL_DYNAMIC_DRAW);
+  vbo.Initialize(GL_ARRAY_BUFFER, imgui_manager_state.buffer_size, nullptr, GL_DYNAMIC_DRAW);
 
   auto &vao = imgui_manager_state.vao;
   vao.Initialize();
 
-  vao.BindAttribute(0, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (const GLvoid *)0);
-  vao.BindAttribute(1, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), 
-                    (const GLvoid *)(2 * sizeof(float)));
-  vao.BindAttribute(2, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(ImDrawVert), 
-                    (const GLvoid *)(4 * sizeof(float)));
+  vao.BindAttribute(0, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid *)offsetof(ImDrawVert, pos));
+  vao.BindAttribute(1, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid *)offsetof(ImDrawVert, uv));
+  vao.BindAttribute(2, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(ImDrawVert), (GLvoid *)offsetof(ImDrawVert, col));
 
   vao.Unbind();
   vbo.Unbind();
+  program.Unbind();
 }
 
-void Shutdown() { }
-
-void BeginFrame() {
+void BeginFrame(double delta_time) {
   ImGuiIO &io = ImGui::GetIO();
 
   int display_w, display_h;
   glfwGetFramebufferSize(imgui_manager_state.window, &display_w, &display_h);
   io.DisplaySize = ImVec2((float)display_w, (float)display_h); 
 
-  // TODO: TR Pass in delta time
-  static double previous_time = 0.0f;
-  const double current_time =  glfwGetTime();
-  io.DeltaTime = (float)(current_time - previous_time);
-  previous_time = current_time;
+  io.DeltaTime = (float)delta_time;
 
   int w, h;
   glfwGetWindowSize(imgui_manager_state.window, &w, &h);
@@ -302,13 +284,13 @@ void OnKey(const int &key, const int &action, const int &mods) {
 
 void OnCharacter(const unsigned int &character) {
   if (character > 0 && character <= 255) {
-    ImGui::GetIO().AddInputCharacter((unsigned short)character);
+    ImGui::GetIO().AddInputCharacter(character);
   }
 }
 
 void OnScroll(const double &yoffset) {
   ImGuiIO &io = ImGui::GetIO();
-  io.MouseWheel = (yoffset != 0.0f) ? (yoffset > 0.0f ? 1 : - 1) : 0;
+  io.MouseWheel = (float)yoffset;
 }
 
 } // namespace ImGuiManager

@@ -5,9 +5,11 @@
 #include "cout_flush.h"
 #include "shader_types.h"
 #include "imgui_manager.h"
+#include "back_inserter.h"
 #include "udp_listener.h"
 #include "task_manager.h"
 #include "game.h"
+#include "string_util.h"
 
 #include "event_header_generated.h"
 #include "unload_script_generated.h"
@@ -22,21 +24,27 @@
 #include <glm/gtc/matrix_inverse.hpp>
 
 #include <logog.hpp>
-#include <memory.h>
 
-#include <stb_image.h>
+#include <memory.h>
+#include <temp_allocator.h>
+#include <string_stream.h>
+
 #include <imgui.h>
 
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
-#include <temp_allocator.h>
+#include <utf8.h>
 
 #include <windows.h>
 
+#include <iostream>
+
 using namespace knight;
+using namespace string_util;
 using namespace foundation;
+using namespace foundation::string_stream;
 
 struct GameCode {
   HMODULE module;
@@ -67,7 +75,7 @@ inline FILETIME GetLastWriteTime(const char *filename) {
   FILETIME last_write_time;
 
   WIN32_FILE_ATTRIBUTE_DATA data;
-  if(GetFileAttributesEx(filename, GetFileExInfoStandard, &data)) {
+  if(GetFileAttributesEx(c_str(Widen(filename)), GetFileExInfoStandard, &data)) {
     last_write_time = data.ftLastWriteTime;
   }
 
@@ -95,34 +103,29 @@ int main(int argc, char *argv[]) {
     
     if (Initialize()) {
       UniformManager uniform_manager(a);
-      ImGuiManager::Initialize(window, &uniform_manager);
       
-      std::string source_dll_name = "bin/libgame.dll";
-      std::string temp_dll_name = "bin/temp_libgame.dll";
-      GameCode game = LoadGameCode(source_dll_name.c_str(), temp_dll_name.c_str());
+      const char *source_dll_name = "bin/libgame.dll";
+      const char *temp_dll_name = "bin/temp_libgame.dll";
+      auto game = LoadGameCode(source_dll_name, temp_dll_name);
       
       if (game.Init) {
-        game.Init(uniform_manager);
+        game.Init(*window, uniform_manager);
       }
 
       while (!glfwWindowShouldClose(window)) {
-        FILETIME new_dll_write_time = GetLastWriteTime(source_dll_name.c_str());
+        FILETIME new_dll_write_time = GetLastWriteTime(source_dll_name);
         if(CompareFileTime(&new_dll_write_time, &game.dll_last_write_time) != 0) {
           UnloadGameCode(&game);
-          game = LoadGameCode(source_dll_name.c_str(), temp_dll_name.c_str());
+          game = LoadGameCode(source_dll_name, temp_dll_name);
         }
 
         int display_w, display_h;
         glfwGetFramebufferSize(window, &display_w, &display_h);
         glViewport(0, 0, display_w, display_h);
 
-        ImGuiManager::BeginFrame();
-
         if (game.UpdateAndRender) {
           game.UpdateAndRender();
         }
-
-        ImGuiManager::EndFrame();
 
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -131,8 +134,6 @@ int main(int argc, char *argv[]) {
       if (game.Shutdown) {
         game.Shutdown();
       }
-      
-      ImGuiManager::Shutdown();
 
       glfwTerminate();
     }
@@ -168,7 +169,7 @@ bool Initialize()
     exit(EXIT_FAILURE);
   }
 
-  INFO("OpenGL Version: %s", glGetString(GL_VERSION));
+  INFO("OpenGL %s", glGetString(GL_VERSION));
   
   glClearColor(0.8f, 0.6f, 0.6f, 1.0f);
 
@@ -200,16 +201,22 @@ bool InitWindow() {
   glfwSetScrollCallback(window, GlfwScrollCallback);
   glfwSetCharCallback(window, GlfwCharCallback);
 
+  INFO("GLFW %s", glfwGetVersionString());
+
   return true;
 }
 
 GameCode LoadGameCode(const char *source_dll_name, const char *temp_dll_name) {
   GameCode result;
 
-  CopyFile(source_dll_name, temp_dll_name, false);
+  auto wide_src_buffer = Widen(source_dll_name);
+  auto wide_temp_buffer = Widen(temp_dll_name);
+  auto wide_src_dll_name = c_str(wide_src_buffer);
+  auto wide_temp_dll_name = c_str(wide_temp_buffer);
 
-  result.module = LoadLibraryA(temp_dll_name);
+  CopyFile(wide_src_dll_name, wide_temp_dll_name, false);
 
+  result.module = LoadLibrary(wide_temp_dll_name);
   result.dll_last_write_time = GetLastWriteTime(source_dll_name);
 
   bool is_valid = false;
@@ -217,7 +224,7 @@ GameCode LoadGameCode(const char *source_dll_name, const char *temp_dll_name) {
     result.Init = (game_init *)GetProcAddress(result.module, "Init");
     result.UpdateAndRender = (game_update_and_render *)GetProcAddress(result.module, "UpdateAndRender");
     result.Shutdown = (game_shutdown *)GetProcAddress(result.module, "Shutdown");
-    is_valid = (result.Init && result.UpdateAndRender && result.Shutdown);
+    is_valid = result.Init && result.UpdateAndRender && result.Shutdown;
   }
 
   if (!is_valid) {

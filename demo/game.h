@@ -1,8 +1,10 @@
 #include "shader_types.h"
 
+class GLFWwindow;
+
 namespace knight {
 
-#define GAME_INIT(name) void name(UniformManager &uniform_manager)
+#define GAME_INIT(name) void name(GLFWwindow &window, UniformManager &uniform_manager)
 typedef GAME_INIT(game_init);
 
 #define GAME_UPDATE_AND_RENDER(name) void name()

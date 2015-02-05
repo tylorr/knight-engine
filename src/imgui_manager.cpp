@@ -206,8 +206,7 @@ void Initialize(GLFWwindow *window, UniformManager *uniform_manager) {
                0, GL_RGBA, GL_UNSIGNED_BYTE, tex_data);
   stbi_image_free(tex_data);
 
-  ExitOnGLError("Texture load");
-  //glBindTexture(GL_TEXTURE_2D, 0);
+  GL_ASSERT("Texture was not loaded properly");
 
   auto &program = imgui_manager_state.shader_program;
   program.Initialize(*uniform_manager, kShaderSource);

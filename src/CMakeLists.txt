@@ -5,8 +5,6 @@ set(SOURCES
     vertex_array.cpp
     entity.cpp
     entity_manager.cpp
-    system.cpp
-    component.cpp
     uniform.cpp
     uniform_manager.cpp
     imgui_manager.cpp
@@ -15,13 +13,15 @@ set(SOURCES
     udp_listener.cpp
     string_util.cpp
     win32/file.cpp
+    win32/file_util.cpp
+    win32/game_code.cpp
 )
 
 include_directories(${KNIGHT_ENGINE_INCLUDES})
 
 add_library(knight-engine ${SOURCES})
 
-register_event_fbs(knight-engine ../schema/unload_script.fbs ../schema/event_header.fbs)
+#register_event_fbs(knight-engine ../schema/event_header.fbs)
 
 target_link_libraries(knight-engine glfw ${GLFW_LIBRARIES})
 target_link_libraries(knight-engine ${GLEW_LIBRARIES})

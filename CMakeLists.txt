@@ -52,6 +52,7 @@ find_package(GLEW REQUIRED)
 
 set(KNIGHT_ENGINE_INCLUDES
   ${PROJECT_SOURCE_DIR}/include
+  ${PROJECT_SOURCE_DIR}/include/win32 # TODO: TR Choose by platform
   ${PROJECT_SOURCE_DIR}/type_erasure
   ${PROJECT_SOURCE_DIR}/third-party/glfw/include
   ${GLEW_INCLUDE_DIRS}

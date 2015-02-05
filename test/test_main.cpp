@@ -1,5 +1,4 @@
-#include "color_formatter.h"
-#include "cout_flush.h"
+#include "logog_util.h"
 
 #define CATCH_CONFIG_RUNNER
 #include <catch.hpp>

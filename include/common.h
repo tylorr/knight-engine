@@ -1,16 +1,14 @@
 #pragma once
 
-#include <memory.h>
+#include <GL/glew.h>
 
 #include <bitset>
-#include <cstdint>
-#include <cstdlib>
-#include <limits>
-#include <cstdio>
 
 constexpr std::size_t operator"" _z(unsigned long long n) { 
   return n; 
 }
+
+class GLFWwindow;
 
 namespace knight {
 
@@ -24,56 +22,48 @@ namespace knight {
 
 #define BOOL_STRING(value) (value ? "true" : "false")
 
-template<typename Owner, typename T, size_t index_bits, size_t version_bits>
-union ID {
-  typedef T type;
-  
-  T id;
-  struct {
-    T index   : index_bits;
-    T version : version_bits;
-  };
+class UniformManager;
 
-  ID() : id(0) { }
-  ID(const T &val) : id(val) { }
-  ID(T &&val) : id(val) { }
+#define GAME_INIT(name) void name(GLFWwindow &window, UniformManager &uniform_manager)
+typedef GAME_INIT(game_init);
 
-  operator T() const { return id; }
-  ID &operator=(const T &val) {
-    id = val;
-    return *this;
-  }
+#define GAME_UPDATE_AND_RENDER(name) void name()
+typedef GAME_UPDATE_AND_RENDER(game_update_and_render);
 
-  bool operator==(const ID &other) const {
-    return id == other.id;
-  }
-};
-
-template<typename Owner>
-struct ID32 { typedef ID<Owner, uint32_t, 16, 16> ID; };
-
-template<typename Owner>
-struct ID64 { typedef ID<Owner, uint64_t, 32, 32> ID; };
-
-// TODO: set from cmake
-static const uint64_t kMaxComponents = 64;
-
-typedef std::bitset<kMaxComponents> ComponentMask;
-
-void ExitOnGLError(const char *error_message);
+#define GAME_SHUTDOWN(name) void name()
+typedef GAME_SHUTDOWN(game_shutdown);
 
 #if defined(DEVELOPMENT)
   #define XASSERT(test, msg, ...) do {if (!(test)) error(__LINE__, __FILE__, \
-      "Assertion failed: %s\n\n" msg, #test, ##  __VA_ARGS__);} while (0)
+      "\x1b[31mAssertion failed: %s\x1b[0m\n\n" msg, #test, ## __VA_ARGS__);} while (false)
+
+  #define GL_ASSERT(msg, ...) do {                                  \
+    auto error_value = glGetError();                                \
+    if (error_value != GL_NO_ERROR) {                               \
+      printf("\x1b[1m%s:%d:\x1b[0m ", __FILE__, __LINE__);          \
+      printf(msg, ## __VA_ARGS__);                                  \
+      printf("\n\n");                                               \
+      while (error_value != GL_NO_ERROR) {                          \
+        printf("\x1b[31m%s\x1b[0m\n", glErrorString(error_value));  \
+        error_value = glGetError();                                 \
+      }                                                             \
+      printf("\n");                                                 \
+      abort();                                                      \
+    }                                                               \
+  } while (false);
+
 #else
   #define XASSERT(test, msg, ...) ((void)0)
+  #define GL_ASSERT(msg, ...) ((void)0)
 #endif
+
+const char *glErrorString(GLenum error);
 
 template<typename... Args>
 void error(const int &line_number, const char *filename, 
            const char *message, Args... args) {
   // TODO: TR Print stack trace
-  printf("%s:%d\n", filename, line_number);
+  printf("\x1b[1m%s:%d:\x1b[0m ", filename, line_number);
   printf(message, args...);
   printf("\n");
   abort();

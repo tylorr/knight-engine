@@ -1,5 +1,6 @@
 #include "common.h"
 #include "slot_map.h"
+#include "types.h"
 
 #include <catch.hpp>
 

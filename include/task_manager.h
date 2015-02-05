@@ -1,6 +1,7 @@
 #pragma once
 
 #include "common.h"
+#include "types.h"
 
 #include <memory.h>
 

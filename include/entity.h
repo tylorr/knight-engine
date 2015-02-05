@@ -1,19 +1,16 @@
 #pragma once
 
 #include "common.h"
+#include "types.h"
 
 #include <cstdint>
 #include <memory>
 
 namespace knight {
 
-template<typename T, typename ID>
-class SlotMap;
-
 class Entity {
  public:
-  typedef ID64<Entity>::ID ID;
-
+  using ID = ID64<Entity>::ID;
   ID id;
   
   Entity() : id(0) { }

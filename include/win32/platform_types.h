@@ -23,4 +23,16 @@ struct File {
   KNIGHT_DISALLOW_COPY_AND_ASSIGN(File);
 };
 
+struct GameCode {
+  game_init *Init;
+  game_update_and_render *UpdateAndRender;
+  game_shutdown *Shutdown;
+
+  const char *source_dll_name_;
+  const char *temp_dll_name_;
+
+  HMODULE module_;
+  uint64_t last_write_time_;
+};
+
 } // namespace knight

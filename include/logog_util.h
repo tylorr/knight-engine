@@ -4,6 +4,15 @@
 
 namespace logog {
 
+class CoutFlush : public Target
+{
+  virtual int Output(const LOGOG_STRING &data) {
+    LOGOG_COUT << (const LOGOG_CHAR *)data << std::flush;
+
+    return 0;
+  }
+};
+
 class ColorFormatter : public FormatterGCC {
   LOGOG_STRING &Format(const Topic &topic, const Target &target)
   {
@@ -34,11 +43,11 @@ class ColorFormatter : public FormatterGCC {
     // Color topic level
     auto level = topic.Level();
     if (level <= LOGOG_LEVEL_ERROR) {
-      m_sMessageBuffer.append("\x1b[31m");
+      m_sMessageBuffer.append("\x1b[31m"); // red
     } else if (level <=  LOGOG_LEVEL_WARN3) {
-      m_sMessageBuffer.append("\x1b[35m");
+      m_sMessageBuffer.append("\x1b[35m"); // yellow
     } else if (level <= LOGOG_LEVEL_INFO) {
-      m_sMessageBuffer.append("\x1b[30m");
+      m_sMessageBuffer.append("\x1b[30m"); // gray
     } else {
       m_sMessageBuffer.append("\x1b[32m");
     }

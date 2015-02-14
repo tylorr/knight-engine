@@ -24,7 +24,7 @@ namespace knight {
 
 class UniformManager;
 
-#define GAME_INIT(name) void name(GLFWwindow &window, UniformManager &uniform_manager)
+#define GAME_INIT(name) void name(GLFWwindow &window)
 typedef GAME_INIT(game_init);
 
 #define GAME_UPDATE_AND_RENDER(name) void name()
@@ -50,11 +50,18 @@ typedef GAME_SHUTDOWN(game_shutdown);
       printf("\n");                                                 \
       abort();                                                      \
     }                                                               \
-  } while (false);
+  } while (false)
+
+  #define GL(line) do { \
+    line; \
+    XASSERT(glGetError() == GL_NO_ERROR, "OpenGL error"); \
+  } while (false)
+
 
 #else
   #define XASSERT(test, msg, ...) ((void)0)
   #define GL_ASSERT(msg, ...) ((void)0)
+  #define GL(line) line
 #endif
 
 const char *glErrorString(GLenum error);

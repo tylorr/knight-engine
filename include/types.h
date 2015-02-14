@@ -1,6 +1,10 @@
 #pragma once
 
+#include "common.h"
+
 namespace knight {
+
+class EntityManager;
 
 template<typename Owner, typename T, size_t index_bits, size_t version_bits>
 union ID {
@@ -31,5 +35,13 @@ template<typename Owner>
 struct ID32 { using ID = ID<Owner, uint32_t, 16, 16>; };
 template<typename Owner>
 struct ID64 { using ID = ID<Owner, uint64_t, 32, 32>; };
+
+class Entity {
+ public:
+  using ID = ID64<Entity>::ID;
+  ID id;
+  
+  Entity() : id(0) { }
+};
 
 } // namespace knight

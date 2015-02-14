@@ -8,7 +8,8 @@ namespace knight {
 
 namespace ImGuiManager {
 
-void Initialize(GLFWwindow *window, UniformManager *uniform_manager);
+void Initialize(GLFWwindow &window, MaterialManager &material_manager);
+void Shutdown();
 
 void BeginFrame(double delta_time);
 void EndFrame();

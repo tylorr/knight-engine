@@ -1,17 +1,17 @@
 #include "game.h"
 #include "common.h"
 #include "shader_types.h"
-#include "buffer_object.h"
-#include "vertex_array.h"
 #include "uniform.h"
-#include "uniform_manager.h"
 #include "imgui_manager.h"
 #include "platform_types.h"
+#include "mesh_component.h"
+#include "entity_manager.h"
+#include "types.h"
+#include "std_allocator.h"
+#include "material.h"
 
 #include <logog.hpp>
 #include <memory.h>
-#include <string_stream.h>
-#include <temp_allocator.h>
 
 #include <imgui.h>
 
@@ -31,16 +31,15 @@
 
 using namespace knight;
 using namespace foundation;
-using namespace foundation::string_stream;
+
+using std::shared_ptr;
 
 struct Vertex {
   glm::vec3 position;
   glm::vec3 normal;
 };
 
-Allocator *allocator;
-UniformManager *uniform_manager_;
-ShaderProgram program;
+shared_ptr<Material> material;
 BufferObject vbo;
 BufferObject ibo;
 VertexArray vao;
@@ -50,32 +49,25 @@ Uniform<float, 4, 4> *mvp_uniform;
 Uniform<float, 4, 4> *mv_matrix_uniform;
 Uniform<float, 3, 3> *normal_matrix_uniform;
 
-std::vector<Vertex> vertices;
-std::vector<unsigned int> indices;
+shared_ptr<EntityManager> entity_manager;
+shared_ptr<MeshComponent> mesh_component;
+shared_ptr<MaterialManager> material_manager;
+
+uint32_t index_count;
 
 extern "C" GAME_INIT(Init) {
+  auto &alloc = memory_globals::default_allocator();
 
-  ImGuiManager::Initialize(&window, &uniform_manager);
+  material_manager = allocate_shared<MaterialManager>(alloc, alloc);
 
-  uniform_manager_ = &uniform_manager;
-  allocator = &memory_globals::default_allocator();
+  ImGuiManager::Initialize(window, *material_manager);
 
-  {
-    TempAllocator4096 temp_allocator;
-    Buffer phong_shader_buffer{temp_allocator};
-
-    File phong_shader{"../shaders/blinn_phong.shader"};
-    phong_shader.Read(phong_shader_buffer);
-    program.Initialize(uniform_manager, c_str(phong_shader_buffer));
-  }
-
-  mvp_uniform = uniform_manager.Get<float, 4, 4>(program, "MVP");
-  mv_matrix_uniform = uniform_manager.Get<float, 4, 4>(program, "ModelView");
-  normal_matrix_uniform = uniform_manager.Get<float, 3, 3>(program, "NormalMatrix");
+  material = material_manager->CreateMaterial("../shaders/blinn_phong.shader");
+  mvp_uniform = material->Get<float, 4, 4>("MVP");
+  mv_matrix_uniform = material->Get<float, 4, 4>("ModelView");
+  normal_matrix_uniform = material->Get<float, 3, 3>("NormalMatrix");
 
   model_matrix = glm::mat4{1.0};
-
-  uniform_manager.PushUniforms(program);
 
   auto importer = Assimp::Importer{};
 
@@ -89,36 +81,50 @@ extern "C" GAME_INIT(Init) {
 
   auto mesh = scene->mMeshes[0];
 
+  Array<Vertex> vertices{memory_globals::default_scratch_allocator()};
   for (auto j = 0; j < mesh->mNumVertices; ++j) {
     auto pos = mesh->mVertices[j];
     auto normal = mesh->mNormals[j];
-    vertices.emplace_back(Vertex {
-      glm::vec3{ pos.x, pos.y, pos.z },
-      glm::vec3{ normal.x, normal.y, normal.z }
-    });
+    array::push_back(vertices, 
+      Vertex {
+        glm::vec3{ pos.x, pos.y, pos.z },
+        glm::vec3{ normal.x, normal.y, normal.z }
+      });
   }
 
+  Array<unsigned int> indices{memory_globals::default_scratch_allocator()};
   for (auto j = 0; j < mesh->mNumFaces; ++j) {
     auto face = mesh->mFaces[j];
     XASSERT(face.mNumIndices == 3, "Wrong number of indices");
 
-    indices.emplace_back(face.mIndices[0]);
-    indices.emplace_back(face.mIndices[1]);
-    indices.emplace_back(face.mIndices[2]);
+    array::push_back(indices, face.mIndices[0]);
+    array::push_back(indices, face.mIndices[1]);
+    array::push_back(indices, face.mIndices[2]);
   }
 
   vao.Initialize();
-  vbo.Initialize(GL_ARRAY_BUFFER, vertices.size() * sizeof(vertices[0]), &vertices[0], GL_STATIC_DRAW);
+  vbo.Initialize(GL_ARRAY_BUFFER, array::size(vertices) * sizeof(vertices[0]), &vertices[0], GL_STATIC_DRAW);
 
   vao.BindAttribute(0, 3, GL_FLOAT, GL_FALSE, sizeof(vertices[0]), nullptr);
   vao.BindAttribute(1, 3, GL_FLOAT, GL_FALSE, sizeof(vertices[0]), (void *)sizeof(vertices[0].position));
 
-  ibo.Initialize(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
+  ibo.Initialize(GL_ELEMENT_ARRAY_BUFFER, array::size(indices) * sizeof(unsigned int), &(indices)[0], GL_STATIC_DRAW);
 
   vao.Unbind();
   vbo.Unbind();
   ibo.Unbind();
-  program.Unbind();
+  material->Unbind();
+
+  entity_manager = allocate_shared<EntityManager>(alloc, alloc);
+  auto entity_id = entity_manager->Create();
+  auto entity = entity_manager->Get(entity_id);
+
+  mesh_component = allocate_shared<MeshComponent>(alloc, alloc);
+  mesh_component->Add(*entity, *material, vao, array::size(indices));
+
+  index_count = array::size(indices);
+
+  mesh_component->GC(*entity_manager);
 }
 
 bool show_test_window = true;
@@ -161,19 +167,16 @@ extern "C" GAME_UPDATE_AND_RENDER(UpdateAndRender) {
   auto normal_matrix = glm::inverseTranspose(glm::mat3(model_view_matrix));
   normal_matrix_uniform->SetValue(glm::value_ptr(normal_matrix));
 
-  program.Bind();
-  uniform_manager_->PushUniforms(program);
+  material_manager->PushUniforms(*material);
   
-  vao.Bind();
-
-  glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, nullptr);
+  mesh_component->Render();
 
   ImGuiManager::EndFrame();
 
-  program.Unbind();
   vao.Unbind();
+  material->Unbind();
 }
 
 extern "C" GAME_SHUTDOWN(Shutdown) {
-  // allocator->make_delete(program);
+  ImGuiManager::Shutdown();
 }

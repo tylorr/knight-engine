@@ -1,9 +1,7 @@
 #include "imgui_manager.h"
 
 #include "uniform.h"
-#include "buffer_object.h"
-#include "vertex_array.h"
-#include "uniform_manager.h"
+#include "material.h"
 
 #include <GL/glew.h>
 #include <stb_image.h>
@@ -46,10 +44,10 @@ const GLchar *kShaderSource =
   "#endif\n";
 
 struct ImGuiManagerState {
-  UniformManager *uniform_manager;
+  MaterialManager *material_manager;
   GLFWwindow *window;
 
-  ShaderProgram shader_program;
+  std::shared_ptr<Material> material;
   VertexArray vao;
   BufferObject vbo;
   size_t buffer_size = 20000;
@@ -78,19 +76,21 @@ void RenderDrawLists(ImDrawList **const command_lists, int command_lists_count) 
   glDisable(GL_DEPTH_TEST);
   glEnable(GL_SCISSOR_TEST);
 
-  auto &program = imgui_manager_state.shader_program;
-  program.Bind();
+  auto material = imgui_manager_state.material;
+  material->Bind();
 
-  glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, imgui_manager_state.font_texture_handle);
-  glUniform1i(program.GetUniformLocation("Texture"), 0);
+  GL(glActiveTexture(GL_TEXTURE0));
+  GL(glBindTexture(GL_TEXTURE_2D, imgui_manager_state.font_texture_handle));
+  auto texture_loc = GLint{};
+  GL(texture_loc = glGetUniformLocation(material->program_handle(), "Texture"));
+  GL(glUniform1i(texture_loc, 0));
 
   const auto width = ImGui::GetIO().DisplaySize.x;
   const auto height = ImGui::GetIO().DisplaySize.y;
   const auto projection = glm::ortho(0.0f, width, height, 0.0f, -1.0f, 1.0f);
   imgui_manager_state.projection_uniform->SetValue(glm::value_ptr(projection));
 
-  imgui_manager_state.uniform_manager->PushUniforms(program);
+  imgui_manager_state.material_manager->PushUniforms(*material);
 
   auto total_vertex_count = 0_z;
   for (int n = 0; n < command_lists_count; n++) {
@@ -107,7 +107,8 @@ void RenderDrawLists(ImDrawList **const command_lists, int command_lists_count) 
       vbo.Data(imgui_manager_state.buffer_size, nullptr, GL_DYNAMIC_DRAW);
   }
 
-  auto *buffer_data = static_cast<char *>(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY));
+  char *buffer_data;
+  GL(buffer_data = static_cast<char *>(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY)));
   if (!buffer_data)
     return;
 
@@ -119,7 +120,7 @@ void RenderDrawLists(ImDrawList **const command_lists, int command_lists_count) 
     buffer_data += command_list->vtx_buffer.size() * sizeof(ImDrawVert);
   }
 
-  glUnmapBuffer(GL_ARRAY_BUFFER);
+  GL(glUnmapBuffer(GL_ARRAY_BUFFER));
   vbo.Unbind();
 
   auto &vao = imgui_manager_state.vao;
@@ -131,11 +132,11 @@ void RenderDrawLists(ImDrawList **const command_lists, int command_lists_count) 
     auto vertex_offset = previous_vertex_offset;
     const ImDrawCmd* pcmd_end = command_list->commands.end();
     for (const ImDrawCmd* pcmd = command_list->commands.begin(); pcmd != pcmd_end; pcmd++) {
-      glScissor(pcmd->clip_rect.x, 
+      GL(glScissor(pcmd->clip_rect.x, 
                 height - pcmd->clip_rect.w, 
                 pcmd->clip_rect.z - pcmd->clip_rect.x, 
-                pcmd->clip_rect.w - pcmd->clip_rect.y);
-      glDrawArrays(GL_TRIANGLES, vertex_offset, pcmd->vtx_count);
+                pcmd->clip_rect.w - pcmd->clip_rect.y));
+      GL(glDrawArrays(GL_TRIANGLES, vertex_offset, pcmd->vtx_count));
       vertex_offset += pcmd->vtx_count;
     }
     previous_vertex_offset = vertex_offset;
@@ -143,7 +144,7 @@ void RenderDrawLists(ImDrawList **const command_lists, int command_lists_count) 
 
   // Cleanup GL state
   vao.Unbind();
-  program.Unbind();
+  material->Unbind();
   glDisable(GL_SCISSOR_TEST);
   glBindTexture(GL_TEXTURE_2D, 0);
 }
@@ -158,9 +159,9 @@ void SetClipboardString(const char *text) {
 
 } // namespace
 
-void Initialize(GLFWwindow *window, UniformManager *uniform_manager) {
-  imgui_manager_state.uniform_manager = uniform_manager;
-  imgui_manager_state.window = window;
+void Initialize(GLFWwindow &window, MaterialManager &material_manager) {
+  imgui_manager_state.window = &window;
+  imgui_manager_state.material_manager = &material_manager;
 
   ImGuiIO &io = ImGui::GetIO();
 
@@ -188,10 +189,10 @@ void Initialize(GLFWwindow *window, UniformManager *uniform_manager) {
   io.GetClipboardTextFn = GetClipboardString;
   io.SetClipboardTextFn = SetClipboardString;
 
-  glGenTextures(1, &imgui_manager_state.font_texture_handle);
-  glBindTexture(GL_TEXTURE_2D, imgui_manager_state.font_texture_handle);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  GL(glGenTextures(1, &imgui_manager_state.font_texture_handle));
+  GL(glBindTexture(GL_TEXTURE_2D, imgui_manager_state.font_texture_handle));
+  GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
+  GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
 
   const void *png_data;
   unsigned int png_size;
@@ -202,16 +203,15 @@ void Initialize(GLFWwindow *window, UniformManager *uniform_manager) {
                                          (int)png_size, 
                                          &tex_x, &tex_y, 
                                          nullptr, 0);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tex_x, tex_y, 
-               0, GL_RGBA, GL_UNSIGNED_BYTE, tex_data);
+  GL(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tex_x, tex_y, 
+               0, GL_RGBA, GL_UNSIGNED_BYTE, tex_data));
   stbi_image_free(tex_data);
 
-  GL_ASSERT("Texture was not loaded properly");
+  auto program_handle = imgui_manager_state.material_manager->CreateShaderFromSource("imgui_shader", kShaderSource);
+  auto material = imgui_manager_state.material_manager->CreateMaterial(program_handle);
+  imgui_manager_state.material = material;
 
-  auto &program = imgui_manager_state.shader_program;
-  program.Initialize(*uniform_manager, kShaderSource);
-
-  imgui_manager_state.projection_uniform = uniform_manager->Get<float, 4, 4>(program, "projection");
+  imgui_manager_state.projection_uniform = material->Get<float, 4, 4>("projection");
 
   auto &vbo = imgui_manager_state.vbo;
   vbo.Initialize(GL_ARRAY_BUFFER, imgui_manager_state.buffer_size, nullptr, GL_DYNAMIC_DRAW);
@@ -225,7 +225,7 @@ void Initialize(GLFWwindow *window, UniformManager *uniform_manager) {
 
   vao.Unbind();
   vbo.Unbind();
-  program.Unbind();
+  material->Unbind();
 }
 
 void BeginFrame(double delta_time) {
@@ -290,6 +290,12 @@ void OnCharacter(const unsigned int &character) {
 void OnScroll(const double &yoffset) {
   ImGuiIO &io = ImGui::GetIO();
   io.MouseWheel = (float)yoffset;
+}
+
+void Shutdown() {
+  //NOTE: TR Some reason if I don't do this I get a segfault from the 
+  // destructor of shared_ptr
+  imgui_manager_state.material.reset();
 }
 
 } // namespace ImGuiManager

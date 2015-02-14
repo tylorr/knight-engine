@@ -1,17 +1,16 @@
 set(SOURCES
     common.cpp
-    shader_program.cpp
     buffer_object.cpp
     vertex_array.cpp
-    entity.cpp
     entity_manager.cpp
     uniform.cpp
-    uniform_manager.cpp
+    material.cpp
     imgui_manager.cpp
     task_manager.cpp
     stb_impl.cpp
     udp_listener.cpp
     string_util.cpp
+    mesh_component.cpp
     win32/file.cpp
     win32/file_util.cpp
     win32/game_code.cpp

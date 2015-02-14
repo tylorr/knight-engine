@@ -1,4 +1,4 @@
-#include "vertex_array.h"
+#include "shader_types.h"
 
 namespace knight {
 
@@ -9,13 +9,13 @@ VertexArray::~VertexArray() {
 }
 
 void VertexArray::Initialize() {
-  glGenVertexArrays(1, &handle_);
+  GL(glGenVertexArrays(1, &handle_));
   Bind();
 }
 
 void VertexArray::Bind() const {
   XASSERT(handle_, "Trying to bind an uninitialized vertex array");
-  glBindVertexArray(handle_);
+  GL(glBindVertexArray(handle_));
 }
 
 void VertexArray::Unbind() const {
@@ -29,8 +29,8 @@ void VertexArray::Unbind() const {
 void VertexArray::BindAttribute(const GLint &attribute, const GLint &size,
                                 const GLenum &type, const GLboolean &normalized,
                                 const GLsizei &stride, const GLvoid *pointer) {
-  glEnableVertexAttribArray(attribute);
-  glVertexAttribPointer(attribute, size, type, normalized, stride, pointer);
+  GL(glEnableVertexAttribArray(attribute));
+  GL(glVertexAttribPointer(attribute, size, type, normalized, stride, pointer));
 }
 
 } // namespace knight

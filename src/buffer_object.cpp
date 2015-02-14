@@ -1,4 +1,4 @@
-#include "buffer_object.h"
+#include "shader_types.h"
 
 namespace knight {
 
@@ -10,15 +10,13 @@ BufferObject::~BufferObject() {
 
 void BufferObject::Initialize(const GLenum &target) {
   target_ = target;
-  glGenBuffers(1, &handle_);
+  GL(glGenBuffers(1, &handle_));
   Bind();
 }
 
 void BufferObject::Initialize(const GLenum &target, const GLsizeiptr &size, 
                               const GLvoid *data, const GLenum &usage) {
-  target_ = target;
-  glGenBuffers(1, &handle_);
-  Bind();
+  Initialize(target);
   Data(size, data, usage);
 }
 
@@ -58,15 +56,15 @@ void BufferObject::Unbind() const {
 }
 
 void BufferObject::Data(const GLsizeiptr &size, const GLvoid *data, const GLenum &usage) {
-  glBufferData(target_, size, data, usage);
+  GL(glBufferData(target_, size, data, usage));
 }
 
 void BufferObject::SubData(const GLintptr &offset, const GLsizeiptr &size, const GLvoid *data) {
-  glBufferSubData(target_, offset, size, data);
+  GL(glBufferSubData(target_, offset, size, data));
 }
 
 void BufferObject::GetSubData(const GLintptr &offset, const GLsizeiptr &size, GLvoid *data) {
-  glGetBufferSubData(target_, offset, size, data);
+  GL(glGetBufferSubData(target_, offset, size, data));
 }
 
 } // namespace knight

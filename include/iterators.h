@@ -2,9 +2,7 @@
 
 #include <hash.h>
 
-using namespace foundation;
-
-namespace knight {
+namespace foundation {
   template<typename T> T* begin(Array<T> &a) { return array::begin(a); }
   template<typename T> const T* begin(const Array<T> &a) { return array::begin(a); }
   template<typename T> T* end(Array<T> &a) { return array::end(a); }

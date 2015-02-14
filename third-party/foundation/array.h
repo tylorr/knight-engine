@@ -170,7 +170,9 @@ namespace foundation {
 	Array<T, align> &Array<T, align>::operator=(Array<T, align> &&other)
 	{
 		if (this != &other) {
-			_allocator->deallocate(_data);
+			if (_allocator) {
+				_allocator->deallocate(_data);
+			}
 
 			_allocator = other._allocator;
 			_data = other._data;

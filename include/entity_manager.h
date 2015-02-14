@@ -1,99 +1,28 @@
-// #pragma once
+#pragma once
 
-// #include "common.h"
-// #include "entity.h"
-// #include "slot_map.h"
+#include "common.h"
+#include "types.h"
+#include "slot_map.h"
 
-// #include <memory_types.h>
+#include <memory_types.h>
 
-// #include <map>
+namespace knight {
 
-// namespace knight {
+class EntityManager {
+ public:
+  EntityManager(foundation::Allocator &allocator) : entities_{allocator} { }
 
-// class ComponentBase;
+  Entity::ID Create();
+  Entity *Get(Entity::ID id) const;
+  void Destroy(Entity::ID id);
 
-// class EntityManager {
-//  public:
-//   EntityManager(foundation::Allocator &allocator) : entities_(allocator) { }
+  bool Alive(Entity::ID id) const;
+  bool Alive(const Entity &e) const;
 
-//   Entity::ID Create();
-//   Entity *Get(const Entity::ID &);
-//   void Destroy(Entity::ID);
+ private:
+  SlotMap<Entity, Entity::ID> entities_;
 
-//   ComponentMask component_mask(const Entity::ID &);
+  KNIGHT_DISALLOW_COPY_AND_ASSIGN(EntityManager);
+};
 
-//   template<typename T>
-//   void AddComponent(const Entity::ID &, std::shared_ptr<T>);
-
-//   /// Construct component with optional arguments and attach it
-//   /// to the entity.
-//   template<typename T, typename... Args>
-//   std::shared_ptr<T> AddComponent(const Entity::ID &, Args&&...);
-
-//   template<typename T>
-//   std::shared_ptr<T> GetComponent(const Entity::ID &);
-
-//   template<typename T>
-//   bool HasComponent(const Entity::ID &);
-
-//   template<typename T>
-//   void RemoveComponent(const Entity::ID &);
-
-//   /// Helper function that grabs the type from the passed in Component
-//   /// and forwards it to the other RemoveComponent function
-//   template<typename T>
-//   void RemoveComponent(const Entity::ID &, std::shared_ptr<T>);
-
-//  private:
-//   typedef std::shared_ptr<ComponentBase> ComponentBasePtr;
-//   typedef std::map<Entity::ID, ComponentBasePtr> EntityComponentMap;
-//   typedef std::map<unsigned int, EntityComponentMap> EntityComponentsMap;
-//   typedef std::map<Entity::ID, ComponentMask> ComponentMaskMap;
-
-//   // component = [family][entity_id]
-//   EntityComponentsMap entity_components_;
-//   ComponentMaskMap entity_component_mask_;
-//   SlotMap<Entity, Entity::ID> entities_;
-
-//   KNIGHT_DISALLOW_COPY_AND_ASSIGN(EntityManager);
-// };
-
-// template<typename T>
-// void EntityManager::AddComponent(const Entity::ID &id,
-//                                  std::shared_ptr<T> component) {
-//   ComponentBasePtr base(std::static_pointer_cast<ComponentBase>(component));
-//   entity_components_[T::family()][id] = base;
-//   entity_component_mask_[id].set(T::family());
-// }
-
-// template<typename T, typename... Args>
-// std::shared_ptr<T> EntityManager::AddComponent(const Entity::ID &id,
-//                                               Args&&... args) {
-//   auto component = std::make_shared<T>(std::forward<Args>(args)...);
-//   AddComponent<T>(id, component);
-//   return component;
-// }
-
-// template<typename T>
-// std::shared_ptr<T> EntityManager::GetComponent(const Entity::ID &id) {
-//   return std::static_pointer_cast<T>(entity_components_[T::family()][id]);
-// }
-
-// template<typename T>
-// bool EntityManager::HasComponent(const Entity::ID &id) {
-//   return entity_components_[T::family()][id] != nullptr;
-//   // return entity_component_mask_[id].test(T::family());
-// }
-
-// template<typename T>
-// void EntityManager::RemoveComponent(const Entity::ID &id) {
-//   entity_components_[T::family()][id] = nullptr;
-//   entity_component_mask_[id].reset(T::family());
-// }
-
-// template<typename T>
-// void EntityManager::RemoveComponent(const Entity::ID &, std::shared_ptr<T>) {
-//   RemoveComponent<T>();
-// }
-
-// } // namespace knight
+} // namespace knight

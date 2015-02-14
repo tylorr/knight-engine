@@ -46,15 +46,15 @@ int main(int argc, char *argv[]) {
     udp_listener.Start(1234);
     
     Initialize();
-    UniformManager uniform_manager{memory_globals::default_allocator()};
+    //UniformManager uniform_manager{memory_globals::default_allocator()};
     
     // TODO: TR Get these from cmake
-    const char *source_dll_name = "bin/libgame.dll";
-    const char *temp_dll_name = "bin/temp_libgame.dll";
+    auto source_dll_name = "bin/libgame.dll";
+    auto temp_dll_name = "bin/temp_libgame.dll";
     auto game = game_code::Load(source_dll_name, temp_dll_name);
     
     if (game.Init) {
-      game.Init(*window, uniform_manager);
+      game.Init(*window);
     }
 
     while (!glfwWindowShouldClose(window)) {
@@ -76,6 +76,8 @@ int main(int argc, char *argv[]) {
     if (game.Shutdown) {
       game.Shutdown();
     }
+
+    game_code::Unload(game);
     
     udp_listener.Stop();
 

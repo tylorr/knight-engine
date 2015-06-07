@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="CPP_MODULE" version="4">
+  <component name="NewModuleRootManager">
+    <content url="file://$USER_HOME$/.clion10/system/cmake/generated/134e83c6/134e83c6/Debug/src/cotire/knight-engine_CXX_prefix.hxx">
+      <sourceFolder url="file://$USER_HOME$/.clion10/system/cmake/generated/134e83c6/134e83c6/Debug/src/cotire/knight-engine_CXX_prefix.hxx" isTestSource="false" />
+    </content>
+    <content url="file://$USER_HOME$/.clion10/system/cmake/generated/134e83c6/134e83c6/Debug/src/cotire/knight-engine_CXX_unity.cxx">
+      <sourceFolder url="file://$USER_HOME$/.clion10/system/cmake/generated/134e83c6/134e83c6/Debug/src/cotire/knight-engine_CXX_unity.cxx" isTestSource="false" />
+    </content>
+    <content url="file://$USER_HOME$/.clion10/system/cmake/generated/134e83c6/134e83c6/Debug/test/cotire/knight_test_CXX_prefix.hxx">
+      <sourceFolder url="file://$USER_HOME$/.clion10/system/cmake/generated/134e83c6/134e83c6/Debug/test/cotire/knight_test_CXX_prefix.hxx" isTestSource="false" />
+    </content>
+    <content url="file://$USER_HOME$/.clion10/system/cmake/generated/134e83c6/134e83c6/Debug/test/cotire/knight_test_CXX_unity.cxx">
+      <sourceFolder url="file://$USER_HOME$/.clion10/system/cmake/generated/134e83c6/134e83c6/Debug/test/cotire/knight_test_CXX_unity.cxx" isTestSource="false" />
+    </content>
+    <content url="file://$USER_HOME$/.clion10/system/cmake/generated/134e83c6/134e83c6/Debug/third-party/enet/cotire/enet_C_prefix.h">
+      <sourceFolder url="file://$USER_HOME$/.clion10/system/cmake/generated/134e83c6/134e83c6/Debug/third-party/enet/cotire/enet_C_prefix.h" isTestSource="false" />
+    </content>
+    <content url="file://$USER_HOME$/.clion10/system/cmake/generated/134e83c6/134e83c6/Debug/third-party/enet/cotire/enet_C_unity.c">
+      <sourceFolder url="file://$USER_HOME$/.clion10/system/cmake/generated/134e83c6/134e83c6/Debug/third-party/enet/cotire/enet_C_unity.c" isTestSource="false" />
+    </content>
+    <content url="file://$USER_HOME$/.clion10/system/cmake/generated/134e83c6/134e83c6/Debug/third-party/foundation/cotire/foundation_CXX_prefix.hxx">
+      <sourceFolder url="file://$USER_HOME$/.clion10/system/cmake/generated/134e83c6/134e83c6/Debug/third-party/foundation/cotire/foundation_CXX_prefix.hxx" isTestSource="false" />
+    </content>
+    <content url="file://$USER_HOME$/.clion10/system/cmake/generated/134e83c6/134e83c6/Debug/third-party/foundation/cotire/foundation_CXX_unity.cxx">
+      <sourceFolder url="file://$USER_HOME$/.clion10/system/cmake/generated/134e83c6/134e83c6/Debug/third-party/foundation/cotire/foundation_CXX_unity.cxx" isTestSource="false" />
+    </content>
+    <content url="file://$USER_HOME$/.clion10/system/cmake/generated/134e83c6/134e83c6/Debug/third-party/logog/cotire/logog_CXX_prefix.hxx">
+      <sourceFolder url="file://$USER_HOME$/.clion10/system/cmake/generated/134e83c6/134e83c6/Debug/third-party/logog/cotire/logog_CXX_prefix.hxx" isTestSource="false" />
+    </content>
+    <content url="file://$USER_HOME$/.clion10/system/cmake/generated/134e83c6/134e83c6/Debug/third-party/logog/cotire/logog_CXX_unity.cxx">
+      <sourceFolder url="file://$USER_HOME$/.clion10/system/cmake/generated/134e83c6/134e83c6/Debug/third-party/logog/cotire/logog_CXX_unity.cxx" isTestSource="false" />
+    </content>
+    <content url="file://$MODULE_DIR$" />
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+  </component>
+</module>

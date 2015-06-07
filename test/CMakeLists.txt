@@ -15,6 +15,5 @@ include_directories(${PROJECT_SOURCE_DIR}/third-party/catch)
 
 add_executable(knight_test ${SOURCES})
 target_link_libraries(knight_test knight-engine)
-cotire(knight_test)
 
 add_test(NAME knight_test_all COMMAND knight_test)

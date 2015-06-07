@@ -3,14 +3,15 @@ project(knight-engine)
 
 enable_testing()
 
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
-set(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
+# set(CMAKE_RUNTIME_OUTPUT_DIRECTORY D:/projects/knight-engine/build/clion)
 
 message(STATUS ${CMAKE_CXX_COMPILER})
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -Wall -Wno-mismatched-tags -Wno-switch -fcolor-diagnostics")
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMakeModules)
 
+set (COTIRE_UNITY_OUTPUT_DIRECTORY "")
 include(cotire)
 
 set(GLFW_BUILD_TESTS OFF)

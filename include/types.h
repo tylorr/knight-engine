@@ -44,4 +44,9 @@ class Entity {
   Entity() : id(0) { }
 };
 
+template <typename T>
+class Component;
+
+class MeshComponent;
+
 } // namespace knight

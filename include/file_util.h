@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 namespace knight {
 
 namespace file_util {

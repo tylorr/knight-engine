@@ -11,7 +11,7 @@ template<typename T>
 std::enable_if_t<std::is_floating_point<T>::value, T> random_in_range(T a, T b);
 
 namespace random_internal {
-  auto &prng_engine() {
+  inline auto &prng_engine() {
     thread_local static std::random_device rd{};
     thread_local static std::mt19937 engine{rd()};
     return engine;

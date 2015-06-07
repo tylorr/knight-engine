@@ -11,20 +11,12 @@ using namespace foundation;
 namespace knight {
 
 MeshComponent::MeshComponent(foundation::Allocator &allocator) 
-    : data_{},
-      allocator_{allocator},
-      map_{allocator} { }
+    : Component{allocator},
+      data_{},
+      allocator_{allocator} { }
 
 MeshComponent::~MeshComponent() {
   allocator_.deallocate(data_.buffer);
-}
-
-auto MeshComponent::MakeInstance(int i) -> Instance {
-  return Instance{i};
-}
-
-auto MeshComponent::Lookup(Entity e) -> Instance {
-  return MakeInstance(hash::get(map_, e.id, 0u));
 }
 
 void MeshComponent::Add(Entity e, Material &material, VertexArray &vao, uint32_t index_count) {

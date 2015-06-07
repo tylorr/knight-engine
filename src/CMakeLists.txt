@@ -11,6 +11,7 @@ set(SOURCES
     udp_listener.cpp
     string_util.cpp
     mesh_component.cpp
+    transform_component.cpp
     win32/file.cpp
     win32/file_util.cpp
     win32/game_code.cpp

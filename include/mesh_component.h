@@ -2,16 +2,15 @@
 
 #include "types.h"
 #include "shader_types.h"
-#include "collection_types.h"
+#include "component.h"
 
-#include <memory.h>
+#include <collection_types.h>
+#include <memory_types.h>
 
 namespace knight {
 
-class MeshComponent {
+class MeshComponent : public Component<MeshComponent> {
  public:
-  struct Instance { int i; };
-
   struct InstanceData {
     uint32_t size;
     uint32_t capacity;
@@ -26,9 +25,6 @@ class MeshComponent {
   MeshComponent(foundation::Allocator &allocator);
   ~MeshComponent();
 
-  Instance MakeInstance(int i);
-  Instance Lookup(Entity e);
-
   void Add(Entity e, Material &material, VertexArray &vao, uint32_t index_count);
 
   void Render() const;
@@ -41,7 +37,6 @@ class MeshComponent {
  private:
   InstanceData data_;
   foundation::Allocator &allocator_;
-  foundation::Hash<uint32_t> map_;
 };
 
 } // namespace knight

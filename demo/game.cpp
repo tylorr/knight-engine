@@ -71,7 +71,7 @@ extern "C" GAME_INIT(Init) {
 
   auto importer = Assimp::Importer{};
 
-  const auto scene = importer.ReadFile("../models/bench.obj", 
+  const auto scene = importer.ReadFile("../models/bench.obj",
       aiProcess_CalcTangentSpace       | 
       aiProcess_Triangulate            |
       aiProcess_JoinIdenticalVertices  |

@@ -9,6 +9,8 @@ first:
 
     namespace MyGame;
 
+    attribute "priority";
+
     enum Color : byte { Red = 1, Green, Blue }
 
     union Any { Monster, Weapon, Pickup }
@@ -80,7 +82,7 @@ parent object, and use no virtual table).
 
 ### Types
 
-Builtin scalar types are:
+Built-in scalar types are:
 
 -   8 bit: `byte ubyte bool`
 
@@ -89,6 +91,8 @@ Builtin scalar types are:
 -   32 bit: `int uint float`
 
 -   64 bit: `long ulong double`
+
+Built-in non-scalar types:
 
 -   Vector of any other type (denoted with `[type]`). Nesting vectors
     is not supported, instead you can wrap the inner vector in a table.
@@ -135,6 +139,14 @@ additionally a hidden field with the suffix `_type` is generated that
 holds the corresponding enum value, allowing you to know which type to
 cast to at runtime.
 
+Unions are a good way to be able to send multiple message types as a FlatBuffer.
+Note that because a union field is really two fields, it must always be
+part of a table, it cannot be the root of a FlatBuffer by itself.
+
+If you have a need to distinguish between different FlatBuffers in a more
+open-ended way, for example for use as files, see the file identification
+feature below.
+
 ### Namespaces
 
 These will generate the corresponding namespace in C++ for all helper
@@ -145,7 +157,7 @@ packages.
 
 You can include other schemas files in your current one, e.g.:
 
-    include "mydefinitions.fbs"
+    include "mydefinitions.fbs";
 
 This makes it easier to refer to types defined elsewhere. `include`
 automatically ensures each file is parsed just once, even when referred to
@@ -193,6 +205,10 @@ without one, you can always still do so by calling
 After loading a buffer, you can use a call like
 `MonsterBufferHasIdentifier` to check if the identifier is present.
 
+Note that this is best for open-ended uses such as files. If you simply wanted
+to send one of a set of possible messages over a network for example, you'd
+be better off with a union.
+
 Additionally, by default `flatc` will output binary files as `.bin`.
 This declaration in the schema will change that to whatever you want:
 
@@ -211,8 +227,9 @@ in the corresponding C++ code. Multiple such lines per item are allowed.
 Attributes may be attached to a declaration, behind a field, or after
 the name of a table/struct/enum/union. These may either have a value or
 not. Some attributes like `deprecated` are understood by the compiler,
-others are simply ignored (like `priority`), but are available to query
-if you parse the schema at runtime.
+user defined ones need to be declared with the attribute declaration
+(like `priority` in the example above), and are
+available to query if you parse the schema at runtime.
 This is useful if you write your own code generators/editors etc., and
 you wish to add additional information specific to your tool (such as a
 help text).
@@ -254,6 +271,13 @@ Current understood attributes:
     meaning that any value N specified in the schema will end up
     representing 1<<N, or if you don't specify values at all, you'll get
     the sequence 1, 2, 4, 8, ...
+-   `nested_flatbuffer: "table_name"` (on a field): this indicates that the field
+    (which must be a vector of ubyte) contains flatbuffer data, for which the
+    root type is given by `table_name`. The generated code will then produce
+    a convenient accessor for the nested FlatBuffer.
+-   `key` (on a field): this field is meant to be used as a key when sorting
+    a vector of the type of table it sits in. Can be used for in-place
+    binary search.
 
 ## JSON Parsing
 
@@ -277,6 +301,10 @@ JSON:
     representing flags, you may place multiple inside a string
     separated by spaces to OR them, e.g.
     `field: "EnumVal1 EnumVal2"` or `field: "Enum.EnumVal1 Enum.EnumVal2"`.
+-   Similarly, for unions, these need to specified with two fields much like
+    you do when serializing from code. E.g. for a field `foo`, you must
+    add a field `foo_type: FooOne` right before the `foo` field, where
+    `FooOne` would be the table out of the union you want to use.
 
 When parsing JSON, it recognizes the following escape codes in strings:
 

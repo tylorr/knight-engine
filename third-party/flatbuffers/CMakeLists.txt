@@ -6,9 +6,18 @@ project(FlatBuffers)
 option(FLATBUFFERS_CODE_COVERAGE "Enable the code coverage build option." OFF)
 option(FLATBUFFERS_BUILD_TESTS "Enable the build of tests and samples." ON)
 option(FLATBUFFERS_INSTALL "Enable the installation of targets." ON)
+option(FLATBUFFERS_BUILD_FLATC "Enable the build of the flatbuffers compiler" ON)
+option(FLATBUFFERS_BUILD_FLATHASH "Enable the build of flathash" ON)
+
+if(NOT FLATBUFFERS_BUILD_FLATC AND FLATBUFFERS_BUILD_TESTS)
+    message(WARNING
+    "Cannot build tests without building the compiler. Tests will be disabled.")
+    set(FLATBUFFERS_BUILD_TESTS OFF)
+endif()
 
 set(FlatBuffers_Compiler_SRCS
   include/flatbuffers/flatbuffers.h
+  include/flatbuffers/hash.h
   include/flatbuffers/idl.h
   include/flatbuffers/util.h
   src/idl_parser.cpp
@@ -20,8 +29,14 @@ set(FlatBuffers_Compiler_SRCS
   src/flatc.cpp
 )
 
+set(FlatHash_SRCS
+  include/flatbuffers/hash.h
+  src/flathash.cpp
+)
+
 set(FlatBuffers_Tests_SRCS
   include/flatbuffers/flatbuffers.h
+  include/flatbuffers/hash.h
   include/flatbuffers/idl.h
   include/flatbuffers/util.h
   src/idl_parser.cpp
@@ -41,6 +56,7 @@ set(FlatBuffers_Sample_Binary_SRCS
 
 set(FlatBuffers_Sample_Text_SRCS
   include/flatbuffers/flatbuffers.h
+  include/flatbuffers/hash.h
   include/flatbuffers/idl.h
   include/flatbuffers/util.h
   src/idl_parser.cpp
@@ -67,12 +83,24 @@ if(FLATBUFFERS_CODE_COVERAGE)
       "${CMAKE_EXE_LINKER_FLAGS} -fprofile-arcs -ftest-coverage")
 endif()
 
+if(BIICODE)
+  # Execute biicode building
+  include(CMake/biicode.cmake)
+  return()
+endif(BIICODE)
+
 include_directories(include)
 
-add_executable(flatc ${FlatBuffers_Compiler_SRCS})
+if(FLATBUFFERS_BUILD_FLATC)
+  add_executable(flatc ${FlatBuffers_Compiler_SRCS})
+endif()
+
+if(FLATBUFFERS_BUILD_FLATC)
+  add_executable(flathash ${FlatHash_SRCS})
+endif()
 
 function(compile_flatbuffers_schema_to_cpp SRC_FBS)
-  get_filename_component(SRC_FBS_DIR ${SRC_FBS} DIRECTORY)
+  get_filename_component(SRC_FBS_DIR ${SRC_FBS} PATH)
   string(REGEX REPLACE "\\.fbs$" "_generated.h" GEN_HEADER ${SRC_FBS})
   add_custom_command(
     OUTPUT ${GEN_HEADER}
@@ -93,7 +121,9 @@ endif()
 
 if(FLATBUFFERS_INSTALL)
   install(DIRECTORY include/flatbuffers DESTINATION include)
-  install(TARGETS flatc DESTINATION bin)
+  if(FLATBUFFERS_BUILD_FLATC)
+    install(TARGETS flatc DESTINATION bin)
+  endif()
 endif()
 
 if(FLATBUFFERS_BUILD_TESTS)

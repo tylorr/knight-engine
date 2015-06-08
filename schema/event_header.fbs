@@ -1,9 +1,8 @@
 namespace knight.events;
 
-union EventType { UnloadScript }
+// union EventType { UnloadScript }
 
 table EventHeader {
-  event:EventType;
 }
 
 root_type EventHeader;

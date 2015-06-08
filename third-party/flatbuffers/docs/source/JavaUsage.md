@@ -1,7 +1,12 @@
-# Use in Java
+# Use in Java/C-sharp
 
-FlatBuffers supports reading and writing binary FlatBuffers in Java. Generate
-code for Java with the `-j` option to `flatc`.
+FlatBuffers supports reading and writing binary FlatBuffers in Java and C#.
+Generate code for Java with the `-j` option to `flatc`, or for C# with `-n`
+(think .Net).
+
+Note that this document is from the perspective of Java. Code for both languages
+is generated in the same way, with only very subtle differences, for example
+any `camelCase` Java call will be `CamelCase` in C#.
 
 See `javaTest.java` for an example. Essentially, you read a FlatBuffer binary
 file into a `byte[]`, which you then turn into a `ByteBuffer`, which you pass to
@@ -125,7 +130,8 @@ does not sit in an array, you can also use the start/end pattern:
 You can use the generated method `startInventoryVector` to conveniently call
 `startVector` with the right element size. You pass the number of
 elements you want to write. Note how you write the elements backwards since
-the buffer is being constructed back to front.
+the buffer is being constructed back to front. You then pass `inv` to the
+corresponding `Add` call when you construct the table containing it afterwards.
 
 There are `add` functions for all the scalar types. You use `addOffset` for
 any previously constructed objects (such as other tables, strings, vectors).

@@ -60,7 +60,7 @@ uint32_t lcg_rand() {
 void lcg_reset() { lcg_seed = 48271; }
 
 // example of how to build up a serialized buffer algorithmically:
-std::string CreateFlatBufferTest() {
+flatbuffers::unique_ptr_t CreateFlatBufferTest(std::string &buffer) {
   flatbuffers::FlatBufferBuilder builder;
 
   auto vec = Vec3(1, 2, 3, 0, Color_Red, Test(10, 20));
@@ -70,15 +70,30 @@ std::string CreateFlatBufferTest() {
   unsigned char inv_data[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
   auto inventory = builder.CreateVector(inv_data, 10);
 
+  // Alternatively, create the vector first, and fill in data later:
+  // unsigned char *inv_buf = nullptr;
+  // auto inventory = builder.CreateUninitializedVector<unsigned char>(
+  //                                                              10, &inv_buf);
+  // memcpy(inv_buf, inv_data, 10);
+
   Test tests[] = { Test(10, 20), Test(30, 40) };
   auto testv = builder.CreateVectorOfStructs(tests, 2);
 
   // create monster with very few fields set:
   // (same functionality as CreateMonster below, but sets fields manually)
+  flatbuffers::Offset<Monster> mlocs[3];
   auto fred = builder.CreateString("Fred");
-  MonsterBuilder mb(builder);
-  mb.add_name(fred);
-  auto mloc2 = mb.Finish();
+  auto barney = builder.CreateString("Barney");
+  auto wilma = builder.CreateString("Wilma");
+  MonsterBuilder mb1(builder);
+  mb1.add_name(fred);
+  mlocs[0] = mb1.Finish();
+  MonsterBuilder mb2(builder);
+  mb2.add_name(barney);
+  mlocs[1] = mb2.Finish();
+  MonsterBuilder mb3(builder);
+  mb3.add_name(wilma);
+  mlocs[2] = mb3.Finish();
 
   // Create an array of strings:
   flatbuffers::Offset<flatbuffers::String> strings[2];
@@ -86,12 +101,12 @@ std::string CreateFlatBufferTest() {
   strings[1] = builder.CreateString("fred");
   auto vecofstrings = builder.CreateVector(strings, 2);
 
-  // Create an array of tables:
-  auto vecoftables = builder.CreateVector(&mloc2, 1);
+  // Create an array of sorted tables, can be used with binary search when read:
+  auto vecoftables = builder.CreateVectorOfSortedTables(mlocs, 3);
 
   // shortcut for creating monster with all fields set:
   auto mloc = CreateMonster(builder, &vec, 150, 80, name, inventory, Color_Blue,
-                            Any_Monster, mloc2.Union(), // Store a union.
+                            Any_Monster, mlocs[1].Union(), // Store a union.
                             testv, vecofstrings, vecoftables, 0);
 
   FinishMonsterBuffer(builder, mloc);
@@ -104,23 +119,25 @@ std::string CreateFlatBufferTest() {
   #endif
 
   // return the buffer for the caller to use.
-  return std::string(reinterpret_cast<const char *>(builder.GetBufferPointer()),
-                     builder.GetSize());
+  auto bufferpointer =
+    reinterpret_cast<const char *>(builder.GetBufferPointer());
+  buffer.assign(bufferpointer, bufferpointer + builder.GetSize());
+
+  return builder.ReleaseBufferPointer();
 }
 
 //  example of accessing a buffer loaded in memory:
-void AccessFlatBufferTest(const std::string &flatbuf) {
+void AccessFlatBufferTest(const uint8_t *flatbuf, const std::size_t length) {
 
   // First, verify the buffers integrity (optional)
-  flatbuffers::Verifier verifier(
-    reinterpret_cast<const uint8_t *>(flatbuf.c_str()),
-    flatbuf.length());
+  flatbuffers::Verifier verifier(flatbuf, length);
   TEST_EQ(VerifyMonsterBuffer(verifier), true);
 
-  TEST_EQ(MonsterBufferHasIdentifier(flatbuf.c_str()), true);
+  TEST_EQ(strcmp(MonsterIdentifier(), "MONS"), 0);
+  TEST_EQ(MonsterBufferHasIdentifier(flatbuf), true);
 
   // Access the buffer from the root.
-  auto monster = GetMonster(flatbuf.c_str());
+  auto monster = GetMonster(flatbuf);
 
   TEST_EQ(monster->hp(), 80);
   TEST_EQ(monster->mana(), 150);  // default
@@ -136,6 +153,7 @@ void AccessFlatBufferTest(const std::string &flatbuf) {
   TEST_EQ(pos->test3().b(), 20);
 
   auto inventory = monster->inventory();
+  TEST_EQ(VectorLength(inventory), 10UL);  // Works even if inventory is null.
   TEST_NOTNULL(inventory);
   unsigned char inv_data[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
   for (auto it = inventory->begin(); it != inventory->end(); ++it)
@@ -155,9 +173,15 @@ void AccessFlatBufferTest(const std::string &flatbuf) {
 
   // Example of accessing a vector of tables:
   auto vecoftables = monster->testarrayoftables();
-  TEST_EQ(vecoftables->Length(), 1U);
+  TEST_EQ(vecoftables->Length(), 3U);
   for (auto it = vecoftables->begin(); it != vecoftables->end(); ++it)
-    TEST_EQ(strcmp(it->name()->c_str(), "Fred"), 0);
+    TEST_EQ(strlen(it->name()->c_str()) >= 4, true);
+  TEST_EQ(strcmp(vecoftables->Get(0)->name()->c_str(), "Barney"), 0);
+  TEST_EQ(strcmp(vecoftables->Get(1)->name()->c_str(), "Fred"), 0);
+  TEST_EQ(strcmp(vecoftables->Get(2)->name()->c_str(), "Wilma"), 0);
+  TEST_NOTNULL(vecoftables->LookupByKey("Barney"));
+  TEST_NOTNULL(vecoftables->LookupByKey("Fred"));
+  TEST_NOTNULL(vecoftables->LookupByKey("Wilma"));
 
   // Since Flatbuffers uses explicit mechanisms to override the default
   // compiler alignment, double check that the compiler indeed obeys them:
@@ -226,7 +250,7 @@ void ParseProtoTest() {
     "tests/prototest/test.golden", false, &goldenfile), true);
 
   // Parse proto.
-  flatbuffers::Parser parser(true);
+  flatbuffers::Parser parser(false, true);
   TEST_EQ(parser.Parse(protofile.c_str(), nullptr), true);
 
   // Generate fbs.
@@ -342,6 +366,8 @@ void FuzzTest2() {
   const int num_struct_definitions = 5;  // Subset of num_definitions.
   const int fields_per_definition = 15;
   const int instances_per_definition = 5;
+  const int deprecation_rate = 10;        // 1 in deprecation_rate fields will
+                                          // be deprecated.
 
   std::string schema = "namespace test;\n\n";
 
@@ -380,24 +406,41 @@ void FuzzTest2() {
       "{\n");
 
     for (int field = 0; field < fields_per_definition; field++) {
+      const bool is_last_field = field == fields_per_definition - 1;
+
+      // Deprecate 1 in deprecation_rate fields. Only table fields can be
+      // deprecated.
+      // Don't deprecate the last field to avoid dangling commas in JSON.
+      const bool deprecated = !is_struct &&
+                              !is_last_field &&
+                              (lcg_rand() % deprecation_rate == 0);
+
       std::string field_name = "f" + flatbuffers::NumToString(field);
       AddToSchemaAndInstances(("  " + field_name + ":").c_str(),
-                              (field_name + ": ").c_str());
+                              deprecated ? "" : (field_name + ": ").c_str());
       // Pick random type:
       int base_type = lcg_rand() % (flatbuffers::BASE_TYPE_UNION + 1);
       switch (base_type) {
         case flatbuffers::BASE_TYPE_STRING:
           if (is_struct) {
-            Dummy();  // No strings in structs,
+            Dummy();  // No strings in structs.
           } else {
-            AddToSchemaAndInstances("string", "\"hi\"");
+            AddToSchemaAndInstances("string", deprecated ? "" : "\"hi\"");
+          }
+          break;
+        case flatbuffers::BASE_TYPE_VECTOR:
+          if (is_struct) {
+            Dummy();  // No vectors in structs.
+          }
+          else {
+            AddToSchemaAndInstances("[ubyte]",
+                                    deprecated ? "" : "[\n0,\n1,\n255\n]");
           }
           break;
         case flatbuffers::BASE_TYPE_NONE:
         case flatbuffers::BASE_TYPE_UTYPE:
         case flatbuffers::BASE_TYPE_STRUCT:
         case flatbuffers::BASE_TYPE_UNION:
-        case flatbuffers::BASE_TYPE_VECTOR:
           if (definition) {
             // Pick a random previous definition and random data instance of
             // that definition.
@@ -405,7 +448,9 @@ void FuzzTest2() {
             int instance = lcg_rand() % instances_per_definition;
             AddToSchemaAndInstances(
               ("D" + flatbuffers::NumToString(defref)).c_str(),
-              definitions[defref].instances[instance].c_str());
+              deprecated
+                ? ""
+                : definitions[defref].instances[instance].c_str());
           } else {
             // If this is the first definition, we have no definition we can
             // refer to.
@@ -414,13 +459,18 @@ void FuzzTest2() {
           break;
         default:
           // All the scalar types.
-          AddToSchemaAndInstances(
-            flatbuffers::kTypeNames[base_type],
-            flatbuffers::NumToString(lcg_rand() % 128).c_str());
+          schema += flatbuffers::kTypeNames[base_type];
+
+          if (!deprecated) {
+            // We want each instance to use its own random value.
+            for (int inst = 0; inst < instances_per_definition; inst++)
+              definitions[definition].instances[inst] +=
+              flatbuffers::NumToString(lcg_rand() % 128).c_str();
+          }
       }
       AddToSchemaAndInstances(
-        ";\n",
-        field == fields_per_definition - 1 ? "\n" : ",\n");
+        deprecated ? "(deprecated);\n" : ";\n",
+        deprecated ? "" : is_last_field ? "\n" : ",\n");
     }
     AddToSchemaAndInstances("}\n\n", "}");
   }
@@ -470,8 +520,9 @@ void FuzzTest2() {
 }
 
 // Test that parser errors are actually generated.
-void TestError(const char *src, const char *error_substr) {
-  flatbuffers::Parser parser;
+void TestError(const char *src, const char *error_substr,
+               bool strict_json = false) {
+  flatbuffers::Parser parser(strict_json);
   TEST_EQ(parser.Parse(src), false);  // Must signal error
   // Must be the error we're expecting
   TEST_NOTNULL(strstr(parser.error_.c_str(), error_substr));
@@ -499,6 +550,9 @@ void ErrorTest() {
   TestError("union Z { X } table X { Y:Z; } root_type X; { Y_type: 99, Y: {",
             "type id");
   TestError("table X { Y:int; } root_type X; { Z:", "unknown field");
+  TestError("table X { Y:int; } root_type X; { Y:", "string constant", true);
+  TestError("table X { Y:int; } root_type X; { \"Y\":1, }", "string constant",
+            true);
   TestError("struct X { Y:int; Z:int; } table W { V:X; } root_type W; "
             "{ V:{ Y:1 } }", "incomplete");
   TestError("enum E:byte { A } table X { Y:E; } root_type X; { Y:U }",
@@ -566,8 +620,11 @@ void UnicodeTest() {
 int main(int /*argc*/, const char * /*argv*/[]) {
   // Run our various test suites:
 
-  auto flatbuf = CreateFlatBufferTest();
-  AccessFlatBufferTest(flatbuf);
+  std::string rawbuf;
+  auto flatbuf = CreateFlatBufferTest(rawbuf);
+  AccessFlatBufferTest(reinterpret_cast<const uint8_t *>(rawbuf.c_str()),
+                       rawbuf.length());
+  AccessFlatBufferTest(flatbuf.get(), rawbuf.length());
 
   #ifndef __ANDROID__  // requires file access
   ParseAndGenerateTextTest();

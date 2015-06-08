@@ -42,6 +42,11 @@ correct type below. To create a vector of struct objects (which will
 be stored as contiguous memory in the buffer, use `CreateVectorOfStructs`
 instead.
 
+To create a vector of nested objects (e.g. tables, strings or other vectors)
+collect their offsets in a temporary array/vector, then call `CreateVector`
+on that (see e.g. the array of strings example in `test.cpp`
+`CreateFlatBufferTest`).
+
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
     Vec3 vec(1, 2, 3);
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -107,6 +112,12 @@ be compressed, or whatever you'd like to do with it. You can access the
 start of the buffer with `fbb.GetBufferPointer()`, and it's size from
 `fbb.GetSize()`.
 
+Calling code may take ownership of the buffer with `fbb.ReleaseBufferPointer()`.
+Should you do it, the `FlatBufferBuilder` will be in an invalid state,
+and *must* be cleared before it can be used again.
+However, it also means you are able to destroy the builder while keeping
+the buffer in your application.
+
 `samples/sample_binary.cpp` is a complete code sample similar to
 the code above, that also includes the reading code below.
 
@@ -119,8 +130,9 @@ directly start traversing it using:
     auto monster = GetMonster(buffer_pointer);
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-`monster` is of type `Monster *`, and points to somewhere inside your
-buffer. If you look in your generated header, you'll see it has
+`monster` is of type `Monster *`, and points to somewhere *inside* your
+buffer (root object pointers are not the same as `buffer_pointer` !).
+If you look in your generated header, you'll see it has
 convenient accessors for all fields, e.g.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
@@ -150,6 +162,32 @@ Similarly, we can access elements of the inventory array:
     assert(inv);
     assert(inv->Get(9) == 9);
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+### Storing maps / dictionaries in a FlatBuffer
+
+FlatBuffers doesn't support maps natively, but there is support to
+emulate their behavior with vectors and binary search, which means you
+can have fast lookups directly from a FlatBuffer without having to unpack
+your data into a `std::map` or similar.
+
+To use it:
+-   Designate one of the fields in a table as they "key" field. You do this
+    by setting the `key` attribute on this field, e.g.
+    `name:string (key)`.
+    You may only have one key field, and it must be of string or scalar type.
+-   Write out tables of this type as usual, collect their offsets in an
+    array or vector.
+-   Instead of `CreateVector`, call `CreateVectorOfSortedTables`,
+    which will first sort all offsets such that the tables they refer to
+    are sorted by the key field, then serialize it.
+-   Now when you're accessing the FlatBuffer, you can use `Vector::LookupByKey`
+    instead of just `Vector::Get` to access elements of the vector, e.g.:
+    `myvector->LookupByKey("Fred")`, which returns a pointer to the
+    corresponding table type, or `nullptr` if not found.
+    `LookupByKey` performs a binary search, so should have a similar speed to
+    `std::map`, though may be faster because of better caching. `LookupByKey`
+    only works if the vector has been sorted, it will likely not find elements
+    if it hasn't been sorted.
 
 ### Direct memory access
 
@@ -213,7 +251,9 @@ reading, the actual overhead may be even lower than expected.
 In specialized cases where a denial of service attack is possible,
 the verifier has two additional constructor arguments that allow
 you to limit the nesting depth and total amount of tables the
-verifier may encounter before declaring the buffer malformed.
+verifier may encounter before declaring the buffer malformed. The default is
+`Verifier(buf, len, 64 /* max depth */, 1000000, /* max tables */)` which
+should be sufficient for most uses.
 
 ## Text & schema parsing
 
@@ -291,7 +331,14 @@ file, that you can access as described above.
 
 ### Threading
 
-None of the code is thread-safe, by design. That said, since currently a
-FlatBuffer is read-only and entirely `const`, reading by multiple threads
-is possible.
+Reading a FlatBuffer does not touch any memory outside the original buffer,
+and is entirely read-only (all const), so is safe to access from multiple
+threads even without synchronisation primitives.
 
+Creating a FlatBuffer is not thread safe. All state related to building
+a FlatBuffer is contained in a FlatBufferBuilder instance, and no memory
+outside of it is touched. To make this thread safe, either do not
+share instances of FlatBufferBuilder between threads (recommended), or
+manually wrap it in synchronisation primites. There's no automatic way to
+accomplish this, by design, as we feel multithreaded construction
+of a single buffer will be rare, and synchronisation overhead would be costly.

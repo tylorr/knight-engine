@@ -105,6 +105,11 @@ namespace FlatBuffers
             Pad(alignSize);
         }
 
+        public void PutBool(bool x)
+        {
+          _bb.PutByte(_space -= sizeof(byte), (byte)(x ? 1 : 0));
+        }
+
         public void PutSbyte(sbyte x)
         {
           _bb.PutSbyte(_space -= sizeof(sbyte), x);
@@ -157,6 +162,7 @@ namespace FlatBuffers
 
         // Adds a scalar to the buffer, properly aligned, and the buffer grown
         // if needed.
+        public void AddBool(bool x) { Prep(sizeof(byte), 0); PutBool(x); }
         public void AddSbyte(sbyte x) { Prep(sizeof(sbyte), 0); PutSbyte(x); }
         public void AddByte(byte x) { Prep(sizeof(byte), 0); PutByte(x); }
         public void AddShort(short x) { Prep(sizeof(short), 0); PutShort(x); }
@@ -164,7 +170,7 @@ namespace FlatBuffers
         public void AddInt(int x) { Prep(sizeof(int), 0); PutInt(x); }
         public void AddUint(uint x) { Prep(sizeof(uint), 0); PutUint(x); }
         public void AddLong(long x) { Prep(sizeof(long), 0); PutLong(x); }
-        public void AddULong(ulong x) { Prep(sizeof(ulong), 0); PutUlong(x); }
+        public void AddUlong(ulong x) { Prep(sizeof(ulong), 0); PutUlong(x); }
         public void AddFloat(float x) { Prep(sizeof(float), 0); PutFloat(x); }
         public void AddDouble(double x) { Prep(sizeof(double), 0);
                                           PutDouble(x); }
@@ -231,6 +237,7 @@ namespace FlatBuffers
         }
 
         // Add a scalar to a table at `o` into its vtable, with value `x` and default `d`
+        public void AddBool(int o, bool x, bool d) { if (x != d) { AddBool(x); Slot(o); } }
         public void AddSbyte(int o, sbyte x, sbyte d) { if (x != d) { AddSbyte(x); Slot(o); } }
         public void AddByte(int o, byte x, byte d) { if (x != d) { AddByte(x); Slot(o); } }
         public void AddShort(int o, short x, int d) { if (x != d) { AddShort(x); Slot(o); } }
@@ -238,7 +245,7 @@ namespace FlatBuffers
         public void AddInt(int o, int x, int d) { if (x != d) { AddInt(x); Slot(o); } }
         public void AddUint(int o, uint x, uint d) { if (x != d) { AddUint(x); Slot(o); } }
         public void AddLong(int o, long x, long d) { if (x != d) { AddLong(x); Slot(o); } }
-        public void AddULong(int o, ulong x, ulong d) { if (x != d) { AddULong(x); Slot(o); } }
+        public void AddUlong(int o, ulong x, ulong d) { if (x != d) { AddUlong(x); Slot(o); } }
         public void AddFloat(int o, float x, double d) { if (x != d) { AddFloat(x); Slot(o); } }
         public void AddDouble(int o, double x, double d) { if (x != d) { AddDouble(x); Slot(o); } }
         public void AddOffset(int o, int x, int d) { if (x != d) { AddOffset(x); Slot(o); } }
@@ -359,9 +366,9 @@ namespace FlatBuffers
         // Utility function for copying a byte array that starts at 0.
         public byte[] SizedByteArray()
         {
-            var newArray = new byte[_bb.Data.Length];
+            var newArray = new byte[_bb.Data.Length - _bb.position()];
             Buffer.BlockCopy(_bb.Data, _bb.position(), newArray, 0,
-                             _bb.Data.Length);
+                             _bb.Data.Length - _bb.position());
             return newArray;
         }
 

@@ -37,9 +37,9 @@ inline const char **EnumNamesAny() {
 
 inline const char *EnumNameAny(Any e) { return EnumNamesAny()[e]; }
 
-inline bool VerifyAny(flatbuffers::Verifier &verifier, const void *union_obj, uint8_t type);
+inline bool VerifyAny(flatbuffers::Verifier &verifier, const void *union_obj, Any type);
 
-MANUALLY_ALIGNED_STRUCT(4) Vec3 {
+MANUALLY_ALIGNED_STRUCT(4) Vec3 FLATBUFFERS_FINAL_CLASS {
  private:
   float x_;
   float y_;
@@ -55,7 +55,7 @@ MANUALLY_ALIGNED_STRUCT(4) Vec3 {
 };
 STRUCT_END(Vec3, 12);
 
-struct Monster : private flatbuffers::Table {
+struct Monster FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   const Vec3 *pos() const { return GetStruct<const Vec3 *>(4); }
   int16_t mana() const { return GetField<int16_t>(6, 150); }
   int16_t hp() const { return GetField<int16_t>(8, 100); }
@@ -110,7 +110,7 @@ inline flatbuffers::Offset<Monster> CreateMonster(flatbuffers::FlatBufferBuilder
   return builder_.Finish();
 }
 
-inline bool VerifyAny(flatbuffers::Verifier &verifier, const void *union_obj, uint8_t type) {
+inline bool VerifyAny(flatbuffers::Verifier &verifier, const void *union_obj, Any type) {
   switch (type) {
     case Any_NONE: return true;
     case Any_Monster: return verifier.VerifyTable(reinterpret_cast<const Monster *>(union_obj));

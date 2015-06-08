@@ -152,7 +152,7 @@ func (b *Builder) EndObject() UOffsetT {
 // Doubles the size of the byteslice, and copies the old data towards the
 // end of the new byteslice (since we build the buffer backwards).
 func (b *Builder) growByteBuffer() {
-	if (len(b.Bytes) & 0xC0000000) != 0 {
+	if (int64(len(b.Bytes)) & int64(0xC0000000)) != 0 {
 		panic("cannot grow buffer beyond 2 gigabytes")
 	}
 	newSize := len(b.Bytes) * 2
@@ -257,6 +257,18 @@ func (b *Builder) CreateString(s string) UOffsetT {
 	copy(b.Bytes[b.head:b.head+l], x)
 
 	return b.EndVector(len(x))
+}
+
+// CreateByteVector writes a ubyte vector
+func (b *Builder) CreateByteVector(v []byte) UOffsetT {
+	b.Prep(int(SizeUOffsetT), len(v)*SizeByte)
+
+	l := UOffsetT(len(v))
+
+	b.head -= l
+	copy(b.Bytes[b.head:b.head+l], v)
+
+	return b.EndVector(len(v))
 }
 
 func (b *Builder) notNested() {

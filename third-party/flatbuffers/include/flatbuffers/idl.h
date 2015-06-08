@@ -18,10 +18,13 @@
 #define FLATBUFFERS_IDL_H_
 
 #include <map>
+#include <set>
+#include <stack>
 #include <memory>
 #include <functional>
 
 #include "flatbuffers/flatbuffers.h"
+#include "flatbuffers/hash.h"
 
 // This file defines the data types representing a parsed IDL (Interface
 // Definition Language) / schema file.
@@ -34,7 +37,7 @@ namespace flatbuffers {
 #define FLATBUFFERS_GEN_TYPES_SCALAR(TD) \
   TD(NONE,   "",       uint8_t,  byte,   byte,    byte) \
   TD(UTYPE,  "",       uint8_t,  byte,   byte,    byte) /* begin scalar/int */ \
-  TD(BOOL,   "bool",   uint8_t,  byte,   byte,    byte) \
+  TD(BOOL,   "bool",   uint8_t,  boolean,byte,    bool) \
   TD(CHAR,   "byte",   int8_t,   byte,   int8,    sbyte) \
   TD(UCHAR,  "ubyte",  uint8_t,  byte,   byte,    byte) \
   TD(SHORT,  "short",  int16_t,  short,  int16,   short) \
@@ -178,6 +181,7 @@ struct Definition {
   Definition() : generated(false), defined_namespace(nullptr) {}
 
   std::string name;
+  std::string file;
   std::vector<std::string> doc_comment;
   SymbolTable<Value> attributes;
   bool generated;  // did we already output code for this definition?
@@ -185,11 +189,14 @@ struct Definition {
 };
 
 struct FieldDef : public Definition {
-  FieldDef() : deprecated(false), required(false), padding(0), used(false) {}
+  FieldDef() : deprecated(false), required(false), key(false), padding(0),
+               used(false) {}
 
   Value value;
-  bool deprecated;
-  bool required;
+  bool deprecated; // Field is allowed to be present in old data, but can't be
+                   // written in new data nor accessed in new code.
+  bool required;   // Field must always be present.
+  bool key;        // Field functions as a key for creating sorted vectors.
   size_t padding;  // Bytes to always pad after this field.
   bool used;       // Used during JSON parsing to check for repeated fields.
 };
@@ -199,6 +206,7 @@ struct StructDef : public Definition {
     : fixed(false),
       predecl(true),
       sortbysize(true),
+      has_key(false),
       minalign(1),
       bytesize(0)
     {}
@@ -213,6 +221,7 @@ struct StructDef : public Definition {
   bool fixed;       // If it's struct, not a table.
   bool predecl;     // If it's used before it was defined.
   bool sortbysize;  // Whether fields come in the declaration or size order.
+  bool has_key;     // It has a key field.
   size_t minalign;  // What the whole object needs to be aligned to.
   size_t bytesize;  // Size if fixed.
 };
@@ -260,14 +269,24 @@ struct EnumDef : public Definition {
 
 class Parser {
  public:
-  Parser(bool proto_mode = false) :
-    root_struct_def(nullptr),
-    source_(nullptr),
-    cursor_(nullptr),
-    line_(1),
-    proto_mode_(proto_mode) {
-      // Just in case none are declared:
-      namespaces_.push_back(new Namespace());
+  Parser(bool strict_json = false, bool proto_mode = false)
+    : root_struct_def(nullptr),
+      source_(nullptr),
+      cursor_(nullptr),
+      line_(1),
+      proto_mode_(proto_mode),
+      strict_json_(strict_json) {
+    // Just in case none are declared:
+    namespaces_.push_back(new Namespace());
+    known_attributes_.insert("deprecated");
+    known_attributes_.insert("required");
+    known_attributes_.insert("key");
+    known_attributes_.insert("hash");
+    known_attributes_.insert("id");
+    known_attributes_.insert("force_align");
+    known_attributes_.insert("bit_flags");
+    known_attributes_.insert("original_order");
+    known_attributes_.insert("nested_flatbuffer");
   }
 
   ~Parser() {
@@ -294,6 +313,11 @@ class Parser {
   // Mark all definitions as already having code generated.
   void MarkGenerated();
 
+  // Get the files recursively included by the given file. The returned
+  // container will have at least the given file.
+  std::set<std::string> GetIncludedFilesRecursive(
+      const std::string &file_name) const;
+
  private:
   int64_t ParseHexNum(int nibbles);
   void Next();
@@ -312,6 +336,7 @@ class Parser {
   uoffset_t ParseVector(const Type &type);
   void ParseMetaData(Definition &def);
   bool TryTypedValue(int dtoken, bool check, Value &e, BaseType req);
+  void ParseHash(Value &e, FieldDef* field);
   void ParseSingleValue(Value &e);
   int64_t ParseIntegerFromString(Type &type);
   StructDef *LookupCreateStruct(const std::string &name);
@@ -334,17 +359,22 @@ class Parser {
   std::string file_extension_;
 
   std::map<std::string, bool> included_files_;
+  std::map<std::string, std::set<std::string>> files_included_per_file_;
 
  private:
   const char *source_, *cursor_;
   int line_;  // the current line being parsed
   int token_;
+  std::stack<std::string> files_being_parsed_;
   bool proto_mode_;
+  bool strict_json_;
   std::string attribute_;
   std::vector<std::string> doc_comment_;
 
   std::vector<std::pair<Value, FieldDef *>> field_stack_;
   std::vector<uint8_t> struct_stack_;
+
+  std::set<std::string> known_attributes_;
 };
 
 // Utility functions for multiple generators:
@@ -363,7 +393,7 @@ struct GeneratorOptions {
   bool include_dependence_headers;
 
   // Possible options for the more general generator below.
-  enum Language { kJava, kCSharp, kMAX };
+  enum Language { kJava, kCSharp, kGo, kMAX };
 
   Language lang;
 
@@ -383,6 +413,18 @@ extern void GenerateText(const Parser &parser,
                          const void *flatbuffer,
                          const GeneratorOptions &opts,
                          std::string *text);
+extern bool GenerateTextFile(const Parser &parser,
+                             const std::string &path,
+                             const std::string &file_name,
+                             const GeneratorOptions &opts);
+
+// Generate binary files from a given FlatBuffer, and a given Parser
+// object that has been populated with the corresponding schema.
+// See idl_gen_general.cpp.
+extern bool GenerateBinary(const Parser &parser,
+                           const std::string &path,
+                           const std::string &file_name,
+                           const GeneratorOptions &opts);
 
 // Generate a C++ header from the definitions in the Parser object.
 // See idl_gen_cpp.
@@ -431,6 +473,34 @@ extern bool GenerateFBS(const Parser &parser,
                         const std::string &path,
                         const std::string &file_name,
                         const GeneratorOptions &opts);
+
+// Generate a make rule for the generated C++ header.
+// See idl_gen_cpp.cpp.
+extern std::string CPPMakeRule(const Parser &parser,
+                               const std::string &path,
+                               const std::string &file_name,
+                               const GeneratorOptions &opts);
+
+// Generate a make rule for the generated Java/C#/... files.
+// See idl_gen_general.cpp.
+extern std::string GeneralMakeRule(const Parser &parser,
+                                   const std::string &path,
+                                   const std::string &file_name,
+                                   const GeneratorOptions &opts);
+
+// Generate a make rule for the generated text (JSON) files.
+// See idl_gen_text.cpp.
+extern std::string TextMakeRule(const Parser &parser,
+                                const std::string &path,
+                                const std::string &file_name,
+                                const GeneratorOptions &opts);
+
+// Generate a make rule for the generated binary files.
+// See idl_gen_general.cpp.
+extern std::string BinaryMakeRule(const Parser &parser,
+                                  const std::string &path,
+                                  const std::string &file_name,
+                                  const GeneratorOptions &opts);
 
 }  // namespace flatbuffers
 

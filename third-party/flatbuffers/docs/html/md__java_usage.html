@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.7"/>
-<title>FlatBuffers: Use in Java</title>
+<title>FlatBuffers: Use in Java/C-sharp</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -50,10 +50,11 @@ $(document).ready(function(){initNavTree('md__java_usage.html','');});
 <div id="doc-content">
 <div class="header">
   <div class="headertitle">
-<div class="title">Use in Java </div>  </div>
+<div class="title">Use in Java/C-sharp </div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><p>FlatBuffers supports reading and writing binary FlatBuffers in Java. Generate code for Java with the <code>-j</code> option to <code>flatc</code>.</p>
+<div class="textblock"><p>FlatBuffers supports reading and writing binary FlatBuffers in Java and C#. Generate code for Java with the <code>-j</code> option to <code>flatc</code>, or for C# with <code>-n</code> (think .Net).</p>
+<p>Note that this document is from the perspective of Java. Code for both languages is generated in the same way, with only very subtle differences, for example any <code>camelCase</code> Java call will be <code>CamelCase</code> in C#.</p>
 <p>See <code>javaTest.java</code> for an example. Essentially, you read a FlatBuffer binary file into a <code>byte[]</code>, which you then turn into a <code>ByteBuffer</code>, which you pass to the <code>getRootAsMyRootType</code> function:</p>
 <div class="fragment"><div class="line">ByteBuffer bb = ByteBuffer.wrap(data);</div>
 <div class="line">Monster monster = Monster.getRootAsMonster(bb);</div>
@@ -94,7 +95,7 @@ $(document).ready(function(){initNavTree('md__java_usage.html','');});
 <div class="fragment"><div class="line">Monster.startInventoryVector(fbb, 5);</div>
 <div class="line"><span class="keywordflow">for</span> (byte i = 4; i &gt;=0; i--) fbb.addByte(i);</div>
 <div class="line"><span class="keywordtype">int</span> inv = fbb.endVector();</div>
-</div><!-- fragment --><p>You can use the generated method <code>startInventoryVector</code> to conveniently call <code>startVector</code> with the right element size. You pass the number of elements you want to write. Note how you write the elements backwards since the buffer is being constructed back to front.</p>
+</div><!-- fragment --><p>You can use the generated method <code>startInventoryVector</code> to conveniently call <code>startVector</code> with the right element size. You pass the number of elements you want to write. Note how you write the elements backwards since the buffer is being constructed back to front. You then pass <code>inv</code> to the corresponding <code>Add</code> call when you construct the table containing it afterwards.</p>
 <p>There are <code>add</code> functions for all the scalar types. You use <code>addOffset</code> for any previously constructed objects (such as other tables, strings, vectors). For structs, you use the appropriate <code>create</code> function in-line, as shown above in the <code>Monster</code> example.</p>
 <p>To finish the buffer, call:</p>
 <div class="fragment"><div class="line">Monster.finishMonsterBuffer(fbb, mon);</div>

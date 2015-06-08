@@ -46,7 +46,7 @@ inline const char *EnumNameAny(Any e) { return EnumNamesAny()[e]; }
 
 inline bool VerifyAny(flatbuffers::Verifier &verifier, const void *union_obj, Any type);
 
-MANUALLY_ALIGNED_STRUCT(2) Test {
+MANUALLY_ALIGNED_STRUCT(2) Test FLATBUFFERS_FINAL_CLASS {
  private:
   int16_t a_;
   int8_t b_;
@@ -61,7 +61,7 @@ MANUALLY_ALIGNED_STRUCT(2) Test {
 };
 STRUCT_END(Test, 4);
 
-MANUALLY_ALIGNED_STRUCT(16) Vec3 {
+MANUALLY_ALIGNED_STRUCT(16) Vec3 FLATBUFFERS_FINAL_CLASS {
  private:
   float x_;
   float y_;
@@ -86,14 +86,16 @@ MANUALLY_ALIGNED_STRUCT(16) Vec3 {
 };
 STRUCT_END(Vec3, 32);
 
-struct Stat : private flatbuffers::Table {
+struct Stat FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   const flatbuffers::String *id() const { return GetPointer<const flatbuffers::String *>(4); }
   int64_t val() const { return GetField<int64_t>(6, 0); }
+  uint16_t count() const { return GetField<uint16_t>(8, 0); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<flatbuffers::uoffset_t>(verifier, 4 /* id */) &&
            verifier.Verify(id()) &&
            VerifyField<int64_t>(verifier, 6 /* val */) &&
+           VerifyField<uint16_t>(verifier, 8 /* count */) &&
            verifier.EndTable();
   }
 };
@@ -103,28 +105,33 @@ struct StatBuilder {
   flatbuffers::uoffset_t start_;
   void add_id(flatbuffers::Offset<flatbuffers::String> id) { fbb_.AddOffset(4, id); }
   void add_val(int64_t val) { fbb_.AddElement<int64_t>(6, val, 0); }
+  void add_count(uint16_t count) { fbb_.AddElement<uint16_t>(8, count, 0); }
   StatBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   StatBuilder &operator=(const StatBuilder &);
   flatbuffers::Offset<Stat> Finish() {
-    auto o = flatbuffers::Offset<Stat>(fbb_.EndTable(start_, 2));
+    auto o = flatbuffers::Offset<Stat>(fbb_.EndTable(start_, 3));
     return o;
   }
 };
 
 inline flatbuffers::Offset<Stat> CreateStat(flatbuffers::FlatBufferBuilder &_fbb,
    flatbuffers::Offset<flatbuffers::String> id = 0,
-   int64_t val = 0) {
+   int64_t val = 0,
+   uint16_t count = 0) {
   StatBuilder builder_(_fbb);
   builder_.add_val(val);
   builder_.add_id(id);
+  builder_.add_count(count);
   return builder_.Finish();
 }
 
-struct Monster : private flatbuffers::Table {
+struct Monster FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   const Vec3 *pos() const { return GetStruct<const Vec3 *>(4); }
   int16_t mana() const { return GetField<int16_t>(6, 150); }
   int16_t hp() const { return GetField<int16_t>(8, 100); }
   const flatbuffers::String *name() const { return GetPointer<const flatbuffers::String *>(10); }
+  bool KeyCompareLessThan(const Monster *o) const { return *name() < *o->name(); }
+  int KeyCompareWithValue(const char *val) const { return strcmp(name()->c_str(), val); }
   const flatbuffers::Vector<uint8_t> *inventory() const { return GetPointer<const flatbuffers::Vector<uint8_t> *>(14); }
   Color color() const { return static_cast<Color>(GetField<int8_t>(16, 8)); }
   Any test_type() const { return static_cast<Any>(GetField<uint8_t>(18, 0)); }
@@ -136,8 +143,17 @@ struct Monster : private flatbuffers::Table {
   const flatbuffers::Vector<flatbuffers::Offset<Monster>> *testarrayoftables() const { return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<Monster>> *>(26); }
   const Monster *enemy() const { return GetPointer<const Monster *>(28); }
   const flatbuffers::Vector<uint8_t> *testnestedflatbuffer() const { return GetPointer<const flatbuffers::Vector<uint8_t> *>(30); }
-  const Monster *testnestedflatbuffer_nested_root() { return flatbuffers::GetRoot<Monster>(testnestedflatbuffer()->Data()); }
+  const Monster *testnestedflatbuffer_nested_root() const { return flatbuffers::GetRoot<Monster>(testnestedflatbuffer()->Data()); }
   const Stat *testempty() const { return GetPointer<const Stat *>(32); }
+  uint8_t testbool() const { return GetField<uint8_t>(34, 0); }
+  int32_t testhashs32_fnv1() const { return GetField<int32_t>(36, 0); }
+  uint32_t testhashu32_fnv1() const { return GetField<uint32_t>(38, 0); }
+  int64_t testhashs64_fnv1() const { return GetField<int64_t>(40, 0); }
+  uint64_t testhashu64_fnv1() const { return GetField<uint64_t>(42, 0); }
+  int32_t testhashs32_fnv1a() const { return GetField<int32_t>(44, 0); }
+  uint32_t testhashu32_fnv1a() const { return GetField<uint32_t>(46, 0); }
+  int64_t testhashs64_fnv1a() const { return GetField<int64_t>(48, 0); }
+  uint64_t testhashu64_fnv1a() const { return GetField<uint64_t>(50, 0); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<Vec3>(verifier, 4 /* pos */) &&
@@ -165,6 +181,15 @@ struct Monster : private flatbuffers::Table {
            verifier.Verify(testnestedflatbuffer()) &&
            VerifyField<flatbuffers::uoffset_t>(verifier, 32 /* testempty */) &&
            verifier.VerifyTable(testempty()) &&
+           VerifyField<uint8_t>(verifier, 34 /* testbool */) &&
+           VerifyField<int32_t>(verifier, 36 /* testhashs32_fnv1 */) &&
+           VerifyField<uint32_t>(verifier, 38 /* testhashu32_fnv1 */) &&
+           VerifyField<int64_t>(verifier, 40 /* testhashs64_fnv1 */) &&
+           VerifyField<uint64_t>(verifier, 42 /* testhashu64_fnv1 */) &&
+           VerifyField<int32_t>(verifier, 44 /* testhashs32_fnv1a */) &&
+           VerifyField<uint32_t>(verifier, 46 /* testhashu32_fnv1a */) &&
+           VerifyField<int64_t>(verifier, 48 /* testhashs64_fnv1a */) &&
+           VerifyField<uint64_t>(verifier, 50 /* testhashu64_fnv1a */) &&
            verifier.EndTable();
   }
 };
@@ -186,10 +211,19 @@ struct MonsterBuilder {
   void add_enemy(flatbuffers::Offset<Monster> enemy) { fbb_.AddOffset(28, enemy); }
   void add_testnestedflatbuffer(flatbuffers::Offset<flatbuffers::Vector<uint8_t>> testnestedflatbuffer) { fbb_.AddOffset(30, testnestedflatbuffer); }
   void add_testempty(flatbuffers::Offset<Stat> testempty) { fbb_.AddOffset(32, testempty); }
+  void add_testbool(uint8_t testbool) { fbb_.AddElement<uint8_t>(34, testbool, 0); }
+  void add_testhashs32_fnv1(int32_t testhashs32_fnv1) { fbb_.AddElement<int32_t>(36, testhashs32_fnv1, 0); }
+  void add_testhashu32_fnv1(uint32_t testhashu32_fnv1) { fbb_.AddElement<uint32_t>(38, testhashu32_fnv1, 0); }
+  void add_testhashs64_fnv1(int64_t testhashs64_fnv1) { fbb_.AddElement<int64_t>(40, testhashs64_fnv1, 0); }
+  void add_testhashu64_fnv1(uint64_t testhashu64_fnv1) { fbb_.AddElement<uint64_t>(42, testhashu64_fnv1, 0); }
+  void add_testhashs32_fnv1a(int32_t testhashs32_fnv1a) { fbb_.AddElement<int32_t>(44, testhashs32_fnv1a, 0); }
+  void add_testhashu32_fnv1a(uint32_t testhashu32_fnv1a) { fbb_.AddElement<uint32_t>(46, testhashu32_fnv1a, 0); }
+  void add_testhashs64_fnv1a(int64_t testhashs64_fnv1a) { fbb_.AddElement<int64_t>(48, testhashs64_fnv1a, 0); }
+  void add_testhashu64_fnv1a(uint64_t testhashu64_fnv1a) { fbb_.AddElement<uint64_t>(50, testhashu64_fnv1a, 0); }
   MonsterBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   MonsterBuilder &operator=(const MonsterBuilder &);
   flatbuffers::Offset<Monster> Finish() {
-    auto o = flatbuffers::Offset<Monster>(fbb_.EndTable(start_, 15));
+    auto o = flatbuffers::Offset<Monster>(fbb_.EndTable(start_, 24));
     fbb_.Required(o, 10);  // name
     return o;
   }
@@ -209,8 +243,25 @@ inline flatbuffers::Offset<Monster> CreateMonster(flatbuffers::FlatBufferBuilder
    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Monster>>> testarrayoftables = 0,
    flatbuffers::Offset<Monster> enemy = 0,
    flatbuffers::Offset<flatbuffers::Vector<uint8_t>> testnestedflatbuffer = 0,
-   flatbuffers::Offset<Stat> testempty = 0) {
+   flatbuffers::Offset<Stat> testempty = 0,
+   uint8_t testbool = 0,
+   int32_t testhashs32_fnv1 = 0,
+   uint32_t testhashu32_fnv1 = 0,
+   int64_t testhashs64_fnv1 = 0,
+   uint64_t testhashu64_fnv1 = 0,
+   int32_t testhashs32_fnv1a = 0,
+   uint32_t testhashu32_fnv1a = 0,
+   int64_t testhashs64_fnv1a = 0,
+   uint64_t testhashu64_fnv1a = 0) {
   MonsterBuilder builder_(_fbb);
+  builder_.add_testhashu64_fnv1a(testhashu64_fnv1a);
+  builder_.add_testhashs64_fnv1a(testhashs64_fnv1a);
+  builder_.add_testhashu64_fnv1(testhashu64_fnv1);
+  builder_.add_testhashs64_fnv1(testhashs64_fnv1);
+  builder_.add_testhashu32_fnv1a(testhashu32_fnv1a);
+  builder_.add_testhashs32_fnv1a(testhashs32_fnv1a);
+  builder_.add_testhashu32_fnv1(testhashu32_fnv1);
+  builder_.add_testhashs32_fnv1(testhashs32_fnv1);
   builder_.add_testempty(testempty);
   builder_.add_testnestedflatbuffer(testnestedflatbuffer);
   builder_.add_enemy(enemy);
@@ -223,6 +274,7 @@ inline flatbuffers::Offset<Monster> CreateMonster(flatbuffers::FlatBufferBuilder
   builder_.add_pos(pos);
   builder_.add_hp(hp);
   builder_.add_mana(mana);
+  builder_.add_testbool(testbool);
   builder_.add_test_type(test_type);
   builder_.add_color(color);
   return builder_.Finish();
@@ -240,9 +292,11 @@ inline const Monster *GetMonster(const void *buf) { return flatbuffers::GetRoot<
 
 inline bool VerifyMonsterBuffer(flatbuffers::Verifier &verifier) { return verifier.VerifyBuffer<Monster>(); }
 
-inline void FinishMonsterBuffer(flatbuffers::FlatBufferBuilder &fbb, flatbuffers::Offset<Monster> root) { fbb.Finish(root, "MONS"); }
+inline const char *MonsterIdentifier() { return "MONS"; }
 
-inline bool MonsterBufferHasIdentifier(const void *buf) { return flatbuffers::BufferHasIdentifier(buf, "MONS"); }
+inline bool MonsterBufferHasIdentifier(const void *buf) { return flatbuffers::BufferHasIdentifier(buf, MonsterIdentifier()); }
+
+inline void FinishMonsterBuffer(flatbuffers::FlatBufferBuilder &fbb, flatbuffers::Offset<Monster> root) { fbb.Finish(root, MonsterIdentifier()); }
 
 }  // namespace Example
 }  // namespace MyGame

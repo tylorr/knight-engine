@@ -4,7 +4,6 @@
 #include "material.h"
 
 #include <GL/glew.h>
-#include <stb_image.h>
 #include <imgui.h>
 #include <GLFW/glfw3.h>
 
@@ -166,7 +165,6 @@ void Initialize(GLFWwindow &window, MaterialManager &material_manager) {
   ImGuiIO &io = ImGui::GetIO();
 
   io.DeltaTime = 1.0f / 60.0f;
-  io.PixelCenterOffset = 0.0f;
   io.KeyMap[ImGuiKey_Tab] = GLFW_KEY_TAB;
   io.KeyMap[ImGuiKey_LeftArrow] = GLFW_KEY_LEFT;
   io.KeyMap[ImGuiKey_RightArrow] = GLFW_KEY_RIGHT;
@@ -191,21 +189,19 @@ void Initialize(GLFWwindow &window, MaterialManager &material_manager) {
 
   GL(glGenTextures(1, &imgui_manager_state.font_texture_handle));
   GL(glBindTexture(GL_TEXTURE_2D, imgui_manager_state.font_texture_handle));
-  GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
-  GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+  GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
+  GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
 
-  const void *png_data;
-  unsigned int png_size;
-  ImGui::GetDefaultFontData(nullptr, nullptr, &png_data, &png_size);
+  unsigned char* pixels;
+  int width, height;
+  io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
 
-  int tex_x, tex_y;
-  void *tex_data = stbi_load_from_memory((const unsigned char *)png_data, 
-                                         (int)png_size, 
-                                         &tex_x, &tex_y, 
-                                         nullptr, 0);
-  GL(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tex_x, tex_y, 
-               0, GL_RGBA, GL_UNSIGNED_BYTE, tex_data));
-  stbi_image_free(tex_data);
+  GL(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels));
+
+  io.Fonts->TexID = (void *)(intptr_t)imgui_manager_state.font_texture_handle;
+
+  io.Fonts->ClearInputData();
+  io.Fonts->ClearTexData();
 
   auto program_handle = imgui_manager_state.material_manager->CreateShaderFromSource("imgui_shader", kShaderSource);
   auto material = imgui_manager_state.material_manager->CreateMaterial(program_handle);

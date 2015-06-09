@@ -9,6 +9,12 @@
 #include "types.h"
 #include "std_allocator.h"
 #include "material.h"
+#include "flatbuffer_allocator.h"
+
+#include "entity_resource_generated.h"
+#include "transform_component_generated.h"
+#include "mesh_component_generated.h"
+#include "types_generated.h"
 
 #include <logog.hpp>
 #include <memory.h>
@@ -125,6 +131,26 @@ extern "C" GAME_INIT(Init) {
   index_count = array::size(indices);
 
   mesh_component->GC(*entity_manager);
+
+  // FlatBufferAllocator fb_alloc(alloc);
+
+  // flatbuffers::FlatBufferBuilder fbb(1024, &fb_alloc);
+
+  // auto material = fbb.CreateString("../shaders/blinn_phong.shader");
+  // auto mesh_location = schema::CreateMeshComponent(fbb, material);
+  // auto mesh_data_location = schema::CreateComponentData(fbb, schema::Component_MeshComponent, mesh_location.Union());
+
+  // flatbuffers::Offset<schema::ComponentData> components[] = { mesh_data_location };
+  // auto component_locations = fbb.CreateVector(components, 1);
+
+  // auto entity_location = CreateEntityResource(fbb, component_locations);
+
+  // fbb.Finish(entity_location);
+
+  // {
+  //   FileWrite writer("entity_data.bin");
+  //   writer.Write(fbb.GetBufferPointer(), fbb.GetSize());
+  // }
 }
 
 bool show_test_window = true;

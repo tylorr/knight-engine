@@ -12,16 +12,22 @@ set(SOURCES
     string_util.cpp
     mesh_component.cpp
     transform_component.cpp
-    win32/file.cpp
+    win32/file_read.cpp
+    win32/file_write.cpp
     win32/file_util.cpp
     win32/game_code.cpp
+    win32/windows_utils.cpp
 )
 
 include_directories(${KNIGHT_ENGINE_INCLUDES})
 
 add_library(knight-engine ${SOURCES})
 
-register_event_fbs(knight-engine ../schema/event_header.fbs)
+# register_event_fbs(knight-engine ../schema/event_header.fbs)
+register_event_fbs(knight-engine ../schema/types.fbs)
+register_event_fbs(knight-engine ../schema/transform_component.fbs)
+register_event_fbs(knight-engine ../schema/mesh_component.fbs)
+register_event_fbs(knight-engine ../schema/entity_resource.fbs)
 
 target_link_libraries(knight-engine glfw ${GLFW_LIBRARIES})
 target_link_libraries(knight-engine ${GLEW_LIBRARIES})

@@ -12,27 +12,27 @@ namespace knight {
 
 using namespace string_util;
 
-File::File(const char *path) : path_{path} {
-  file_handle_ = CreateFile(c_str(Widen(path)), GENERIC_READ | GENERIC_WRITE, 
-                            0, nullptr, OPEN_EXISTING, 
+FileRead::FileRead(const char *path) : path_{path} {
+  file_handle_ = CreateFile(c_str(Widen(path)), GENERIC_READ, 
+                            FILE_SHARE_READ, nullptr, OPEN_EXISTING, 
                             FILE_ATTRIBUTE_NORMAL, nullptr);
 
-  XASSERT(file_handle_ != INVALID_HANDLE_VALUE, "Failed to open file for RW '%s'", path_);
+  XASSERT(file_handle_ != INVALID_HANDLE_VALUE, "Failed to open file for reading '%s'", path_);
 }
 
-File::File(File &&other) 
+FileRead::FileRead(FileRead &&other) 
     : file_handle_(std::move(other.file_handle_)) {
   other.file_handle_ = INVALID_HANDLE_VALUE;
 }
 
-File::~File() {
+FileRead::~FileRead() {
   if (file_handle_ != INVALID_HANDLE_VALUE) {
     CloseHandle(file_handle_);
     file_handle_ = INVALID_HANDLE_VALUE;
   }
 }
 
-void File::Read(foundation::Array<char, 4> &content) const {
+void FileRead::Read(foundation::Array<char, 4> &content) const {
   LARGE_INTEGER file_size;
   auto get_file_size_result = GetFileSizeEx(file_handle_, &file_size);
   XASSERT(get_file_size_result, "Failed to get file size for '%s'", path_);
@@ -48,7 +48,7 @@ void File::Read(foundation::Array<char, 4> &content) const {
   XASSERT(read_result, "Failed to read file '%s'", path_);
 }
 
-File &File::operator=(File &&other) {
+FileRead &FileRead::operator=(FileRead &&other) {
   file_handle_ = other.file_handle_;
   other.file_handle_ = INVALID_HANDLE_VALUE;
   return *this;

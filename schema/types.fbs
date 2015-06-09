@@ -1,0 +1,21 @@
+namespace knight.schema;
+
+struct vec3 {
+  x:float;
+  y:float;
+  z:float;
+}
+
+struct vec4 {
+  x:float;
+  y:float;
+  z:float;
+  w:float;
+}
+
+struct mat4 {
+  v0:vec4;
+  v1:vec4;
+  v2:vec4;
+  v3:vec4;
+}

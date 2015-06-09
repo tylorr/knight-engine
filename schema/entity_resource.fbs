@@ -1,0 +1,17 @@
+namespace knight.schema;
+
+union Component {
+  TransformComponent,
+  MeshComponent
+}
+
+table ComponentData {
+  component:Component;
+}
+
+table EntityResource {
+  components:[ComponentData];
+  children:[EntityResource];
+}
+
+root_type EntityResource;

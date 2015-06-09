@@ -23,7 +23,7 @@ GLFWwindow *window;
 void Initialize();
 void InitWindow();
 
-void GlfwMouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
+void GlfwMouseButtonCallback(GLFWwindow *window, int button, int action, int mods);
 void GlfwKeyCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
 void GlfwScrollCallback(GLFWwindow *window, double xoffset, double yoffset);
 void GlfwCharCallback(GLFWwindow *window, unsigned int c);

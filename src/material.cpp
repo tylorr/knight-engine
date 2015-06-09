@@ -69,7 +69,7 @@ MaterialManager::~MaterialManager() {
 GLuint MaterialManager::CreateShader(const char *shader_path) {
   TempAllocator4096 temp_allocator;
   Buffer shader_source{temp_allocator};
-  File shader_file{shader_path};
+  FileRead shader_file{shader_path};
   shader_file.Read(shader_source);
 
   auto shader_id = murmur_hash_64(shader_path, strlen(shader_path), 0u);

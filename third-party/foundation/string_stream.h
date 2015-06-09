@@ -42,7 +42,7 @@ namespace foundation
 		/// Returns the stream as a C-string. There will always be a \0 character
 		/// at the end of the returned string. You don't have to explicitly add it
 		/// to the buffer.
-		const char *c_str(Buffer &b);
+		const char *c_str(const Buffer &b);
 	}
 
 	namespace string_stream_internal
@@ -113,8 +113,10 @@ namespace foundation
 			return b;
 		}
 
-		inline const char *c_str(Buffer &b)
+		inline const char *c_str(const Buffer &buffer)
 		{
+			auto b = const_cast<Buffer &>(buffer);
+			
 			// Ensure there is a \0 at the end of the buffer.
 			array::push_back(b, '\0');
 			array::pop_back(b);

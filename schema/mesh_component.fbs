@@ -1,0 +1,7 @@
+namespace knight.schema;
+
+table MeshComponent {
+  material:string;
+}
+
+root_type MeshComponent;

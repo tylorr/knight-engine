@@ -1,0 +1,7 @@
+namespace knight.schema;
+
+table EntityCollectionResource {
+  entities:[EntityResource]
+}
+
+root_type EntityCollectionResource;

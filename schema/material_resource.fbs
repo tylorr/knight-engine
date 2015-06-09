@@ -1,0 +1,9 @@
+namespace knight.schema;
+
+table MaterialResource {
+  guid:string;
+  path:string;
+  shader:string;
+}
+
+root_type MaterialResource;

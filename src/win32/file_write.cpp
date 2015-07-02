@@ -4,11 +4,11 @@
 
 #include <string_stream.h>
 #include <array.h>
-#include <stdio.h>
+#include <logog.hpp>
+#include <temp_allocator.h>
 
 #include <windows.h>
-
-#include <logog.hpp>
+#include <stdio.h>
 
 using namespace foundation;
 
@@ -18,7 +18,8 @@ using namespace string_util;
 using namespace windows;
 
 FileWrite::FileWrite(const char *path) : path_{path} {
-  file_handle_ = CreateFile(c_str(Widen(path)), GENERIC_WRITE, 
+  TempAllocator128 alloc;
+  file_handle_ = CreateFile(c_str(Widen(alloc, path)), GENERIC_WRITE, 
                             0, nullptr, CREATE_ALWAYS, 
                             FILE_ATTRIBUTE_NORMAL, nullptr);
 
@@ -26,10 +27,20 @@ FileWrite::FileWrite(const char *path) : path_{path} {
 }
 
 FileWrite::FileWrite(FileWrite &&other) 
-    : path_ {std::move(other.path_)},
-      file_handle_{std::move(other.file_handle_)} {
-  other.file_handle_ = INVALID_HANDLE_VALUE;
-  other.path_ = "";
+    : path_{},
+      file_handle_{INVALID_HANDLE_VALUE} {
+  *this = std::move(other);
+}
+
+FileWrite &FileWrite::operator=(FileWrite &&other) {
+  if (this != &other)
+  {
+    path_ = std::move(other.path_);
+    file_handle_ = std::move(other.file_handle_);
+    other.path_ = "";
+    other.file_handle_ = INVALID_HANDLE_VALUE;
+  }
+  return *this;
 }
 
 FileWrite::~FileWrite() {
@@ -49,16 +60,10 @@ void FileWrite::Write(const void *data, uint32_t size) const {
   DWORD bytes_written;
   auto write_result = WriteFile(file_handle_, data, size, &bytes_written, nullptr);
   
-  XASSERT(write_result, "Failed to write file '%s': %s", path_, string_stream::c_str(GetLastErrorMessage()));
+  XASSERT(write_result, "Failed to write file '%s'", path_);
   XASSERT(size == bytes_written, "Failed to write all bytes to file '%s'", path_);
 }
 
-FileWrite &FileWrite::operator=(FileWrite &&other) {
-  path_ = other.path_;
-  file_handle_ = other.file_handle_;
-  other.path_ = "";
-  other.file_handle_ = INVALID_HANDLE_VALUE;
-  return *this;
-}
+
 
 } // namespace knight

@@ -12,12 +12,14 @@ set(SOURCES
     string_util.cpp
     mesh_component.cpp
     transform_component.cpp
+    game_memory.cpp
     win32/file_read.cpp
     win32/file_write.cpp
     win32/file_util.cpp
-    win32/game_code.cpp
     win32/windows_utils.cpp
 )
+
+
 
 include_directories(${KNIGHT_ENGINE_INCLUDES})
 

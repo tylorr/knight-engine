@@ -8,6 +8,11 @@ constexpr std::size_t operator"" _z(unsigned long long n) {
   return n; 
 }
 
+#define Kibibytes(Value) ((Value)*1024_z)
+#define Mebibytes(Value) (Kibibytes(Value)*1024_z)
+#define Gibibytes(Value) (Mebibytes(Value)*1024_z)
+#define Tebibytes(Value) (Gibibytes(Value)*1024_z)
+
 class GLFWwindow;
 
 namespace knight {
@@ -21,17 +26,6 @@ namespace knight {
   TypeName &operator=(TypeName &&) = delete;
 
 #define BOOL_STRING(value) (value ? "true" : "false")
-
-class UniformManager;
-
-#define GAME_INIT(name) void name(GLFWwindow &window)
-typedef GAME_INIT(game_init);
-
-#define GAME_UPDATE_AND_RENDER(name) void name()
-typedef GAME_UPDATE_AND_RENDER(game_update_and_render);
-
-#define GAME_SHUTDOWN(name) void name()
-typedef GAME_SHUTDOWN(game_shutdown);
 
 #if defined(DEVELOPMENT)
   #define XASSERT(test, msg, ...) do {if (!(test)) error(__LINE__, __FILE__, \

@@ -25,24 +25,24 @@ namespace string_util {
     return array::begin(wide_buffer);
   }
 
-  WideBuffer Widen(const char *string) {
-    WideBuffer wide_buffer{memory_globals::default_scratch_allocator()};
+  WideBuffer Widen(Allocator &allocator, const char *string) {
+    WideBuffer wide_buffer{allocator};
     utf8::utf8to16(string, string + strlen(string), BackInserter(wide_buffer));
     return wide_buffer;
   }
 
-  WideBuffer Widen(Buffer &buffer) {
-    return Widen(string_stream::c_str(buffer));
+  WideBuffer Widen(Allocator &allocator, Buffer &buffer) {
+    return Widen(allocator, string_stream::c_str(buffer));
   }
 
-  Buffer Narrow(const wchar_t *wide_string) {
-    Buffer buffer{memory_globals::default_scratch_allocator()};
+  Buffer Narrow(Allocator &allocator, const wchar_t *wide_string) {
+    Buffer buffer{allocator};
     utf8::utf16to8(wide_string, wide_string + wcslen(wide_string), BackInserter(buffer));
     return buffer;
   }
 
-  Buffer Narrow(WideBuffer &wide_buffer) {
-    return Narrow(c_str(wide_buffer));
+  Buffer Narrow(Allocator &allocator, WideBuffer &wide_buffer) {
+    return Narrow(allocator, c_str(wide_buffer));
   }
 
 } // namespace string_util

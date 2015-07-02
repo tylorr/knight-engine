@@ -5,6 +5,7 @@
 #include "imgui_manager.h"
 #include "udp_listener.h"
 #include "game_code.h"
+#include "game_platform.h"
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -35,6 +36,8 @@ int main(int argc, char *argv[]) {
 
   memory_globals::init();
 
+  auto game = GameCode{memory_globals::default_allocator()};
+
   auto logog_init_params = logog::INIT_PARAMS{knight_malloc, knight_free};
   LOGOG_INITIALIZE(&logog_init_params);
   {
@@ -46,27 +49,34 @@ int main(int argc, char *argv[]) {
     udp_listener.Start(1234);
     
     Initialize();
-    //UniformManager uniform_manager{memory_globals::default_allocator()};
     
+    auto &page_allocator = memory_globals::default_page_allocator();
+
+    auto game_memory = GameMemory{};
+
+    game_memory.temporary_memory_size = Gibibytes(1);
+    game_memory.memory_size = Mebibytes(256) + game_memory.temporary_memory_size;
+    game_memory.memory = page_allocator.allocate(game_memory.memory_size);
+
     // TODO: TR Get these from cmake
     auto source_dll_name = "bin/libgame.dll";
     auto temp_dll_name = "bin/temp_libgame.dll";
-    auto game = game_code::Load(source_dll_name, temp_dll_name);
+    game_code::Load(game, source_dll_name, temp_dll_name);
     
     if (game.Init) {
-      game.Init(*window);
+      game.Init(&game_memory, *window);
     }
 
     while (!glfwWindowShouldClose(window)) {
       if(game_code::IsDirty(game)) {
-        game = game_code::Reload(game);
+        game_code::Reload(game);
       }
 
       glfwGetFramebufferSize(window, &current_width, &current_height);
       glViewport(0, 0, current_width, current_height);
 
       if (game.UpdateAndRender) {
-        game.UpdateAndRender();
+        game.UpdateAndRender(&game_memory);
       }
 
       glfwSwapBuffers(window);
@@ -76,14 +86,15 @@ int main(int argc, char *argv[]) {
     if (game.Shutdown) {
       game.Shutdown();
     }
-
-    game_code::Unload(game);
     
     udp_listener.Stop();
 
     glfwTerminate();
+
+    page_allocator.deallocate(game_memory.memory);
   }
   LOGOG_SHUTDOWN();
+  game_code::Unload(game);
   memory_globals::shutdown();
 
   return EXIT_SUCCESS;

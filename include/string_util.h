@@ -12,11 +12,14 @@ namespace string_util {
   const wchar_t *c_str(WideBuffer &wide_buffer);
   const wchar_t *c_str(WideBuffer &&wide_buffer);
 
-  WideBuffer Widen(const char *string);
-  WideBuffer Widen(foundation::string_stream::Buffer &buffer);
+  WideBuffer Widen(foundation::Allocator &allocator, const char *string);
+  WideBuffer Widen(foundation::Allocator &allocator, 
+                   foundation::string_stream::Buffer &buffer);
 
-  foundation::string_stream::Buffer Narrow(const wchar_t *wide_string);
-  foundation::string_stream::Buffer Narrow(WideBuffer &wide_buffer);
+  foundation::string_stream::Buffer Narrow(foundation::Allocator &allocator, 
+                                           const wchar_t *wide_string);
+  foundation::string_stream::Buffer Narrow(foundation::Allocator &allocator,
+                                           WideBuffer &wide_buffer);
 
 } // namespace string_util
 

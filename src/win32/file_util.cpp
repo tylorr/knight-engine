@@ -1,6 +1,8 @@
 #include "file_util.h"
 #include "string_util.h"
 
+#include <temp_allocator.h>
+
 #include <windows.h>
 
 namespace knight {
@@ -22,8 +24,9 @@ namespace file_util {
 uint64_t GetLastWriteTime(const char *filename) {
   FILETIME last_write_time;
 
+  TempAllocator128 alloc;
   WIN32_FILE_ATTRIBUTE_DATA data;
-  if(GetFileAttributesEx(c_str(Widen(filename)), GetFileExInfoStandard, &data)) {
+  if(GetFileAttributesEx(c_str(Widen(alloc, filename)), GetFileExInfoStandard, &data)) {
     last_write_time = data.ftLastWriteTime;
   }
 

@@ -2,7 +2,7 @@
 #include "string_util.h"
 
 #include <string_stream.h>
-#include <array.h>
+#include <temp_allocator.h>
 
 #include <logog.hpp>
 
@@ -13,7 +13,8 @@ namespace knight {
 using namespace string_util;
 
 FileRead::FileRead(const char *path) : path_{path} {
-  file_handle_ = CreateFile(c_str(Widen(path)), GENERIC_READ, 
+  TempAllocator128 alloc;
+  file_handle_ = CreateFile(c_str(Widen(alloc, path)), GENERIC_READ, 
                             FILE_SHARE_READ, nullptr, OPEN_EXISTING, 
                             FILE_ATTRIBUTE_NORMAL, nullptr);
 

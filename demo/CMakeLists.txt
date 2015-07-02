@@ -1,5 +1,6 @@
 set(SOURCES
     main.cpp
+    game_code.cpp
 )
 
 include_directories(${KNIGHT_ENGINE_INCLUDES})
@@ -17,7 +18,7 @@ cotire(demo)
 add_library(game SHARED game.cpp)
 target_link_libraries(game knight-engine)
 
-add_executable(client client.cpp)
-target_link_libraries(client knight-engine)
+# add_executable(client client.cpp)
+# target_link_libraries(client knight-engine)
 
 add_dependencies(demo game)

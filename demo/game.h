@@ -1,16 +1,29 @@
+#pragma once
+
+#include "game_memory.h"
 #include "shader_types.h"
+#include "pointers.h"
+#include "types.h"
 
-class GLFWwindow;
+#include <glm/glm.hpp>
 
-namespace knight {
+struct GameState : public knight::GameAllocatorState {
+  std::shared_ptr<knight::Material> material;
+  knight::BufferObject vbo;
+  knight::BufferObject ibo;
+  knight::VertexArray vao;
 
-#define GAME_INIT(name) void name(GLFWwindow &window)
-typedef GAME_INIT(game_init);
+  glm::mat4 model_matrix;
+  knight::Uniform<float, 4, 4> *mvp_uniform;
+  knight::Uniform<float, 4, 4> *mv_matrix_uniform;
+  knight::Uniform<float, 3, 3> *normal_matrix_uniform;
 
-#define GAME_UPDATE_AND_RENDER(name) void name()
-typedef GAME_UPDATE_AND_RENDER(game_update_and_render);
+  knight::pointer<knight::EntityManager> entity_manager;
+  knight::pointer<knight::MeshComponent> mesh_component;
+  knight::pointer<knight::MaterialManager> material_manager;
 
-#define GAME_SHUTDOWN(name) void name()
-typedef GAME_SHUTDOWN(game_shutdown);
+  uint32_t index_count;
 
-} // namespace knight
+  char string_buff[256];
+  char foo_buff[256];
+};

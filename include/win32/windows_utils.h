@@ -1,13 +1,11 @@
 #pragma once
 
-#include "common.h"
-
 #include <string_stream.h>
 
 namespace knight {
 namespace windows {
 
-foundation::string_stream::Buffer GetLastErrorMessage();
+  void GetLastErrorMessage(foundation::string_stream::Buffer &error_message);
 
 }
 }

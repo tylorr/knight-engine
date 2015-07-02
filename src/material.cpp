@@ -2,7 +2,7 @@
 #include "iterators.h"
 #include "platform_types.h"
 #include "uniform.h"
-#include "std_allocator.h"
+#include "pointers.h"
 #include "common.h"
 
 #include <hash.h>

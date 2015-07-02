@@ -7,7 +7,7 @@
 #include "mesh_component.h"
 #include "entity_manager.h"
 #include "types.h"
-#include "std_allocator.h"
+#include "pointers.h"
 #include "material.h"
 #include "flatbuffer_allocator.h"
 

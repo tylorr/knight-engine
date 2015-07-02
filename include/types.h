@@ -49,4 +49,7 @@ class Component;
 
 class MeshComponent;
 
+template<typename T, typename F>
+class Copyer;
+
 } // namespace knight

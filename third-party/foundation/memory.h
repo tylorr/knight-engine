@@ -110,6 +110,49 @@ namespace foundation
 	 	uint32_t _total_allocated;
 	};
 
+	/// An allocator used to allocate temporary "scratch" memory. The allocator
+	/// uses a fixed size ring buffer to services the requests.
+	///
+	/// Memory is always always allocated linearly. An allocation pointer is
+	/// advanced through the buffer as memory is allocated and wraps around at
+	/// the end of the buffer. Similarly, a free pointer is advanced as memory
+	/// is freed.
+	///
+	/// It is important that the scratch allocator is only used for short-lived
+	/// memory allocations. A long lived allocator will lock the "free" pointer
+	/// and prevent the "allocate" pointer from proceeding past it, which means
+	/// the ring buffer can't be used.
+	/// 
+	/// If the ring buffer is exhausted, the scratch allocator will use its backing
+	/// allocator to allocate memory instead.
+	class ScratchAllocator : public Allocator {
+	 public:
+
+	 	/// Creates a ScratchAllocator. The allocator will use the backing
+	 	/// allocator to create the ring buffer and to service any requests
+	 	/// that don't fit in the ring buffer.
+	 	///
+	 	/// size specifies the size of the ring buffer.
+		ScratchAllocator(Allocator &backing, uint32_t size);
+		~ScratchAllocator();
+
+		virtual void *allocate(uint32_t size, uint32_t align);
+		virtual void deallocate(void *p);
+
+		virtual uint32_t allocated_size(void *p);
+		virtual uint32_t total_allocated();
+
+		virtual void *allocation_base(void *p);
+
+   private:
+		Allocator &_backing;
+		
+		char *_begin, *_end;
+		char *_allocate, *_free;
+
+		bool in_use(void *p);
+	};
+
 	/// Functions for accessing global memory data.
 	namespace memory_globals {
 		/// Initializes the global memory allocators. scratch_buffer_size is the size of the

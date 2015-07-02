@@ -44,127 +44,9 @@ namespace {
 			*p++ = HEADER_PAD_VALUE;
 	}
 
-	/// An allocator used to allocate temporary "scratch" memory. The allocator
-	/// uses a fixed size ring buffer to services the requests.
-	///
-	/// Memory is always always allocated linearly. An allocation pointer is
-	/// advanced through the buffer as memory is allocated and wraps around at
-	/// the end of the buffer. Similarly, a free pointer is advanced as memory
-	/// is freed.
-	///
-	/// It is important that the scratch allocator is only used for short-lived
-	/// memory allocations. A long lived allocator will lock the "free" pointer
-	/// and prevent the "allocate" pointer from proceeding past it, which means
-	/// the ring buffer can't be used.
-	/// 
-	/// If the ring buffer is exhausted, the scratch allocator will use its backing
-	/// allocator to allocate memory instead.
-	class ScratchAllocator : public Allocator
-	{
-		Allocator &_backing;
-		
-		// Start and end of the ring buffer.
-		char *_begin, *_end;
-
-		// Pointers to where to allocate memory and where to free memory.
-		char *_allocate, *_free;
-		
-	public:
-		/// Creates a ScratchAllocator. The allocator will use the backing
-		/// allocator to create the ring buffer and to service any requests
-		/// that don't fit in the ring buffer.
-		///
-		/// size specifies the size of the ring buffer.
-		ScratchAllocator(Allocator &backing, uint32_t size) : _backing(backing) {
-			_begin = (char *)_backing.allocate(size);
-			_end = _begin + size;
-			_allocate = _begin;
-			_free = _begin;
-		}
-
-		~ScratchAllocator() {
-			assert(_free == _allocate);
-			_backing.deallocate(_begin);
-		}
-
-		bool in_use(void *p)
-		{
-			if (_free == _allocate)
-				return false;
-			if (_allocate > _free)
-				return p >= _free && p < _allocate;
-			return p >= _free || p < _allocate;
-		}
-
-		virtual void *allocate(uint32_t size, uint32_t align) {
-			assert(align % 4 == 0);
-			size = ((size + 3)/4)*4;
-
-			char *p = _allocate;
-			Header *h = (Header *)p;
-			char *data = (char *)data_pointer(h, align);
-			p = data + size;
-
-			// Reached the end of the buffer, wrap around to the beginning.
-			if (p > _end) {
-				h->size = (_end - (char *)h) | 0x80000000u;
-				
-				p = _begin;
-				h = (Header *)p;
-				data = (char *)data_pointer(h, align);
-				p = data + size;
-			}
-			
-			// If the buffer is exhausted use the backing allocator instead.
-			if (in_use(p))
-				return _backing.allocate(size, align);
-
-			fill(h, data, p - (char *)h);
-			_allocate = p;
-			return data;
-		}
-
-		virtual void deallocate(void *p) {
-			if (!p)
-				return;
-
-			if (p < _begin || p >= _end) {
-				_backing.deallocate(p);
-				return;
-			}
-
-			// Mark this slot as free
-			Header *h = header(p);
-			assert((h->size & 0x80000000u) == 0);
-			h->size = h->size | 0x80000000u;
-
-			// Advance the free pointer past all free slots.
-			while (_free != _allocate) {
-				Header *h = (Header *)_free;
-				if ((h->size & 0x80000000u) == 0)
-					break;
-
-				_free += h->size & 0x7fffffffu;
-				if (_free == _end)
-					_free = _begin;
-			}
-		}
-
-		virtual uint32_t allocated_size(void *p) {
-			Header *h = header(p);
-			return h->size - ((char *)p - (char *)h);
-		}
-
-		virtual uint32_t total_allocated() {
-			return _end - _begin;
-		}
-
-		virtual void *allocation_base(void *p) { return nullptr; }
-	};
-
 	struct MemoryGlobals {
-		//static const int ALLOCATOR_MEMORY = sizeof(HeapAllocator) + sizeof(ScratchAllocator);
-		static const int ALLOCATOR_MEMORY = 1024;
+		//static const size_t ALLOCATOR_MEMORY = (2 * sizeof(HeapAllocator)) + sizeof(ScratchAllocator) + sizeof(PageAllocator) + (128 * sizeof(size_t)) + 32;
+		static const size_t ALLOCATOR_MEMORY = 768;
 		char buffer[ALLOCATOR_MEMORY];
 
 		HeapAllocator *static_heap;
@@ -238,8 +120,8 @@ namespace foundation
 
  	void *PageAllocator::allocate(uint32_t size, uint32_t align) {
  		void *ptr = VirtualAlloc(0, size, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
- 		auto as = allocated_size(ptr);
- 		_total_allocated += as;
+ 		auto allocated = allocated_size(ptr);
+ 		_total_allocated += allocated;
  		return ptr;
  	}
 
@@ -263,6 +145,96 @@ namespace foundation
  		VirtualQuery(p, &minfo, sizeof(minfo));
  		return minfo.AllocationBase;
 	}
+
+	///
+	/// Scratch Allocator
+	///
+	
+	ScratchAllocator::ScratchAllocator(Allocator &backing, uint32_t size) : _backing(backing) {
+		_begin = (char *)_backing.allocate(size);
+		_end = _begin + size;
+		_allocate = _begin;
+		_free = _begin;
+	}
+
+	ScratchAllocator::~ScratchAllocator() {
+		assert(_free == _allocate);
+		_backing.deallocate(_begin);
+	}
+
+	bool ScratchAllocator::in_use(void *p)
+	{
+		if (_free == _allocate)
+			return false;
+		if (_allocate > _free)
+			return p >= _free && p < _allocate;
+		return p >= _free || p < _allocate;
+	}
+
+	void *ScratchAllocator::allocate(uint32_t size, uint32_t align) {
+		assert(align % 4 == 0);
+		size = ((size + 3)/4)*4;
+
+		char *p = _allocate;
+		Header *h = (Header *)p;
+		char *data = (char *)data_pointer(h, align);
+		p = data + size;
+
+		// Reached the end of the buffer, wrap around to the beginning.
+		if (p > _end) {
+			h->size = (_end - (char *)h) | 0x80000000u;
+			
+			p = _begin;
+			h = (Header *)p;
+			data = (char *)data_pointer(h, align);
+			p = data + size;
+		}
+		
+		// If the buffer is exhausted use the backing allocator instead.
+		if (in_use(p))
+			return _backing.allocate(size, align);
+
+		fill(h, data, p - (char *)h);
+		_allocate = p;
+		return data;
+	}
+
+	void ScratchAllocator::deallocate(void *p) {
+		if (!p)
+			return;
+
+		if (p < _begin || p >= _end) {
+			_backing.deallocate(p);
+			return;
+		}
+
+		// Mark this slot as free
+		Header *h = header(p);
+		assert((h->size & 0x80000000u) == 0);
+		h->size = h->size | 0x80000000u;
+
+		// Advance the free pointer past all free slots.
+		while (_free != _allocate) {
+			Header *h = (Header *)_free;
+			if ((h->size & 0x80000000u) == 0)
+				break;
+
+			_free += h->size & 0x7fffffffu;
+			if (_free == _end)
+				_free = _begin;
+		}
+	}
+
+	uint32_t ScratchAllocator::allocated_size(void *p) {
+		Header *h = header(p);
+		return h->size - ((char *)p - (char *)h);
+	}
+
+	uint32_t ScratchAllocator::total_allocated() {
+		return _end - _begin;
+	}
+
+	void *ScratchAllocator::allocation_base(void *p) { return nullptr; }
 
 	///
 	/// Memory globals

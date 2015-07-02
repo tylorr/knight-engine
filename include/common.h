@@ -50,13 +50,14 @@ namespace knight {
     line; \
     XASSERT(glGetError() == GL_NO_ERROR, "OpenGL error"); \
   } while (false)
-
-
 #else
   #define XASSERT(test, msg, ...) ((void)0)
   #define GL_ASSERT(msg, ...) ((void)0)
   #define GL(line) line
 #endif
+
+
+#define EXPAND(EXPR) std::initializer_list<int>{((EXPR),0)...}
 
 const char *glErrorString(GLenum error);
 

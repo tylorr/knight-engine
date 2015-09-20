@@ -6,15 +6,18 @@
 #include "udp_listener.h"
 #include "game_code.h"
 #include "game_platform.h"
+#include "win32/windows_utils.h"
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <memory.h>
+#include <string_stream.h>
 
 #include <logog.hpp>
 
 using namespace knight;
 using namespace foundation;
+using namespace string_stream;
 
 int current_width = 1280,
     current_height = 720;

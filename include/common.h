@@ -8,10 +8,21 @@ constexpr std::size_t operator"" _z(unsigned long long n) {
   return n; 
 }
 
-#define Kibibytes(Value) ((Value)*1024_z)
-#define Mebibytes(Value) (Kibibytes(Value)*1024_z)
-#define Gibibytes(Value) (Mebibytes(Value)*1024_z)
-#define Tebibytes(Value) (Gibibytes(Value)*1024_z)
+constexpr unsigned long long operator""_kib(unsigned long long n) {
+  return n * 1024;
+}
+
+constexpr unsigned long long operator""_mib(unsigned long long n) {
+  return n * 1024_kib;
+}
+
+constexpr unsigned long long operator""_gib(unsigned long long n) {
+  return n * 1024_mib;
+}
+
+constexpr unsigned long long operator""_tib(unsigned long long n) {
+  return n * 1024_gib;
+}
 
 class GLFWwindow;
 

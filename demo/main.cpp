@@ -57,9 +57,11 @@ int main(int argc, char *argv[]) {
 
     auto game_memory = GameMemory{};
 
-    game_memory.temporary_memory_size = Gibibytes(1);
-    game_memory.memory_size = Mebibytes(256) + game_memory.temporary_memory_size;
+    game_memory.temporary_memory_size = 512_mib;
+    game_memory.memory_size = 256_mib + game_memory.temporary_memory_size;
     game_memory.memory = page_allocator.allocate(game_memory.memory_size);
+
+    XASSERT(game_memory.memory != nullptr, "Page allocation failed");
 
     // TODO: TR Get these from cmake
     auto source_dll_name = "bin/libgame.dll";

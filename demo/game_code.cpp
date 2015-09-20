@@ -1,9 +1,11 @@
+#include "game_code.h"
 #include "game_platform.h"
 #include "file_util.h"
 #include "string_util.h"
 
 #include <windows.h>
 
+using namespace knight;
 using namespace string_util;
 
 namespace game_code_internal {

@@ -72,13 +72,16 @@ namespace knight {
 
 const char *glErrorString(GLenum error);
 
+void stack_trace();
+
 template<typename... Args>
 void error(const int &line_number, const char *filename, 
            const char *message, Args... args) {
   // TODO: TR Print stack trace
   printf("\x1b[1m%s:%d:\x1b[0m ", filename, line_number);
   printf(message, args...);
-  printf("\n");
+  printf("\n\n");
+  stack_trace();
   abort();
 }
 

@@ -46,6 +46,10 @@ macro(register_event_fbs _target)
   endif()
 endmacro()
 
+macro(pdb target)
+  add_custom_command(TARGET ${target} POST_BUILD COMMAND cv2pdb $<TARGET_FILE:${target}>)
+endmacro(pdb)
+
 set(FBSCHEMA_OUTPUT "${PROJECT_BINARY_DIR}/schema_headers/")
 
 find_package(GLEW REQUIRED)
@@ -99,3 +103,5 @@ if (FBSCHEMAS)
   add_custom_target(fbschema DEPENDS ${FBSCHEMA_HEADERS})
   add_dependencies(fbschema flatc)
 endif()
+
+

@@ -4,6 +4,7 @@
 #include "shader_types.h"
 #include "pointers.h"
 #include "types.h"
+#include "dependency_injection.h"
 
 #include <glm/glm.hpp>
 
@@ -18,9 +19,7 @@ struct GameState : public knight::GameAllocatorState {
   knight::Uniform<float, 4, 4> *mv_matrix_uniform;
   knight::Uniform<float, 3, 3> *normal_matrix_uniform;
 
-  knight::pointer<knight::EntityManager> entity_manager;
-  knight::pointer<knight::MeshComponent> mesh_component;
-  knight::pointer<knight::MaterialManager> material_manager;
+  knight::pointer<knight::di::Injector> injector;
 
   uint32_t index_count;
 

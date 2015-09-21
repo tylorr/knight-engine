@@ -48,6 +48,32 @@ struct Vertex {
   glm::vec3 normal;
 };
 
+auto EntityManagerFactory() {
+  auto &allocator = game_memory::default_allocator();
+  return allocate_unique<EntityManager>(allocator, allocator);
+}
+
+auto MaterialManagerFactory() {
+  auto &allocator = game_memory::default_allocator();
+  return allocate_unique<MaterialManager>(allocator, allocator);
+}
+
+auto MeshComponentFactory() {
+  auto &allocator = game_memory::default_allocator();
+  return allocate_unique<MeshComponent>(allocator, allocator);
+}
+
+void BuildInjector(GameState &game_state) {
+  auto &allocator = game_memory::default_allocator();
+  di::InjectorConfig config;
+
+  config.Add(EntityManagerFactory);
+  config.Add(MaterialManagerFactory);
+  config.Add(MeshComponentFactory);
+
+  game_state.injector = allocate_unique<di::Injector>(allocator, config.BuildInjector(allocator));
+}
+
 extern "C" GAME_INIT(Init) {
   GameState *game_state;
   game_memory::Initialize(game_memory, &game_state);
@@ -55,11 +81,13 @@ extern "C" GAME_INIT(Init) {
   auto &allocator = game_memory::default_allocator();
   auto &scratch_allocator = game_memory::default_scratch_allocator();
 
-  game_state->material_manager = allocate_unique<MaterialManager>(allocator, allocator);
+  BuildInjector(*game_state);
 
-  ImGuiManager::Initialize(window, *game_state->material_manager);
+  auto material_manager = game_state->injector->get_instance<MaterialManager>();
 
-  game_state->material = game_state->material_manager->CreateMaterial("../shaders/blinn_phong.shader");
+  ImGuiManager::Initialize(window, *material_manager);
+
+  game_state->material = material_manager->CreateMaterial("../shaders/blinn_phong.shader");
 
   auto material = game_state->material;
 
@@ -82,7 +110,7 @@ extern "C" GAME_INIT(Init) {
   auto mesh = scene->mMeshes[0];
 
   Array<Vertex> vertices{scratch_allocator};
-  for (auto j = 0; j < mesh->mNumVertices; ++j) {
+  for (auto j = 0u; j < mesh->mNumVertices; ++j) {
     auto pos = mesh->mVertices[j];
     auto normal = mesh->mNormals[j];
     array::push_back(vertices, 
@@ -93,7 +121,7 @@ extern "C" GAME_INIT(Init) {
   }
 
   Array<unsigned int> indices{scratch_allocator};
-  for (auto j = 0; j < mesh->mNumFaces; ++j) {
+  for (auto j = 0u; j < mesh->mNumFaces; ++j) {
     auto face = mesh->mFaces[j];
     XASSERT(face.mNumIndices == 3, "Wrong number of indices");
 
@@ -119,16 +147,15 @@ extern "C" GAME_INIT(Init) {
   game_state->ibo.Unbind();
   game_state->material->Unbind();
 
-  game_state->entity_manager = allocate_unique<EntityManager>(allocator, allocator);
-  auto entity_id = game_state->entity_manager->Create();
-  auto entity = game_state->entity_manager->Get(entity_id);
+  auto entity_manager = game_state->injector->get_instance<EntityManager>();
+  auto entity_id = entity_manager->Create();
+  auto entity = entity_manager->Get(entity_id);
 
-  game_state->mesh_component = allocate_unique<MeshComponent>(allocator, allocator);
-  game_state->mesh_component->Add(*entity, *game_state->material, game_state->vao, array::size(indices));
+  auto mesh_component = game_state->injector->get_instance<MeshComponent>();
+  mesh_component->Add(*entity, *game_state->material, game_state->vao, array::size(indices));
+  mesh_component->GC(*entity_manager);
 
   game_state->index_count = array::size(indices);
-
-  game_state->mesh_component->GC(*game_state->entity_manager);
 
   // FlatBufferAllocator fb_alloc(alloc);
 
@@ -190,9 +217,11 @@ extern "C" GAME_UPDATE_AND_RENDER(UpdateAndRender) {
   auto normal_matrix = glm::inverseTranspose(glm::mat3(model_view_matrix));
   game_state->normal_matrix_uniform->SetValue(glm::value_ptr(normal_matrix));
 
-  game_state->material_manager->PushUniforms(*game_state->material);
-  
-  game_state->mesh_component->Render();
+  auto material_manager = game_state->injector->get_instance<MaterialManager>();
+  material_manager->PushUniforms(*game_state->material);
+
+  auto mesh_component = game_state->injector->get_instance<MeshComponent>();
+  mesh_component->Render();
 
   ImGuiManager::EndFrame();
 

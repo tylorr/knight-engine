@@ -50,7 +50,7 @@ void BufferObject::Unbind() const {
   auto buffer_binding = GLint{};
   glGetIntegerv(binding_type, &buffer_binding);
 
-  if (handle_ == buffer_binding) {
+  if (handle_ == (GLuint)buffer_binding) {
     glBindBuffer(target_, 0);
   }
 }

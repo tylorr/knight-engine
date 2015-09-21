@@ -104,7 +104,7 @@ void TransformComponent::GC(const EntityManager &em) {
 
 bool TransformComponent::IsValid(Instance i) {
   // treat index 0 as a null value
-  return i.i > 0 && i.i < data_.size;
+  return i.i > 0 && (uint32_t)i.i < data_.size;
 }
 
 void TransformComponent::set_local(Instance i, const glm::mat4 &m) {

@@ -24,7 +24,7 @@ namespace file_util {
 uint64_t GetLastWriteTime(const char *filename) {
   FILETIME last_write_time;
 
-  TempAllocator128 alloc;
+  foundation::TempAllocator128 alloc;
   WIN32_FILE_ATTRIBUTE_DATA data;
   if(GetFileAttributesEx(c_str(Widen(alloc, filename)), GetFileExInfoStandard, &data)) {
     last_write_time = data.ftLastWriteTime;

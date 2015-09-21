@@ -1,3 +1,5 @@
+// citation: https://turingtester.wordpress.com/2015/06/27/cs-rule-of-zero/
+
 #pragma once
 
 namespace knight {

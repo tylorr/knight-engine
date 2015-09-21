@@ -22,8 +22,20 @@ FileRead::FileRead(const char *path) : path_{path} {
 }
 
 FileRead::FileRead(FileRead &&other) 
-    : file_handle_(std::move(other.file_handle_)) {
+    : path_{other.path_},
+      file_handle_{other.file_handle_} {
+  other.path_ = "";
   other.file_handle_ = INVALID_HANDLE_VALUE;
+}
+
+FileRead &FileRead::operator=(FileRead &&other) {
+  if (this != &other) {
+    path_ = other.path_;
+    file_handle_ = other.file_handle_;
+    other.path_ = "";
+    other.file_handle_ = INVALID_HANDLE_VALUE;
+  }
+  return *this;
 }
 
 FileRead::~FileRead() {
@@ -49,10 +61,6 @@ void FileRead::Read(foundation::Array<char, 4> &content) const {
   XASSERT(read_result, "Failed to read file '%s'", path_);
 }
 
-FileRead &FileRead::operator=(FileRead &&other) {
-  file_handle_ = other.file_handle_;
-  other.file_handle_ = INVALID_HANDLE_VALUE;
-  return *this;
-}
+
 
 } // namespace knight

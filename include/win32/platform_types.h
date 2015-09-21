@@ -11,12 +11,13 @@ namespace knight {
 
 struct FileRead {
   FileRead(const char *path);
+
   FileRead(FileRead &&other);
+  FileRead &operator=(FileRead &&other);
+
   ~FileRead();
 
   void Read(foundation::Array<char, 4> &content) const;
-
-  FileRead &operator=(FileRead &&other);
 
   const char *path_;
   HANDLE file_handle_;

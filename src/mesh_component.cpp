@@ -2,6 +2,7 @@
 #include "entity_manager.h"
 #include "random.h"
 #include "material.h"
+#include "pointers.h"
 
 #include <hash.h>
 #include <logog.hpp>

@@ -31,7 +31,7 @@ class Material {
     auto current_program = GLint{};
     glGetIntegerv(GL_CURRENT_PROGRAM, &current_program);
 
-    if (program_handle_ == current_program) {
+    if (program_handle_ == (GLuint)current_program) {
       GL(glUseProgram(0));
     }
   }

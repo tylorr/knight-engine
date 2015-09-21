@@ -1,6 +1,8 @@
 #include "windows_utils.h"
 #include "string_util.h"
 
+#include <temp_allocator.h>
+
 #include <windows.h>
 
 using namespace foundation;
@@ -10,7 +12,7 @@ namespace knight {
 
 namespace windows {
 
-  void GetLastErrorMessage(Buffer &result) { 
+  void GetLastErrorMessage() { 
     wchar_t *buffer;
     auto error_code = GetLastError();
 
@@ -23,15 +25,17 @@ namespace windows {
       0,
       nullptr);
 
-    TempAllocator64 alloc;
+    foundation::TempAllocator64 alloc;
     auto error_message = string_util::Narrow(alloc, buffer);
     LocalFree(buffer);
 
-    printf(
-      result, 
-      "%d: %s",
-      error_code, 
-      string_stream::c_str(error_message));
+    printf("%lu: %s\n", error_code, string_stream::c_str(error_message));
+
+    // printf(
+    //   result, 
+    //   "%d: %s",
+    //   error_code, 
+    //   string_stream::c_str(error_message));
   }
 
 } // namespace windows

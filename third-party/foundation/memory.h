@@ -3,6 +3,8 @@
 #include "types.h"
 #include "memory_types.h"
 
+#include <utility>
+
 namespace foundation
 {
 	/// Base class for memory allocators.
@@ -51,9 +53,15 @@ namespace foundation
 		template<typename T, typename... Args>
 		T *make_new(Args&&... args);
 
+		template<typename T>
+		T *make_array(uint32_t count);
+
 		/// Frees an object allocated with MAKE_NEW.
 		template<typename T>
 		void make_delete(T *ptr);
+
+		template<typename T>
+		void make_array_delete(T *array, uint32_t count);
 
 	private:
 		/// Allocators cannot be copied.
@@ -63,7 +71,18 @@ namespace foundation
 	
 	template<typename T, typename... Args>
 	T *Allocator::make_new(Args&&... args) {
-		return new (allocate(sizeof(T), alignof(T))) T(args...);
+		return new (allocate(sizeof(T), alignof(T))) T(std::forward<Args>(args)...);
+	}
+
+	template<typename T>
+	T *Allocator::make_array(uint32_t count) {
+		auto arr = (T *)allocate(sizeof(T) * count, alignof(T));
+
+		for (auto i = 0u; i < count; ++i) {
+			new (arr + i) T{};
+		}
+
+		return arr;
 	}
 	
 	template<typename T>
@@ -72,6 +91,16 @@ namespace foundation
 			ptr->~T();
 			deallocate(ptr);
 		}
+	}
+
+	template<typename T>
+	void make_array_delete(T *array, uint32_t count) {
+		if (array != nullptr) {
+			for (auto i = 0u; i < count; ++i) {
+				array[i]->~T();
+			}
+		}
+		deallocate(array);
 	}
 
 	class HeapAllocator : public Allocator {

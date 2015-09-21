@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory.h>
+
 #include <memory>
 
 namespace knight {
@@ -7,11 +9,7 @@ namespace knight {
 template<typename T>
 struct StdAllocator;
 
-template<typename T>
 struct StdDeleter;
-
-template<typename T>
-using ptr_deleter = StdDeleter<StdAllocator<T>>;
 
 template<typename T>
 struct StdAllocator {
@@ -20,52 +18,57 @@ struct StdAllocator {
   template<typename U>
   struct rebind { using other = StdAllocator<U>; };
 
-  StdAllocator() : allocator_{} { }
-
-  StdAllocator(foundation::Allocator &allocator) 
-    : allocator_{&allocator} { }
-
-  StdAllocator(const StdAllocator<T> &other)
-    : allocator_{other.allocator_} { }
+  StdAllocator() = default;
+  StdAllocator(foundation::Allocator &allocator) : allocator{&allocator} { }
+  StdAllocator(const StdAllocator<T> &other) = default;
 
   template<typename U>
   StdAllocator(const StdAllocator<U> &other) 
-    : allocator_{other.allocator_} { }
+    : allocator{other.allocator} { }
 
   T *allocate(std::size_t n) {
-    return static_cast<T *>(allocator_->allocate(n * sizeof(T)));
+    XASSERT(allocator != nullptr, "Cannot allocate without foundation allocator");
+    return static_cast<T *>(allocator->allocate(n * sizeof(T)));
   }
 
   void deallocate(T *p, std::size_t n) {
-    allocator_->deallocate(p);
+    allocator->deallocate(p);
   }
 
-  foundation::Allocator *allocator_;
+  foundation::Allocator *allocator;
 };
 
-template<typename Allocator>
-struct StdDeleter
-{
-  StdDeleter() : allocator_{} { }
+struct StdDeleter {
+  StdDeleter() = default;
 
-  StdDeleter(const Allocator &allocator) 
-    : allocator_{allocator} { }
+  explicit StdDeleter(foundation::Allocator &allocator) :
+    allocator{&allocator} {}
 
-  using traits = std::allocator_traits<Allocator>;
-  using pointer = typename traits::pointer;
+  StdDeleter(foundation::Allocator &allocator, uint32_t array_size) :
+    allocator{&allocator},
+    array_size_{array_size} {}
 
-  void operator()(pointer p) const {
-    Allocator allocator{allocator_};
-    traits::destroy(allocator, std::addressof(*p));
-    traits::deallocate(allocator, p, 1);
+  template<typename T>
+  std::enable_if_t<!std::is_array<T>::value> 
+    operator()(T *p) const {
+    XASSERT(allocator != nullptr, "Cannot delete pointer without foundation allocator");
+    allocator->make_delete(p);
+  }
+
+  template<typename T>
+  std::enable_if_t<std::is_array<T>::value> 
+    operator()(T *p) const {
+    XASSERT(allocator != nullptr, "Cannot delete pointer without foundation allocator");
+    allocator->make_array_delete(p, array_size_);
   }
   
-  Allocator allocator_;
+  foundation::Allocator *allocator;
+  uint32_t array_size_;
 };
 
 template<typename T, typename U>
 bool operator==(const StdAllocator<T> &lhs, const StdAllocator<U> &rhs) {
-  return &lhs.allocator_ == &rhs.allocator_;
+  return &lhs.allocator == &rhs.allocator;
 }
 
 template<typename T, typename U>

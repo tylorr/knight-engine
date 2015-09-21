@@ -12,8 +12,8 @@ target_link_libraries(emtypen ${LIBCLANG_LIBRARIES})
 
 cotire(emtypen)
 
-if (EXECUTABLE_OUTPUT_PATH)
-  set(output_path "${EXECUTABLE_OUTPUT_PATH}/")
+if (CMAKE_RUNTIME_OUTPUT_DIRECTORY)
+  set(output_path "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/")
 endif()
 
 configure_file(headers.hpp "${output_path}headers.hpp" COPYONLY)

@@ -14,7 +14,7 @@ function(emtypen _archetype _output)
     set(_emtypen_path "$<TARGET_FILE:emtypen>")
   else()
 
-    # TODO: Possibly you some sort of cmake find* method to get this
+    # TODO: Possibly use some sort of cmake find* method to get this
     set(_emtypen_path "emtypen")
   endif()
 
@@ -22,7 +22,7 @@ function(emtypen _archetype _output)
   list(APPEND _target_includes "$<TARGET_PROPERTY:${__EMPTYPEN_TARGET},INCLUDE_DIRECTORIES>")
 
   # TODO: Need to find a cross platform way of getting at these include directories
-  set(_target_includes "$<$<BOOL:${_target_includes}>:-I$<JOIN:${_target_includes}, -I>> -IC:/msys64/mingw32/i686-w64-mingw32/include -IC:/msys64/mingw32/include/c++/4.9.1 -IC:/msys64/mingw32/include/c++/4.9.1/i686-w64-mingw32")
+  set(_target_includes "$<$<BOOL:${_target_includes}>:-I$<JOIN:${_target_includes}, -I>> -IC:/msys64/mingw32/i686-w64-mingw32/include -IC:/msys64/mingw32/include/c++/5.2.0 -IC:/msys64/mingw32/include/c++/5.2.0/i686-w64-mingw32")
 
   # TODO: Need to find a cross platform way of generating scripts (not batch only)
   set(_command "@echo off\n${_emtypen_path} -c ${CMAKE_CXX_FLAGS} ")

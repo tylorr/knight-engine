@@ -106,7 +106,7 @@ void RenderDrawLists(ImDrawList **const command_lists, int command_lists_count) 
   auto needed_buffer_size = total_vertex_count * sizeof(ImDrawVert);
   if (needed_buffer_size > imgui_manager_state.buffer_size) {
       imgui_manager_state.buffer_size = needed_buffer_size + 5000;  
-      vbo.Data(imgui_manager_state.buffer_size, nullptr, GL_DYNAMIC_DRAW);
+      vbo.Data(imgui_manager_state.buffer_size, nullptr, BufferUsage::DynamicDraw);
   }
 
   char *buffer_data;
@@ -216,7 +216,7 @@ void Initialize(GLFWwindow &window, MaterialManager &material_manager) {
   imgui_manager_state.vbo = allocate_unique<BufferObject>(allocator, BufferObject::Target::Array);
 
   auto &vbo = *imgui_manager_state.vbo;
-  vbo.Initialize(imgui_manager_state.buffer_size, nullptr, GL_DYNAMIC_DRAW);
+  vbo.Initialize(imgui_manager_state.buffer_size, nullptr, BufferUsage::DynamicDraw);
 
   auto &vao = imgui_manager_state.vao;
   vao.Initialize();

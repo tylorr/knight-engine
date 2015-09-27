@@ -28,7 +28,7 @@ BufferObject::~BufferObject() {
   }
 }
 
-void BufferObject::Initialize(const GLsizeiptr &size, const GLvoid *data, const GLenum &usage) {
+void BufferObject::Initialize(const GLsizeiptr &size, const GLvoid *data, BufferUsage usage) {
   Bind();
   Data(size, data, usage);
 }
@@ -68,8 +68,8 @@ void BufferObject::Unbind() const {
   }
 }
 
-void BufferObject::Data(const GLsizeiptr &size, const GLvoid *data, const GLenum &usage) {
-  GL(glBufferData(GLenum(target_), size, data, usage));
+void BufferObject::Data(const GLsizeiptr &size, const GLvoid *data, BufferUsage usage) {
+  GL(glBufferData(GLenum(target_), size, data, GLenum(usage)));
 }
 
 void BufferObject::SubData(const GLintptr &offset, const GLsizeiptr &size, const GLvoid *data) {

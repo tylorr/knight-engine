@@ -2,6 +2,20 @@
 
 namespace knight {
 
+enum class BufferUsage : GLenum {
+  StreamDraw = GL_STREAM_DRAW,
+  StreamRead = GL_STREAM_READ,
+  StreamCopy = GL_STREAM_COPY,
+
+  StaticDraw = GL_STATIC_DRAW,
+  StaticRead = GL_STATIC_READ,
+  StaticCopy = GL_STATIC_COPY,
+
+  DynamicDraw = GL_DYNAMIC_DRAW,
+  DynamicRead = GL_DYNAMIC_READ,
+  DynamicCopy = GL_DYNAMIC_COPY
+};
+
 class BufferObject {
  public:
   enum class Target : GLenum {
@@ -33,12 +47,12 @@ class BufferObject {
   GLuint handle() const { return handle_; }
   Target target() const { return target_; }
 
-  void Initialize(const GLsizeiptr &size, const GLvoid *data, const GLenum &usage);
+  void Initialize(const GLsizeiptr &size, const GLvoid *data, BufferUsage usage);
 
   void Bind() const;
   void Unbind() const;
 
-  void Data(const GLsizeiptr &size, const GLvoid *data, const GLenum &usage);
+  void Data(const GLsizeiptr &size, const GLvoid *data, BufferUsage usage);
   void SubData(const GLintptr &offset, const GLsizeiptr &size, const GLvoid *data);
 
   void GetSubData(const GLintptr &offset, const GLsizeiptr &size, GLvoid *data);

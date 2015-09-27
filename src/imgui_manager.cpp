@@ -213,7 +213,7 @@ void Initialize(GLFWwindow &window, MaterialManager &material_manager) {
   imgui_manager_state.projection_uniform = material->Get<float, 4, 4>("projection");
 
   auto &allocator = game_memory::default_allocator();
-  imgui_manager_state.vbo = allocate_unique<BufferObject>(allocator, GL_ARRAY_BUFFER);
+  imgui_manager_state.vbo = allocate_unique<BufferObject>(allocator, BufferObject::Target::Array);
 
   auto &vbo = *imgui_manager_state.vbo;
   vbo.Initialize(imgui_manager_state.buffer_size, nullptr, GL_DYNAMIC_DRAW);

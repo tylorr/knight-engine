@@ -3,7 +3,7 @@
 
 namespace knight {
 
-BufferObject::BufferObject(GLenum target) :
+BufferObject::BufferObject(Target target) :
     target_{target} {
   GL(glGenBuffers(1, &handle_));
 }
@@ -35,7 +35,7 @@ void BufferObject::Initialize(const GLsizeiptr &size, const GLvoid *data, const 
 
 void BufferObject::Bind() const {
   XASSERT(handle_, "Trying to bind an uninitialized buffer object");
-  glBindBuffer(target_, handle_);
+  glBindBuffer(GLenum(target_), handle_);
 }
 
 void BufferObject::Unbind() const {
@@ -43,7 +43,7 @@ void BufferObject::Unbind() const {
 
   auto binding_type = GLenum{};
 
-  switch(target_) {
+  switch(GLenum(target_)) {
     case GL_ARRAY_BUFFER:
       binding_type = GL_ARRAY_BUFFER_BINDING;
       break;
@@ -57,27 +57,27 @@ void BufferObject::Unbind() const {
       binding_type = GL_UNIFORM_BUFFER_BINDING;
       break;
     default:
-      XASSERT(target_ != target_, "Current buffer target not supported");
+      XASSERT(false, "Current buffer target not supported");
   }
 
   auto buffer_binding = GLint{};
   glGetIntegerv(binding_type, &buffer_binding);
 
   if (handle_ == (GLuint)buffer_binding) {
-    glBindBuffer(target_, 0);
+    glBindBuffer(GLenum(target_), 0);
   }
 }
 
 void BufferObject::Data(const GLsizeiptr &size, const GLvoid *data, const GLenum &usage) {
-  GL(glBufferData(target_, size, data, usage));
+  GL(glBufferData(GLenum(target_), size, data, usage));
 }
 
 void BufferObject::SubData(const GLintptr &offset, const GLsizeiptr &size, const GLvoid *data) {
-  GL(glBufferSubData(target_, offset, size, data));
+  GL(glBufferSubData(GLenum(target_), offset, size, data));
 }
 
 void BufferObject::GetSubData(const GLintptr &offset, const GLsizeiptr &size, GLvoid *data) {
-  GL(glGetBufferSubData(target_, offset, size, data));
+  GL(glGetBufferSubData(GLenum(target_), offset, size, data));
 }
 
 } // namespace knight

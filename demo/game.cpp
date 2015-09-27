@@ -131,8 +131,8 @@ extern "C" GAME_INIT(Init) {
     array::push_back(indices, face.mIndices[2]);
   }
 
-  game_state->vbo = allocate_unique<BufferObject>(allocator, GL_ARRAY_BUFFER);
-  game_state->ibo = allocate_unique<BufferObject>(allocator, GL_ELEMENT_ARRAY_BUFFER);
+  game_state->vbo = allocate_unique<BufferObject>(allocator, BufferObject::Target::Array);
+  game_state->ibo = allocate_unique<BufferObject>(allocator, BufferObject::Target::ElementArray);
 
   game_state->vao.Initialize();
 

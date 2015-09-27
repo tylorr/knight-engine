@@ -3,6 +3,11 @@
 
 namespace knight {
 
+BufferObject::BufferObject(GLenum target) :
+    target_{target} {
+  GL(glGenBuffers(1, &handle_));
+}
+
 BufferObject::BufferObject(BufferObject &&other) :
     handle_{other.handle_},
     target_{other.target_} {
@@ -23,15 +28,8 @@ BufferObject::~BufferObject() {
   }
 }
 
-void BufferObject::Initialize(const GLenum &target) {
-  target_ = target;
-  GL(glGenBuffers(1, &handle_));
+void BufferObject::Initialize(const GLsizeiptr &size, const GLvoid *data, const GLenum &usage) {
   Bind();
-}
-
-void BufferObject::Initialize(const GLenum &target, const GLsizeiptr &size, 
-                              const GLvoid *data, const GLenum &usage) {
-  Initialize(target);
   Data(size, data, usage);
 }
 

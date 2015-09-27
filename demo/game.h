@@ -2,7 +2,6 @@
 
 #include "game_memory.h"
 #include "shader_types.h"
-#include "buffer_object.h"
 #include "pointers.h"
 #include "types.h"
 #include "dependency_injection.h"
@@ -11,8 +10,9 @@
 
 struct GameState : public knight::GameAllocatorState {
   std::shared_ptr<knight::Material> material;
-  knight::BufferObject vbo;
-  knight::BufferObject ibo;
+  knight::pointer<knight::BufferObject> vbo;
+  knight::pointer<knight::BufferObject> ibo;
+
   knight::VertexArray vao;
 
   glm::mat4 model_matrix;

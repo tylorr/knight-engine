@@ -3,6 +3,8 @@
 #include "uniform.h"
 #include "material.h"
 #include "buffer_object.h"
+#include "pointers.h"
+#include "game_memory.h"
 
 #include <GL/glew.h>
 #include <imgui.h>
@@ -49,7 +51,7 @@ struct ImGuiManagerState {
 
   std::shared_ptr<Material> material;
   VertexArray vao;
-  BufferObject vbo;
+  pointer<BufferObject> vbo;
   size_t buffer_size = 20000;
   GLuint font_texture_handle;
   Uniform<float, 4, 4> *projection_uniform;
@@ -97,7 +99,7 @@ void RenderDrawLists(ImDrawList **const command_lists, int command_lists_count) 
     total_vertex_count += command_lists[n]->vtx_buffer.size();
   }
 
-  auto &vbo = imgui_manager_state.vbo;
+  auto &vbo = *imgui_manager_state.vbo;
   vbo.Bind();
 
   // Grow buffer if too small
@@ -210,8 +212,11 @@ void Initialize(GLFWwindow &window, MaterialManager &material_manager) {
 
   imgui_manager_state.projection_uniform = material->Get<float, 4, 4>("projection");
 
-  auto &vbo = imgui_manager_state.vbo;
-  vbo.Initialize(GL_ARRAY_BUFFER, imgui_manager_state.buffer_size, nullptr, GL_DYNAMIC_DRAW);
+  auto &allocator = game_memory::default_allocator();
+  imgui_manager_state.vbo = allocate_unique<BufferObject>(allocator, GL_ARRAY_BUFFER);
+
+  auto &vbo = *imgui_manager_state.vbo;
+  vbo.Initialize(imgui_manager_state.buffer_size, nullptr, GL_DYNAMIC_DRAW);
 
   auto &vao = imgui_manager_state.vao;
   vao.Initialize();
@@ -290,9 +295,8 @@ void OnScroll(const double &yoffset) {
 }
 
 void Shutdown() {
-  //NOTE: TR Some reason if I don't do this I get a segfault from the 
-  // destructor of shared_ptr
   imgui_manager_state.material.reset();
+  imgui_manager_state.vbo.reset();
 }
 
 } // namespace ImGuiManager

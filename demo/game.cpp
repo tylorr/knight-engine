@@ -131,21 +131,27 @@ extern "C" GAME_INIT(Init) {
     array::push_back(indices, face.mIndices[2]);
   }
 
+  game_state->vbo = allocate_unique<BufferObject>(allocator, GL_ARRAY_BUFFER);
+  game_state->ibo = allocate_unique<BufferObject>(allocator, GL_ELEMENT_ARRAY_BUFFER);
+
   game_state->vao.Initialize();
-  game_state->vbo.Initialize(GL_ARRAY_BUFFER, array::size(vertices) * sizeof(vertices[0]), &vertices[0], GL_STATIC_DRAW);
+
+  auto &vbo = *game_state->vbo;
+  auto &ibo = *game_state->ibo;
+
+  vbo.Initialize(array::size(vertices) * sizeof(vertices[0]), &vertices[0], GL_STATIC_DRAW);
 
   game_state->vao.BindAttribute(0, 3, GL_FLOAT, GL_FALSE, sizeof(vertices[0]), nullptr);
   game_state->vao.BindAttribute(1, 3, GL_FLOAT, GL_FALSE, sizeof(vertices[0]), (void *)sizeof(vertices[0].position));
 
-  game_state->ibo.Initialize(
-    GL_ELEMENT_ARRAY_BUFFER, 
+  ibo.Initialize(
     array::size(indices) * sizeof(unsigned int), 
     array::begin(indices), 
     GL_STATIC_DRAW);
 
   game_state->vao.Unbind();
-  game_state->vbo.Unbind();
-  game_state->ibo.Unbind();
+  vbo.Unbind();
+  ibo.Unbind();
   game_state->material->Unbind();
 
   auto entity_manager = game_state->injector->get_instance<EntityManager>();

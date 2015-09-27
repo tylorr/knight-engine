@@ -4,7 +4,7 @@ namespace knight {
 
 class BufferObject {
  public:
-  BufferObject() { }
+  BufferObject(GLenum target_);
 
   BufferObject(const BufferObject &) = delete;
   BufferObject &operator=(const BufferObject &) = delete;
@@ -17,9 +17,7 @@ class BufferObject {
   GLuint handle() const { return handle_; }
   GLenum target() const { return target_; }
 
-  void Initialize(const GLenum &target);
-  void Initialize(const GLenum &target, const GLsizeiptr &size, 
-                  const GLvoid *data, const GLenum &usage);
+  void Initialize(const GLsizeiptr &size, const GLvoid *data, const GLenum &usage);
 
   void Bind() const;
   void Unbind() const;

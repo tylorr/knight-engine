@@ -2,6 +2,7 @@
 
 #include "uniform.h"
 #include "material.h"
+#include "buffer_object.h"
 
 #include <GL/glew.h>
 #include <imgui.h>

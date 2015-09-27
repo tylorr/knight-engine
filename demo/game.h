@@ -2,6 +2,7 @@
 
 #include "game_memory.h"
 #include "shader_types.h"
+#include "buffer_object.h"
 #include "pointers.h"
 #include "types.h"
 #include "dependency_injection.h"

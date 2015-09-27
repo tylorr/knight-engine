@@ -1,4 +1,5 @@
-#include "shader_types.h"
+#include "buffer_object.h"
+#include "common.h"
 
 namespace knight {
 

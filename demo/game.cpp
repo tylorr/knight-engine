@@ -12,6 +12,7 @@
 #include "pointers.h"
 #include "material.h"
 #include "flatbuffer_allocator.h"
+#include "buffer_object.h"
 
 #include "entity_resource_generated.h"
 #include "transform_component_generated.h"

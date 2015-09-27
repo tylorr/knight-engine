@@ -78,7 +78,7 @@ class not_null {
   T ptr_;
 
   void ensure_invariant() const {
-    XASSERT(ptr_ != nullptr);
+    XASSERT(ptr_ != nullptr, "nullptr passed to not_null");
   }
 
   // unwanted operators...pointers only point to single objects!
@@ -93,31 +93,57 @@ class not_null {
 };
 
 template<typename T>
+struct type_trait {
+  using reference = T &;
+};
+
+template<>
+struct type_trait<void> {
+  using reference = void;
+};
+
+template<>
+struct type_trait<const void> {
+  using reference = void;
+};
+
+template<typename T>
 class array_view {
  public:
-  template<std::size_t N>
-  array_view(T (&array)[N]) :
-    array_{array},
-    size_{N} {}
-
-  array_view(T *array, std::size_t size) :
-    array_{array},
+  array_view(T *data, std::size_t size) :
+    data_{data},
     size_{size} {}
 
-  T &operator[](std::size_t index) {
-    XASSERT(array_ != nullptr && index >= 0 && index < size_, "Out of bounds error");
-    return array_[index];
+  template<typename U, std::size_t N, typename Dummy = std::enable_if_t<std::is_convertible<U*, T*>::value, void>>
+  array_view(U (&data)[N]) :
+    data_{data},
+    size_{N} {}
+
+  typename type_trait<T>::reference operator[](std::size_t index) {
+    XASSERT(data_ != nullptr && index >= 0 && index < size_, "Out of bounds error");
+    return data_[index];
+  }
+  
+  const typename type_trait<T>::reference operator[](std::size_t index) const {
+    XASSERT(data_ != nullptr && index >= 0 && index < size_, "Out of bounds error");
+    return data_[index];
   }
 
-  const T &operator[](std::size_t index) const {
-    XASSERT(array_ != nullptr && index >= 0 && index < size_, "Out of bounds error");
-    return array_[index];
-  }
+  auto begin() { return data_; }
+  const auto begin() const { return data_; }
+  const auto cbegin() const { return data_; }
 
-  //TODO: Implement methods you need, begin, end, etc.
+  auto end() { return data_ + size_; }
+  const auto end() const { return data_ + size_; }
+  const auto cend() const { return data_ + size_; }
+
+  auto data() { return data_; }
+  const auto data() const { return data_; }
+
+  auto size() const { return size_; }
 
  private:
-  T *array_;
+  T *data_;
   std::size_t size_;
 };
 

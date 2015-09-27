@@ -3,6 +3,20 @@
 
 namespace knight {
 
+BufferObject::BufferObject(BufferObject &&other) :
+    handle_{other.handle_},
+    target_{other.target_} {
+  other.handle_ = 0;
+}
+
+BufferObject &BufferObject::operator=(BufferObject &&other) {
+  handle_ = other.handle_;
+  target_ = other.target_;
+
+  other.handle_ = 0;
+  return *this;
+}
+
 BufferObject::~BufferObject() {
   if (handle_) {
     glDeleteBuffers(1, &handle_);

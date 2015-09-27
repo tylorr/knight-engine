@@ -139,15 +139,12 @@ extern "C" GAME_INIT(Init) {
   auto &vbo = *game_state->vbo;
   auto &ibo = *game_state->ibo;
 
-  vbo.Initialize(array::size(vertices) * sizeof(vertices[0]), &vertices[0], BufferUsage::StaticDraw);
+  vbo.SetData(vertices, BufferUsage::StaticDraw);
 
   game_state->vao.BindAttribute(0, 3, GL_FLOAT, GL_FALSE, sizeof(vertices[0]), nullptr);
   game_state->vao.BindAttribute(1, 3, GL_FLOAT, GL_FALSE, sizeof(vertices[0]), (void *)sizeof(vertices[0].position));
 
-  ibo.Initialize(
-    array::size(indices) * sizeof(unsigned int), 
-    array::begin(indices), 
-    BufferUsage::StaticDraw);
+  ibo.SetData(indices, BufferUsage::StaticDraw);
 
   game_state->vao.Unbind();
   vbo.Unbind();

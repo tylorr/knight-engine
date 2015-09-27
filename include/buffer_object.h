@@ -1,5 +1,9 @@
 #pragma once
 
+#include "gsl.h"
+
+#include <array.h>
+
 namespace knight {
 
 enum class BufferUsage : GLenum {
@@ -47,15 +51,17 @@ class BufferObject {
   GLuint handle() const { return handle_; }
   Target target() const { return target_; }
 
-  void Initialize(const GLsizeiptr &size, const GLvoid *data, BufferUsage usage);
-
   void Bind() const;
   void Unbind() const;
 
-  void Data(const GLsizeiptr &size, const GLvoid *data, BufferUsage usage);
-  void SubData(const GLintptr &offset, const GLsizeiptr &size, const GLvoid *data);
+  void SetData(gsl::array_view<const void> data, BufferUsage usage);
+  void SetSubData(GLintptr offset, gsl::array_view<const void> data);
 
-  void GetSubData(const GLintptr &offset, const GLsizeiptr &size, GLvoid *data);
+  template<typename T>
+  void SetData(const foundation::Array<T> &data, BufferUsage usage) {
+    using namespace foundation;
+    SetData({array::begin(data), array::size(data) * sizeof(T)}, usage);
+  }
 
  private:
   GLuint handle_;

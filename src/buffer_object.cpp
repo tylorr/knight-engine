@@ -3,6 +3,8 @@
 
 namespace knight {
 
+using gsl::array_view;
+
 BufferObject::BufferObject(Target target) :
     target_{target} {
   GL(glGenBuffers(1, &handle_));
@@ -26,11 +28,6 @@ BufferObject::~BufferObject() {
   if (handle_) {
     glDeleteBuffers(1, &handle_);
   }
-}
-
-void BufferObject::Initialize(const GLsizeiptr &size, const GLvoid *data, BufferUsage usage) {
-  Bind();
-  Data(size, data, usage);
 }
 
 void BufferObject::Bind() const {
@@ -68,16 +65,14 @@ void BufferObject::Unbind() const {
   }
 }
 
-void BufferObject::Data(const GLsizeiptr &size, const GLvoid *data, BufferUsage usage) {
-  GL(glBufferData(GLenum(target_), size, data, GLenum(usage)));
+void BufferObject::SetData(array_view<const void> data, BufferUsage usage) {
+  Bind();
+  GL(glBufferData(GLenum(target_), data.size(), data.data(), GLenum(usage)));
 }
 
-void BufferObject::SubData(const GLintptr &offset, const GLsizeiptr &size, const GLvoid *data) {
-  GL(glBufferSubData(GLenum(target_), offset, size, data));
-}
-
-void BufferObject::GetSubData(const GLintptr &offset, const GLsizeiptr &size, GLvoid *data) {
-  GL(glGetBufferSubData(GLenum(target_), offset, size, data));
+void BufferObject::SetSubData(GLintptr offset, array_view<const void> data) {
+  Bind();
+  GL(glBufferSubData(GLenum(target_), offset, data.size(), data.data()));
 }
 
 } // namespace knight

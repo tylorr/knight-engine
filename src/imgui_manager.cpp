@@ -24,25 +24,25 @@ namespace {
 
 const GLchar *kShaderSource =
   "#if defined(VERTEX)\n"
-  "uniform mat4 projection;"
-  "layout(location = 0) in vec2 position;"
-  "layout(location = 1) in vec2 uv;"
-  "layout(location = 2) in vec4 color;"
-  "out vec4 frag_color;"
-  "out vec2 frag_uv;"
-  "void main() {"
-  "  frag_uv = uv;"
-  "  frag_color = color;"
-  "  gl_Position = projection * vec4(position.xy, 0.0f, 1.0f);"
+  "uniform mat4 ProjMtx;\n"
+  "layout(location = 0) in vec2 Position;\n"
+  "layout(location = 1) in vec2 UV;\n"
+  "layout(location = 2) in vec4 Color;\n"
+  "out vec2 Frag_UV;\n"
+  "out vec4 Frag_Color;\n"
+  "void main() {\n"
+  "  Frag_UV = UV;\n"
+  "  Frag_Color = Color;\n"
+  "  gl_Position = ProjMtx * vec4(Position.xy,0,1);\n"
   "}\n"
   "#endif\n"
   "#if defined(FRAGMENT)\n"
-  "uniform sampler2D Texture;"
-  "in vec2 frag_uv;"
-  "in vec4 frag_color;"
-  "layout(location = 0) out vec4 out_color;"
-  "void main() { "
-  "  out_color = texture(Texture, frag_uv) * frag_color;"
+  "uniform sampler2D Texture;\n"
+  "in vec2 Frag_UV;\n"
+  "in vec4 Frag_Color;\n"
+  "out vec4 Out_Color;\n"
+  "void main() {\n"
+  "  Out_Color = Frag_Color * texture(Texture, Frag_UV.st);\n"
   "}\n"
   "#endif\n";
 
@@ -53,24 +53,30 @@ struct ImGuiManagerState {
   std::shared_ptr<Material> material;
   pointer<VertexArray> vao;
   pointer<BufferObject> vbo;
+  pointer<BufferObject> ibo;
   size_t buffer_size = 20000;
   GLuint font_texture_handle;
+  GLint texture_location;
   Uniform<float, 4, 4> *projection_uniform;
 
-  bool mouse_pressed[2] = { false, false };
+  bool mouse_pressed[3] = { false, false, false };
+  float mouse_wheel = 0.0f;
 };
 
 ImGuiManagerState imgui_manager_state;
 
-void RenderDrawLists(ImDrawList **const cmd_lists, int command_lists_count);
-
 const char *GetClipboardString();
 void SetClipboardString(const char *text);
 
-void RenderDrawLists(ImDrawList **const command_lists, int command_lists_count) {
-  if (command_lists_count == 0) {
-    return;
-  }
+void RenderDrawLists(ImDrawData* draw_data) {
+
+  // Backup GL state
+  GLint last_program, last_texture, last_array_buffer, last_element_array_buffer, last_vertex_array;
+  glGetIntegerv(GL_CURRENT_PROGRAM, &last_program);
+  glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture);
+  glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &last_array_buffer);
+  glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &last_element_array_buffer);
+  glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &last_vertex_array);
 
   glEnable(GL_BLEND);
   glBlendEquation(GL_FUNC_ADD);
@@ -78,78 +84,52 @@ void RenderDrawLists(ImDrawList **const command_lists, int command_lists_count) 
   glDisable(GL_CULL_FACE);
   glDisable(GL_DEPTH_TEST);
   glEnable(GL_SCISSOR_TEST);
+  glActiveTexture(GL_TEXTURE0);
 
-  auto material = imgui_manager_state.material;
-  material->Bind();
+  // Handle cases of screen coordinates != from framebuffer coordinates (e.g. retina displays)
+  ImGuiIO& io = ImGui::GetIO();
+  float fb_height = io.DisplaySize.y * io.DisplayFramebufferScale.y;
+  draw_data->ScaleClipRects(io.DisplayFramebufferScale);
 
-  GL(glActiveTexture(GL_TEXTURE0));
-  GL(glBindTexture(GL_TEXTURE_2D, imgui_manager_state.font_texture_handle));
-  auto texture_loc = GLint{};
-  GL(texture_loc = glGetUniformLocation(material->program_handle(), "Texture"));
-  GL(glUniform1i(texture_loc, 0));
-
-  const auto width = ImGui::GetIO().DisplaySize.x;
-  const auto height = ImGui::GetIO().DisplaySize.y;
-  const auto projection = glm::ortho(0.0f, width, height, 0.0f, -1.0f, 1.0f);
+  const auto projection = glm::ortho(0.0f, io.DisplaySize.x, io.DisplaySize.y, 0.0f, -1.0f, 1.0f);
   imgui_manager_state.projection_uniform->SetValue(glm::value_ptr(projection));
 
+  auto material = imgui_manager_state.material;
   imgui_manager_state.material_manager->PushUniforms(*material);
-
-  auto total_vertex_count = 0_z;
-  for (int n = 0; n < command_lists_count; n++) {
-    total_vertex_count += command_lists[n]->vtx_buffer.size();
-  }
-
-  auto &vbo = *imgui_manager_state.vbo;
-  vbo.Bind();
-
-  // Grow buffer if too small
-  auto needed_buffer_size = total_vertex_count * sizeof(ImDrawVert);
-  if (needed_buffer_size > imgui_manager_state.buffer_size) {
-      imgui_manager_state.buffer_size = needed_buffer_size + 5000;  
-      vbo.SetData({nullptr, imgui_manager_state.buffer_size}, BufferObject::Usage::DynamicDraw);
-  }
-
-  char *buffer_data;
-  GL(buffer_data = static_cast<char *>(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY)));
-  if (!buffer_data)
-    return;
-
-  for (int i = 0; i < command_lists_count; i++) {
-    auto *command_list = command_lists[i];
-    memcpy(buffer_data, 
-           &command_list->vtx_buffer[0], 
-           command_list->vtx_buffer.size() * sizeof(ImDrawVert));
-    buffer_data += command_list->vtx_buffer.size() * sizeof(ImDrawVert);
-  }
-
-  GL(glUnmapBuffer(GL_ARRAY_BUFFER));
-  vbo.Unbind();
+  GL(glUniform1i(imgui_manager_state.texture_location, 0));
 
   auto &vao = *imgui_manager_state.vao;
   vao.Bind();
 
-  auto previous_vertex_offset = 0;
-  for (auto i = 0; i < command_lists_count; i++) {
-    auto  *command_list = command_lists[i];
-    auto vertex_offset = previous_vertex_offset;
-    const ImDrawCmd* pcmd_end = command_list->commands.end();
-    for (const ImDrawCmd* pcmd = command_list->commands.begin(); pcmd != pcmd_end; pcmd++) {
-      GL(glScissor(pcmd->clip_rect.x, 
-                height - pcmd->clip_rect.w, 
-                pcmd->clip_rect.z - pcmd->clip_rect.x, 
-                pcmd->clip_rect.w - pcmd->clip_rect.y));
-      GL(glDrawArrays(GL_TRIANGLES, vertex_offset, pcmd->vtx_count));
-      vertex_offset += pcmd->vtx_count;
+  auto &vbo = *imgui_manager_state.vbo;
+  auto &ibo = *imgui_manager_state.ibo;
+
+  for (int n = 0; n < draw_data->CmdListsCount; n++) {
+    const ImDrawList* cmd_list = draw_data->CmdLists[n];
+    const ImDrawIdx* idx_buffer_offset = 0;
+
+    vbo.SetData({&cmd_list->VtxBuffer.front(), cmd_list->VtxBuffer.size() * sizeof(ImDrawVert)}, BufferObject::Usage::StreamDraw);
+    ibo.SetData({&cmd_list->IdxBuffer.front(), cmd_list->IdxBuffer.size() * sizeof(ImDrawIdx)}, BufferObject::Usage::StreamDraw);
+
+    for (const ImDrawCmd* pcmd = cmd_list->CmdBuffer.begin(); pcmd != cmd_list->CmdBuffer.end(); pcmd++) {
+      if (pcmd->UserCallback) {
+          pcmd->UserCallback(cmd_list, pcmd);
+      } else {
+        glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)pcmd->TextureId);
+        glScissor((int)pcmd->ClipRect.x, (int)(fb_height - pcmd->ClipRect.w), (int)(pcmd->ClipRect.z - pcmd->ClipRect.x), (int)(pcmd->ClipRect.w - pcmd->ClipRect.y));
+        glDrawElements(GL_TRIANGLES, (GLsizei)pcmd->ElemCount, GL_UNSIGNED_SHORT, idx_buffer_offset);
+      }
+      idx_buffer_offset += pcmd->ElemCount;
     }
-    previous_vertex_offset = vertex_offset;
   }
 
-  // Cleanup GL state
-  vao.Unbind();
-  material->Unbind();
+  // Restore modified GL state
+  glUseProgram(last_program);
+  glBindTexture(GL_TEXTURE_2D, last_texture);
+  glBindBuffer(GL_ARRAY_BUFFER, last_array_buffer);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, last_element_array_buffer);
+  glBindVertexArray(last_vertex_array);
   glDisable(GL_SCISSOR_TEST);
-  glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 const char *GetClipboardString() {
@@ -167,13 +147,13 @@ void Initialize(GLFWwindow &window, MaterialManager &material_manager) {
   imgui_manager_state.material_manager = &material_manager;
 
   ImGuiIO &io = ImGui::GetIO();
-
-  io.DeltaTime = 1.0f / 60.0f;
-  io.KeyMap[ImGuiKey_Tab] = GLFW_KEY_TAB;
+  io.KeyMap[ImGuiKey_Tab] = GLFW_KEY_TAB;                 // Keyboard mapping. ImGui will use those indices to peek into the io.KeyDown[] array.
   io.KeyMap[ImGuiKey_LeftArrow] = GLFW_KEY_LEFT;
   io.KeyMap[ImGuiKey_RightArrow] = GLFW_KEY_RIGHT;
   io.KeyMap[ImGuiKey_UpArrow] = GLFW_KEY_UP;
   io.KeyMap[ImGuiKey_DownArrow] = GLFW_KEY_DOWN;
+  io.KeyMap[ImGuiKey_PageUp] = GLFW_KEY_PAGE_UP;
+  io.KeyMap[ImGuiKey_PageDown] = GLFW_KEY_PAGE_DOWN;
   io.KeyMap[ImGuiKey_Home] = GLFW_KEY_HOME;
   io.KeyMap[ImGuiKey_End] = GLFW_KEY_END;
   io.KeyMap[ImGuiKey_Delete] = GLFW_KEY_DELETE;
@@ -190,34 +170,47 @@ void Initialize(GLFWwindow &window, MaterialManager &material_manager) {
   io.RenderDrawListsFn = RenderDrawLists;
   io.GetClipboardTextFn = GetClipboardString;
   io.SetClipboardTextFn = SetClipboardString;
+}
+
+void CreateFontsTexture() {
+  ImGuiIO &io = ImGui::GetIO();
+
+  unsigned char* pixels;
+  int width, height;
+  io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);   // Load as RGBA 32-bits for OpenGL3 demo because it is more likely to be compatible with user's existing shader.
 
   GL(glGenTextures(1, &imgui_manager_state.font_texture_handle));
   GL(glBindTexture(GL_TEXTURE_2D, imgui_manager_state.font_texture_handle));
   GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
   GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
-
-  unsigned char* pixels;
-  int width, height;
-  io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
-
   GL(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels));
 
   io.Fonts->TexID = (void *)(intptr_t)imgui_manager_state.font_texture_handle;
 
   io.Fonts->ClearInputData();
   io.Fonts->ClearTexData();
+}
+
+void CreateDeviceObjects() {
+  // Backup GL state
+  GLint last_texture, last_array_buffer, last_vertex_array;
+  glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture);
+  glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &last_array_buffer);
+  glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &last_vertex_array);
 
   auto program_handle = imgui_manager_state.material_manager->CreateShaderFromSource("imgui_shader", kShaderSource);
   auto material = imgui_manager_state.material_manager->CreateMaterial(program_handle);
   imgui_manager_state.material = material;
 
-  imgui_manager_state.projection_uniform = material->Get<float, 4, 4>("projection");
+  GL(imgui_manager_state.texture_location = glGetUniformLocation(material->program_handle(), "Texture"));
+
+  imgui_manager_state.projection_uniform = material->Get<float, 4, 4>("ProjMtx");
 
   auto &allocator = game_memory::default_allocator();
   imgui_manager_state.vbo = allocate_unique<BufferObject>(allocator, BufferObject::Target::Array);
+  imgui_manager_state.ibo = allocate_unique<BufferObject>(allocator, BufferObject::Target::ElementArray);
 
   auto &vbo = *imgui_manager_state.vbo;
-  vbo.SetData({nullptr, imgui_manager_state.buffer_size}, BufferObject::Usage::DynamicDraw);
 
   imgui_manager_state.vao = allocate_unique<VertexArray>(allocator);
   auto &vao = *imgui_manager_state.vao;
@@ -226,52 +219,62 @@ void Initialize(GLFWwindow &window, MaterialManager &material_manager) {
   vao.BindAttribute(vbo, 1, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), offsetof(ImDrawVert, uv));
   vao.BindAttribute(vbo, 2, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(ImDrawVert), offsetof(ImDrawVert, col));
 
-  vao.Unbind();
-  vbo.Unbind();
-  material->Unbind();
+  CreateFontsTexture();
+
+  // Restore modified GL state
+  glBindTexture(GL_TEXTURE_2D, last_texture);
+  glBindBuffer(GL_ARRAY_BUFFER, last_array_buffer);
+  glBindVertexArray(last_vertex_array);
 }
 
 void BeginFrame(double delta_time) {
   ImGuiIO &io = ImGui::GetIO();
 
-  int display_w, display_h;
-  glfwGetFramebufferSize(imgui_manager_state.window, &display_w, &display_h);
-  io.DisplaySize = ImVec2((float)display_w, (float)display_h); 
+  if (!imgui_manager_state.font_texture_handle) CreateDeviceObjects();
 
   io.DeltaTime = (float)delta_time;
 
   int w, h;
+  int display_w, display_h;
   glfwGetWindowSize(imgui_manager_state.window, &w, &h);
+  glfwGetFramebufferSize(imgui_manager_state.window, &display_w, &display_h);
+  io.DisplaySize = ImVec2((float)w, (float)h);
+  io.DisplayFramebufferScale = ImVec2((float)display_w / w, (float)display_h / h);
 
-  double mouse_x, mouse_y;
-  glfwGetCursorPos(imgui_manager_state.window, &mouse_x, &mouse_y);
-  mouse_x *= (float)display_w / w;                                                               // Convert mouse coordinates to pixels
-  mouse_y *= (float)display_h / h;
-  io.MousePos = ImVec2((float)mouse_x, (float)mouse_y);                                          // Mouse position, in pixels (set to -1,-1 if no mouse / on another screen, etc.)
-  io.MouseDown[0] = imgui_manager_state.mouse_pressed[0] || glfwGetMouseButton(imgui_manager_state.window, GLFW_MOUSE_BUTTON_LEFT) != 0;  // If a mouse press event came, always pass it as "mouse held this frame", so we don't miss click-release events that are shorter than 1 frame.
-  io.MouseDown[1] = imgui_manager_state.mouse_pressed[1] || glfwGetMouseButton(imgui_manager_state.window, GLFW_MOUSE_BUTTON_RIGHT) != 0;
+  if (glfwGetWindowAttrib(imgui_manager_state.window, GLFW_FOCUSED)) {
+    double mouse_x, mouse_y;
+    glfwGetCursorPos(imgui_manager_state.window, &mouse_x, &mouse_y);
+    io.MousePos = ImVec2((float)mouse_x, (float)mouse_y);
+  } else {
+    io.MousePos = ImVec2(-1,-1);
+  }
+
+  for (int i = 0; i < 3; i++) {
+    io.MouseDown[i] = imgui_manager_state.mouse_pressed[i] || glfwGetMouseButton(imgui_manager_state.window, i) != 0; // If a mouse press event came, always pass it as "mouse held this frame", so we don't miss click-release events that are shorter than 1 frame.
+    imgui_manager_state.mouse_pressed[i] = false;
+  }
+
+  io.MouseWheel = imgui_manager_state.mouse_wheel;
+  imgui_manager_state.mouse_wheel = 0;
+
+  glfwSetInputMode(imgui_manager_state.window, GLFW_CURSOR, io.MouseDrawCursor ? GLFW_CURSOR_HIDDEN : GLFW_CURSOR_NORMAL);
 
   ImGui::NewFrame();
 }
 
 void EndFrame() {
   ImGui::Render();
-
-  ImGuiIO &io = ImGui::GetIO();
-  io.MouseWheel = 0;
-
-  imgui_manager_state.mouse_pressed[0] = false;
-  imgui_manager_state.mouse_pressed[1] = false;
 }
 
 void OnMouse(int button, int action) {
-  if (action == GLFW_PRESS && button >= 0 && button < 2) {
+  if (action == GLFW_PRESS && button >= 0 && button < 3) {
     imgui_manager_state.mouse_pressed[button] = true;
   }
 }
 
 void OnKey(const int &key, const int &action, const int &mods) {
   ImGuiIO &io = ImGui::GetIO();
+
   if (action == GLFW_PRESS) {
     io.KeysDown[key] = true;
   }
@@ -280,24 +283,26 @@ void OnKey(const int &key, const int &action, const int &mods) {
     io.KeysDown[key] = false;
   }
 
-  io.KeyCtrl = (mods & GLFW_MOD_CONTROL) != 0;
-  io.KeyShift = (mods & GLFW_MOD_SHIFT) != 0;
+  io.KeyCtrl = io.KeysDown[GLFW_KEY_LEFT_CONTROL] || io.KeysDown[GLFW_KEY_RIGHT_CONTROL];
+  io.KeyShift = io.KeysDown[GLFW_KEY_LEFT_SHIFT] || io.KeysDown[GLFW_KEY_RIGHT_SHIFT];
+  io.KeyAlt = io.KeysDown[GLFW_KEY_LEFT_ALT] || io.KeysDown[GLFW_KEY_RIGHT_ALT];
 }
 
 void OnCharacter(const unsigned int &character) {
-  if (character > 0 && character <= 255) {
-    ImGui::GetIO().AddInputCharacter(character);
+  if (character > 0 && character < 0x10000) {
+    ImGui::GetIO().AddInputCharacter((unsigned short)character);
   }
 }
 
 void OnScroll(const double &yoffset) {
-  ImGuiIO &io = ImGui::GetIO();
-  io.MouseWheel = (float)yoffset;
+  imgui_manager_state.mouse_wheel += (float)yoffset;
 }
 
 void Shutdown() {
+  // TODO: Fix this by allocating imgui manager state and releasing here
   imgui_manager_state.material.reset();
   imgui_manager_state.vbo.reset();
+  imgui_manager_state.ibo.reset();
   imgui_manager_state.vao.reset();
 }
 

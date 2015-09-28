@@ -3,8 +3,74 @@
  Those are only provided as a convenience, you can load your own .TTF files.
 
 ---------------------------------
- INCLUDED FONTS
+ LOADING INSTRUCTIONS
 ---------------------------------
+
+ Load default font with:
+
+   ImGuiIO& io = ImGui::GetIO();
+   io.Fonts->AddFontDefault();
+
+ Load .TTF file with:
+
+   ImGuiIO& io = ImGui::GetIO();
+   io.Fonts->AddFontFromFileTTF("font.ttf", size_pixels);
+  
+ Detailed options:
+
+   ImFontConfig config;
+   config.OversampleH = 3;
+   config.OversampleV = 3;
+   config.GlyphExtraSpacing.x = 1.0f;
+   io.Fonts->AddFontFromFileTTF("font.ttf", size_pixels, &config);
+
+ Combine two fonts into one:
+
+   // Load main font
+   io.Fonts->AddFontDefault();
+
+   // Add character ranges and merge into main font
+   ImWchar ranges[] = { 0xf000, 0xf3ff, 0 };
+   ImFontConfig config;
+   config.MergeMode = true;
+   io.Fonts->AddFontFromFileTTF("fontawesome-webfont.ttf", 16.0f, &config, ranges);
+   io.Fonts->AddFontFromFileTTF("font.ttf", size_pixels, &config, io.Fonts->GetGlyphRangesJapanese());
+
+ Add a fourth parameter to bake specific font ranges only:
+
+   // Basic Latin, Extended Latin
+   io.Fonts->AddFontFromFileTTF("font.ttf", size_pixels, NULL, io.Fonts->GetGlyphRangesDefault());
+   
+   // Include full set of about 21000 CJK Unified Ideographs
+   io.Fonts->AddFontFromFileTTF("font.ttf", size_pixels, NULL, io.Fonts->GetGlyphRangesJapanese());
+   
+   // Default + Hiragana, Katakana, Half-Width, Selection of 1946 Ideographs
+   io.Fonts->AddFontFromFileTTF("font.ttf", size_pixels, NULL, io.Fonts->GetGlyphRangesChinese());
+
+ Offset font vertically by altering the io.Font->DisplayOffset value:
+
+   ImFont* font = io.Fonts->AddFontFromFileTTF("font.ttf", size_pixels);
+   font->DisplayOffset.y += 1;   // Render 1 pixel down
+
+---------------------------------
+ EMBED A FONT IN SOURCE CODE
+---------------------------------
+
+ Compile and use 'binary_to_compressed_c.cpp' to create a compressed C style array. Then load the font with:
+ 
+   ImFont* font = io.Fonts->AddFontFromMemoryCompressedTTF(compressed_data, compressed_data_size, size_pixels, ...);
+   
+ Or 
+ 
+   ImFont* font = io.Fonts->AddFontFromMemoryCompressedBase85TTF(compressed_data_base85, size_pixels, ...);
+
+---------------------------------
+ INCLUDED FONT FILES
+---------------------------------
+
+ Cousine-Regular.ttf
+   Digitized data copyright (c) 2010 Google Corporation.
+   Licensed under the SIL Open Font License, Version 1.1   
 
  DroidSans.ttf
    Copyright (c) Steve Matteson
@@ -26,36 +92,28 @@
    SIL OPEN FONT LICENSE Version 1.1
 
 ---------------------------------
- OTHER FONTS
+ LINKS
 ---------------------------------
 
- For Japanese:
+ Typefaces for source code beautification
+   https://github.com/chrissimpkins/codeface
  
-   M+ fonts by Coji Morishita are free and include most useful Kanjis you would need.
-   mplus-fonts.sourceforge.jp/mplus-outline-fonts/index-en.html
+ Programmation fonts
+   http://s9w.github.io/font_compare/
+
+ Proggy Programming Fonts
+   http://upperbounds.net
    
- For Japanese, Chinese, Korean:
- 
-   You can use Arial Unicode or other Unicode fonts provided with Windows (not sure of their license).
-   Other suggestions?
+ Inconsolata
+   http://www.levien.com/type/myfonts/inconsolata.html
 
----------------------------------
- LOADING INSTRUCTIONS
----------------------------------
+ Adobe Source Code Pro: Monospaced font family for user interface and coding environments
+   https://github.com/adobe-fonts/source-code-pro
 
- Load .TTF file with:
+ Monospace/Fixed Width Programmer's Fonts
+   http://www.lowing.org/fonts/
 
-   ImGuiIO& io = ImGui::GetIO();
-   io.Fonts->AddFontFromFileTTF("myfontfile.ttf", size_pixels);
-  
- Add a third parameter to bake specific font ranges:
+ (Japanese) M+ fonts by Coji Morishita are free and include most useful Kanjis you would need.
+   http://mplus-fonts.sourceforge.jp/mplus-outline-fonts/index-en.html
 
-   io.Fonts->LoadFromFileTTF("myfontfile.ttf", size_pixels, io.Fonts->GetGlyphRangesDefault());   // Basic Latin, Extended Latin 
-   io.Fonts->LoadFromFileTTF("myfontfile.ttf", size_pixels, io.Fonts->GetGlyphRangesJapanese());  // Default + Hiragana, Katakana, Half-Width, Selection of 1946 Ideographs
-   io.Fonts->LoadFromFileTTF("myfontfile.ttf", size_pixels, io.Fonts->GetGlyphRangesChinese());   // Include full set of about 21000 CJK Unified Ideographs
-
-Offset font by altering the io.Font->DisplayOffset value:
-
-   ImFont* font = io.Fonts->AddFontFromFileTTF("myfontfile.ttf", size_pixels);
-   font->DisplayOffset.y += 1;   // Render 1 pixel down
-
+ Or use Arial Unicode or other Unicode fonts provided with Windows for full characters coverage (not sure of their licensing).

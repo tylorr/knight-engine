@@ -3,6 +3,7 @@
 #include "random.h"
 #include "material.h"
 #include "pointers.h"
+#include "vertex_array.h"
 
 #include <hash.h>
 #include <logog.hpp>

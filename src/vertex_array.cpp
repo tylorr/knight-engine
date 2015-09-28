@@ -1,4 +1,5 @@
-#include "shader_types.h"
+#include "vertex_array.h"
+#include "common.h"
 
 namespace knight {
 

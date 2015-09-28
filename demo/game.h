@@ -5,6 +5,7 @@
 #include "pointers.h"
 #include "types.h"
 #include "dependency_injection.h"
+#include "vertex_array.h"
 
 #include <glm/glm.hpp>
 

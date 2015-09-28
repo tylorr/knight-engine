@@ -16,34 +16,8 @@ class Uniform;
 class MaterialManager;
 class Material;
 class BufferObject;
+class VertexArray;
 
-struct VertexArray {
-  VertexArray() { }
-  VertexArray(VertexArray &&other) : handle_{std::move(other.handle_)} { }
-  ~VertexArray();
-
-  GLuint handle() const { return handle_; }
-
-  void Initialize();
-
-  void Bind() const;
-  void Unbind() const;
-
-  void BindAttribute(const GLint& attribute,
-                     const GLint &size, const GLenum &type,
-                     const GLboolean &normalized, const GLsizei &stride,
-                     const GLvoid *pointer);
-
-  VertexArray &operator=(VertexArray &&other) {
-    handle_ = std::move(other.handle_);
-    return *this;
-  }
-
-  GLuint handle_;
-
-private:
-  KNIGHT_DISALLOW_COPY_AND_ASSIGN(VertexArray);
-};
 
 // struct UniformManager {
 //   UniformManager(foundation::Allocator &allocator);

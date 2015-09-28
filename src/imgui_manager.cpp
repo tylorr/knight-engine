@@ -5,6 +5,7 @@
 #include "buffer_object.h"
 #include "pointers.h"
 #include "game_memory.h"
+#include "vertex_array.h"
 
 #include <GL/glew.h>
 #include <imgui.h>

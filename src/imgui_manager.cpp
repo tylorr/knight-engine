@@ -222,9 +222,9 @@ void Initialize(GLFWwindow &window, MaterialManager &material_manager) {
   imgui_manager_state.vao = allocate_unique<VertexArray>(allocator);
   auto &vao = *imgui_manager_state.vao;
 
-  vao.BindAttribute(0, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid *)offsetof(ImDrawVert, pos));
-  vao.BindAttribute(1, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid *)offsetof(ImDrawVert, uv));
-  vao.BindAttribute(2, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(ImDrawVert), (GLvoid *)offsetof(ImDrawVert, col));
+  vao.BindAttribute(vbo, 0, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), offsetof(ImDrawVert, pos));
+  vao.BindAttribute(vbo, 1, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), offsetof(ImDrawVert, uv));
+  vao.BindAttribute(vbo, 2, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(ImDrawVert), offsetof(ImDrawVert, col));
 
   vao.Unbind();
   vbo.Unbind();

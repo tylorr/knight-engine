@@ -1,5 +1,6 @@
 #include "vertex_array.h"
 #include "common.h"
+#include "buffer_object.h"
 
 namespace knight {
 
@@ -37,12 +38,12 @@ void VertexArray::Unbind() const {
   }
 }
 
-void VertexArray::BindAttribute(const GLint &attribute, const GLint &size,
-                                const GLenum &type, const GLboolean &normalized,
-                                const GLsizei &stride, const GLvoid *pointer) {
+void VertexArray::BindAttribute(BufferObject &buffer, GLint attribute, GLint size, GLenum type,
+                                GLboolean normalized, GLsizei stride, GLintptr offset) {
   Bind();
+  buffer.Bind();
   GL(glEnableVertexAttribArray(attribute));
-  GL(glVertexAttribPointer(attribute, size, type, normalized, stride, pointer));
+  GL(glVertexAttribPointer(attribute, size, type, normalized, stride, reinterpret_cast<const GLvoid*>(offset)));
 }
 
 } // namespace knight

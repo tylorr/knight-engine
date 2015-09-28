@@ -1,5 +1,7 @@
 #pragma once
 
+#include "shader_types.h"
+
 namespace knight {
 
 class VertexArray {
@@ -19,10 +21,8 @@ class VertexArray {
   void Bind() const;
   void Unbind() const;
 
-  void BindAttribute(const GLint& attribute,
-                     const GLint &size, const GLenum &type,
-                     const GLboolean &normalized, const GLsizei &stride,
-                     const GLvoid *pointer);
+  void BindAttribute(BufferObject &buffer, GLint attribute, GLint size, GLenum type, 
+                     GLboolean normalized, GLsizei stride, GLintptr offset);
 
 private:
   GLuint handle_;

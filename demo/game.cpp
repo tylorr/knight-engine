@@ -142,8 +142,8 @@ extern "C" GAME_INIT(Init) {
 
   vbo.SetData(vertices, BufferObject::Usage::StaticDraw);
 
-  vao.BindAttribute(0, 3, GL_FLOAT, GL_FALSE, sizeof(vertices[0]), nullptr);
-  vao.BindAttribute(1, 3, GL_FLOAT, GL_FALSE, sizeof(vertices[0]), (void *)sizeof(vertices[0].position));
+  vao.BindAttribute(vbo, 0, 3, GL_FLOAT, GL_FALSE, sizeof(vertices[0]), 0);
+  vao.BindAttribute(vbo, 1, 3, GL_FLOAT, GL_FALSE, sizeof(vertices[0]), sizeof(vertices[0].position));
 
   ibo.SetData(indices, BufferObject::Usage::StaticDraw);
 

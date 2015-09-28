@@ -5,7 +5,6 @@
 #include "pointers.h"
 #include "types.h"
 #include "dependency_injection.h"
-#include "vertex_array.h"
 
 #include <glm/glm.hpp>
 
@@ -14,7 +13,7 @@ struct GameState : public knight::GameAllocatorState {
   knight::pointer<knight::BufferObject> vbo;
   knight::pointer<knight::BufferObject> ibo;
 
-  knight::VertexArray vao;
+  knight::pointer<knight::VertexArray> vao;
 
   glm::mat4 model_matrix;
   knight::Uniform<float, 4, 4> *mvp_uniform;

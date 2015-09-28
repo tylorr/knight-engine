@@ -4,13 +4,17 @@ namespace knight {
 
 class VertexArray {
  public:
-  VertexArray() { }
-  VertexArray(VertexArray &&other) : handle_{std::move(other.handle_)} { }
+  VertexArray();
+
+  VertexArray(const VertexArray &) = delete;
+  VertexArray &operator=(const VertexArray &) = delete;
+
+  VertexArray(VertexArray &&other);
+  VertexArray &operator=(VertexArray &&other);
+
   ~VertexArray();
 
   GLuint handle() const { return handle_; }
-
-  void Initialize();
 
   void Bind() const;
   void Unbind() const;
@@ -20,15 +24,8 @@ class VertexArray {
                      const GLboolean &normalized, const GLsizei &stride,
                      const GLvoid *pointer);
 
-  VertexArray &operator=(VertexArray &&other) {
-    handle_ = std::move(other.handle_);
-    return *this;
-  }
-
 private:
   GLuint handle_;
-
-  KNIGHT_DISALLOW_COPY_AND_ASSIGN(VertexArray);
 };
 
 } // namespace knight

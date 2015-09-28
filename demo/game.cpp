@@ -13,6 +13,7 @@
 #include "material.h"
 #include "flatbuffer_allocator.h"
 #include "buffer_object.h"
+#include "vertex_array.h"
 
 #include "entity_resource_generated.h"
 #include "transform_component_generated.h"
@@ -133,20 +134,20 @@ extern "C" GAME_INIT(Init) {
 
   game_state->vbo = allocate_unique<BufferObject>(allocator, BufferObject::Target::Array);
   game_state->ibo = allocate_unique<BufferObject>(allocator, BufferObject::Target::ElementArray);
-
-  game_state->vao.Initialize();
+  game_state->vao = allocate_unique<VertexArray>(allocator);
 
   auto &vbo = *game_state->vbo;
   auto &ibo = *game_state->ibo;
+  auto &vao = *game_state->vao;
 
   vbo.SetData(vertices, BufferObject::Usage::StaticDraw);
 
-  game_state->vao.BindAttribute(0, 3, GL_FLOAT, GL_FALSE, sizeof(vertices[0]), nullptr);
-  game_state->vao.BindAttribute(1, 3, GL_FLOAT, GL_FALSE, sizeof(vertices[0]), (void *)sizeof(vertices[0].position));
+  vao.BindAttribute(0, 3, GL_FLOAT, GL_FALSE, sizeof(vertices[0]), nullptr);
+  vao.BindAttribute(1, 3, GL_FLOAT, GL_FALSE, sizeof(vertices[0]), (void *)sizeof(vertices[0].position));
 
   ibo.SetData(indices, BufferObject::Usage::StaticDraw);
 
-  game_state->vao.Unbind();
+  vao.Unbind();
   vbo.Unbind();
   ibo.Unbind();
   game_state->material->Unbind();
@@ -156,7 +157,7 @@ extern "C" GAME_INIT(Init) {
   auto entity = entity_manager->Get(entity_id);
 
   auto mesh_component = game_state->injector->get_instance<MeshComponent>();
-  mesh_component->Add(*entity, *game_state->material, game_state->vao, array::size(indices));
+  mesh_component->Add(*entity, *game_state->material, *game_state->vao, array::size(indices));
   mesh_component->GC(*entity_manager);
 
   game_state->index_count = array::size(indices);
@@ -229,7 +230,6 @@ extern "C" GAME_UPDATE_AND_RENDER(UpdateAndRender) {
 
   ImGuiManager::EndFrame();
 
-  game_state->vao.Unbind();
   game_state->material->Unbind();
 }
 

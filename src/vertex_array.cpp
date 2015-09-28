@@ -3,15 +3,25 @@
 
 namespace knight {
 
+VertexArray::VertexArray() {
+  GL(glGenVertexArrays(1, &handle_));
+}
+
+VertexArray::VertexArray(VertexArray &&other) :
+    handle_{other.handle_} {
+  other.handle_ = 0;
+}
+
+VertexArray &VertexArray::operator=(VertexArray &&other) {
+  handle_ = other.handle_;
+  other.handle_ = 0;
+  return *this;
+}
+
 VertexArray::~VertexArray() {
   if (handle_) {
     glDeleteVertexArrays(1, &handle_);
   }
-}
-
-void VertexArray::Initialize() {
-  GL(glGenVertexArrays(1, &handle_));
-  Bind();
 }
 
 void VertexArray::Bind() const {
@@ -30,6 +40,7 @@ void VertexArray::Unbind() const {
 void VertexArray::BindAttribute(const GLint &attribute, const GLint &size,
                                 const GLenum &type, const GLboolean &normalized,
                                 const GLsizei &stride, const GLvoid *pointer) {
+  Bind();
   GL(glEnableVertexAttribArray(attribute));
   GL(glVertexAttribPointer(attribute, size, type, normalized, stride, pointer));
 }

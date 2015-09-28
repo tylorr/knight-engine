@@ -51,7 +51,7 @@ struct ImGuiManagerState {
   GLFWwindow *window;
 
   std::shared_ptr<Material> material;
-  VertexArray vao;
+  pointer<VertexArray> vao;
   pointer<BufferObject> vbo;
   size_t buffer_size = 20000;
   GLuint font_texture_handle;
@@ -126,7 +126,7 @@ void RenderDrawLists(ImDrawList **const command_lists, int command_lists_count) 
   GL(glUnmapBuffer(GL_ARRAY_BUFFER));
   vbo.Unbind();
 
-  auto &vao = imgui_manager_state.vao;
+  auto &vao = *imgui_manager_state.vao;
   vao.Bind();
 
   auto previous_vertex_offset = 0;
@@ -219,8 +219,8 @@ void Initialize(GLFWwindow &window, MaterialManager &material_manager) {
   auto &vbo = *imgui_manager_state.vbo;
   vbo.SetData({nullptr, imgui_manager_state.buffer_size}, BufferObject::Usage::DynamicDraw);
 
-  auto &vao = imgui_manager_state.vao;
-  vao.Initialize();
+  imgui_manager_state.vao = allocate_unique<VertexArray>(allocator);
+  auto &vao = *imgui_manager_state.vao;
 
   vao.BindAttribute(0, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid *)offsetof(ImDrawVert, pos));
   vao.BindAttribute(1, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid *)offsetof(ImDrawVert, uv));
@@ -298,6 +298,7 @@ void OnScroll(const double &yoffset) {
 void Shutdown() {
   imgui_manager_state.material.reset();
   imgui_manager_state.vbo.reset();
+  imgui_manager_state.vao.reset();
 }
 
 } // namespace ImGuiManager

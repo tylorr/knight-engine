@@ -65,7 +65,7 @@ void BufferObject::Unbind() const {
   }
 }
 
-void BufferObject::SetData(array_view<const void> data, BufferUsage usage) {
+void BufferObject::SetData(array_view<const void> data, Usage usage) {
   Bind();
   GL(glBufferData(GLenum(target_), data.size(), data.data(), GLenum(usage)));
 }

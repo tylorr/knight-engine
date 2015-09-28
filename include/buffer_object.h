@@ -6,20 +6,6 @@
 
 namespace knight {
 
-enum class BufferUsage : GLenum {
-  StreamDraw = GL_STREAM_DRAW,
-  StreamRead = GL_STREAM_READ,
-  StreamCopy = GL_STREAM_COPY,
-
-  StaticDraw = GL_STATIC_DRAW,
-  StaticRead = GL_STATIC_READ,
-  StaticCopy = GL_STATIC_COPY,
-
-  DynamicDraw = GL_DYNAMIC_DRAW,
-  DynamicRead = GL_DYNAMIC_READ,
-  DynamicCopy = GL_DYNAMIC_COPY
-};
-
 class BufferObject {
  public:
   enum class Target : GLenum {
@@ -38,6 +24,20 @@ class BufferObject {
     Uniform = GL_UNIFORM_BUFFER
   };
 
+  enum class Usage : GLenum {
+    StreamDraw = GL_STREAM_DRAW,
+    StreamRead = GL_STREAM_READ,
+    StreamCopy = GL_STREAM_COPY,
+
+    StaticDraw = GL_STATIC_DRAW,
+    StaticRead = GL_STATIC_READ,
+    StaticCopy = GL_STATIC_COPY,
+
+    DynamicDraw = GL_DYNAMIC_DRAW,
+    DynamicRead = GL_DYNAMIC_READ,
+    DynamicCopy = GL_DYNAMIC_COPY
+  };
+
   BufferObject(Target target);
 
   BufferObject(const BufferObject &) = delete;
@@ -54,11 +54,11 @@ class BufferObject {
   void Bind() const;
   void Unbind() const;
 
-  void SetData(gsl::array_view<const void> data, BufferUsage usage);
+  void SetData(gsl::array_view<const void> data, BufferObject::Usage usage);
   void SetSubData(GLintptr offset, gsl::array_view<const void> data);
 
   template<typename T>
-  void SetData(const foundation::Array<T> &data, BufferUsage usage) {
+  void SetData(const foundation::Array<T> &data, BufferObject::Usage usage) {
     using namespace foundation;
     SetData({array::begin(data), array::size(data) * sizeof(T)}, usage);
   }

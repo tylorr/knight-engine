@@ -4,6 +4,8 @@
 
 #include <array.h>
 
+#include <vector>
+
 namespace knight {
 
 class BufferObject {
@@ -61,6 +63,12 @@ class BufferObject {
   void SetData(const foundation::Array<T> &data, BufferObject::Usage usage) {
     using namespace foundation;
     SetData({array::begin(data), array::size(data) * sizeof(T)}, usage);
+  }
+
+  template<typename T>
+  void SetData(const std::vector<T> &data, BufferObject::Usage usage) {
+    using namespace foundation;
+    SetData({data.data(), data.size() * sizeof(T)}, usage);
   }
 
  private:

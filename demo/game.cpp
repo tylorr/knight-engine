@@ -33,11 +33,10 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/matrix_inverse.hpp>
 
-#include <assimp/Importer.hpp>
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
+#include <tiny_obj_loader.h>
 
 #include <cstdio>
+#include <vector>
 
 using namespace knight;
 using namespace foundation;
@@ -99,37 +98,22 @@ extern "C" GAME_INIT(Init) {
 
   game_state->model_matrix = glm::mat4{1.0};
 
-  auto importer = Assimp::Importer{};
+  std::vector<tinyobj::shape_t> shapes;
+  std::vector<tinyobj::material_t> materials;
 
-  const auto scene = importer.ReadFile("../models/bench.obj",
-      aiProcess_CalcTangentSpace       | 
-      aiProcess_Triangulate            |
-      aiProcess_JoinIdenticalVertices  |
-      aiProcess_SortByPType);
+  std::string err = tinyobj::LoadObj(shapes, materials, "../models/bench.obj", "../models/");
 
-  XASSERT(scene != nullptr, "Could not load bench.obj model");
+  XASSERT(err.empty(), "Error loading model: %s", err.c_str());
 
-  auto mesh = scene->mMeshes[0];
+  auto &mesh = shapes[0].mesh;
 
   Array<Vertex> vertices{scratch_allocator};
-  for (auto j = 0u; j < mesh->mNumVertices; ++j) {
-    auto pos = mesh->mVertices[j];
-    auto normal = mesh->mNormals[j];
+  for (auto i = 0u; i < mesh.positions.size(); i += 3) {
     array::push_back(vertices, 
       Vertex {
-        glm::vec3{ pos.x, pos.y, pos.z },
-        glm::vec3{ normal.x, normal.y, normal.z }
+        glm::vec3{ mesh.positions[i], mesh.positions[i+1], mesh.positions[i+2] },
+        glm::vec3{ mesh.normals[i], mesh.normals[i+1], mesh.normals[i+2] }
       });
-  }
-
-  Array<unsigned int> indices{scratch_allocator};
-  for (auto j = 0u; j < mesh->mNumFaces; ++j) {
-    auto face = mesh->mFaces[j];
-    XASSERT(face.mNumIndices == 3, "Wrong number of indices");
-
-    array::push_back(indices, face.mIndices[0]);
-    array::push_back(indices, face.mIndices[1]);
-    array::push_back(indices, face.mIndices[2]);
   }
 
   game_state->vbo = allocate_unique<BufferObject>(allocator, BufferObject::Target::Array);
@@ -145,7 +129,7 @@ extern "C" GAME_INIT(Init) {
   vao.BindAttribute(vbo, 0, 3, GL_FLOAT, GL_FALSE, sizeof(vertices[0]), 0);
   vao.BindAttribute(vbo, 1, 3, GL_FLOAT, GL_FALSE, sizeof(vertices[0]), sizeof(vertices[0].position));
 
-  ibo.SetData(indices, BufferObject::Usage::StaticDraw);
+  ibo.SetData(mesh.indices, BufferObject::Usage::StaticDraw);
 
   vao.Unbind();
   vbo.Unbind();
@@ -157,10 +141,10 @@ extern "C" GAME_INIT(Init) {
   auto entity = entity_manager->Get(entity_id);
 
   auto mesh_component = game_state->injector->get_instance<MeshComponent>();
-  mesh_component->Add(*entity, *game_state->material, *game_state->vao, array::size(indices));
+  mesh_component->Add(*entity, *game_state->material, *game_state->vao, mesh.indices.size());
   mesh_component->GC(*entity_manager);
 
-  game_state->index_count = array::size(indices);
+  game_state->index_count = mesh.indices.size();
 
   // FlatBufferAllocator fb_alloc(alloc);
 

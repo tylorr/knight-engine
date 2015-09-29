@@ -1,6 +1,6 @@
 # This file uses centimeters as units for non-parametric coordinates.
 
-mtllib bench.mtl
+# mtllib bench.mtl
 v -8.435206 3.572925 -3.393650
 v -8.464171 3.445949 -3.185469
 v -8.463799 3.389938 -3.207626

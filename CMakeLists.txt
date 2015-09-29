@@ -68,8 +68,8 @@ set(KNIGHT_ENGINE_INCLUDES
   ${PROJECT_SOURCE_DIR}/third-party/flatbuffers/include
   ${PROJECT_SOURCE_DIR}/third-party/foundation
   ${PROJECT_SOURCE_DIR}/third-party/enet/include
-  ${PROJECT_SOURCE_DIR}/third-party/assimp/include
   ${PROJECT_SOURCE_DIR}/third-party/utf8
+  ${PROJECT_SOURCE_DIR}/third-party/tinyobjloader
   ${FBSCHEMA_OUTPUT}
   #${LUA_INCLUDE_DIR}
 )
@@ -80,7 +80,7 @@ add_subdirectory(third-party/imgui)
 add_subdirectory(third-party/flatbuffers)
 add_subdirectory(third-party/foundation)
 add_subdirectory(third-party/enet)
-add_subdirectory(third-party/assimp)
+add_subdirectory(third-party/tinyobjloader)
 add_subdirectory(type_erasure)
 add_subdirectory(src)
 add_subdirectory(demo)

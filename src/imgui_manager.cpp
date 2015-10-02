@@ -6,6 +6,7 @@
 #include "pointers.h"
 #include "game_memory.h"
 #include "vertex_array.h"
+#include "attribute.h"
 
 #include <GL/glew.h>
 #include <imgui.h>
@@ -18,6 +19,16 @@
 #include <memory.h>
 
 namespace knight {
+
+namespace detail {
+
+  template<>
+  struct attribute_traits<ImVec2> : float_traits, component_traits<2> {};
+
+  template<>
+  struct attribute_traits<ImVec4> : float_traits, component_traits<4> {};
+
+}
 
 namespace ImGuiManager {
 namespace {
@@ -108,16 +119,16 @@ void RenderDrawLists(ImDrawData* draw_data) {
     const ImDrawList* cmd_list = draw_data->CmdLists[n];
     const ImDrawIdx* idx_buffer_offset = 0;
 
-    vbo.SetData({&cmd_list->VtxBuffer.front(), cmd_list->VtxBuffer.size() * sizeof(ImDrawVert)}, BufferObject::Usage::StreamDraw);
-    ibo.SetData({&cmd_list->IdxBuffer.front(), cmd_list->IdxBuffer.size() * sizeof(ImDrawIdx)}, BufferObject::Usage::StreamDraw);
+    vbo.SetData({cmd_list->VtxBuffer.begin(), cmd_list->VtxBuffer.size() * sizeof(ImDrawVert)}, BufferObject::Usage::StreamDraw);
+    ibo.SetData({cmd_list->IdxBuffer.begin(), cmd_list->IdxBuffer.size() * sizeof(ImDrawIdx)}, BufferObject::Usage::StreamDraw);
 
     for (const ImDrawCmd* pcmd = cmd_list->CmdBuffer.begin(); pcmd != cmd_list->CmdBuffer.end(); pcmd++) {
       if (pcmd->UserCallback) {
           pcmd->UserCallback(cmd_list, pcmd);
       } else {
-        glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)pcmd->TextureId);
-        glScissor((int)pcmd->ClipRect.x, (int)(fb_height - pcmd->ClipRect.w), (int)(pcmd->ClipRect.z - pcmd->ClipRect.x), (int)(pcmd->ClipRect.w - pcmd->ClipRect.y));
-        glDrawElements(GL_TRIANGLES, (GLsizei)pcmd->ElemCount, GL_UNSIGNED_SHORT, idx_buffer_offset);
+        GL(glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)pcmd->TextureId));
+        GL(glScissor((int)pcmd->ClipRect.x, (int)(fb_height - pcmd->ClipRect.w), (int)(pcmd->ClipRect.z - pcmd->ClipRect.x), (int)(pcmd->ClipRect.w - pcmd->ClipRect.y)));
+        GL(glDrawElements(GL_TRIANGLES, (GLsizei)pcmd->ElemCount, GL_UNSIGNED_SHORT, idx_buffer_offset));
       }
       idx_buffer_offset += pcmd->ElemCount;
     }
@@ -141,6 +152,8 @@ void SetClipboardString(const char *text) {
 }
 
 } // namespace
+
+
 
 void Initialize(GLFWwindow &window, MaterialManager &material_manager) {
   imgui_manager_state.window = &window;
@@ -209,15 +222,15 @@ void CreateDeviceObjects() {
   auto &allocator = game_memory::default_allocator();
   imgui_manager_state.vbo = allocate_unique<BufferObject>(allocator, BufferObject::Target::Array);
   imgui_manager_state.ibo = allocate_unique<BufferObject>(allocator, BufferObject::Target::ElementArray);
-
+  imgui_manager_state.vao = allocate_unique<VertexArray>(allocator);
+  
+  auto &vao = *imgui_manager_state.vao;
   auto &vbo = *imgui_manager_state.vbo;
 
-  imgui_manager_state.vao = allocate_unique<VertexArray>(allocator);
-  auto &vao = *imgui_manager_state.vao;
+  using Im4Attribute = Attribute<ImVec4>;
+  Im4Attribute color_attribute{2, Im4Attribute::DataType::UnsignedByte, Im4Attribute::DataOption::Normalized};
 
-  vao.BindAttribute(vbo, 0, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), offsetof(ImDrawVert, pos));
-  vao.BindAttribute(vbo, 1, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), offsetof(ImDrawVert, uv));
-  vao.BindAttribute(vbo, 2, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(ImDrawVert), offsetof(ImDrawVert, col));
+  vao.AddVertexBuffer(vbo, 0, Attribute<ImVec2>{0}, Attribute<ImVec2>{1}, color_attribute);
 
   CreateFontsTexture();
 

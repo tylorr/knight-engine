@@ -44,6 +44,16 @@ using namespace foundation;
 using std::shared_ptr;
 using std::unique_ptr;
 
+namespace knight { namespace detail {
+
+  template<>
+  struct attribute_traits<glm::vec3> : float_traits, component_traits<3> {};
+
+  template<>
+  struct attribute_traits<glm::vec4> : float_traits, component_traits<4> {};
+
+}} // namespace knight::detail
+
 struct Vertex {
   glm::vec3 position;
   glm::vec3 normal;
@@ -111,8 +121,8 @@ extern "C" GAME_INIT(Init) {
   for (auto i = 0u; i < mesh.positions.size(); i += 3) {
     array::push_back(vertices, 
       Vertex {
-        glm::vec3{ mesh.positions[i], mesh.positions[i+1], mesh.positions[i+2] },
-        glm::vec3{ mesh.normals[i], mesh.normals[i+1], mesh.normals[i+2] }
+        { mesh.positions[i], mesh.positions[i+1], mesh.positions[i+2] },
+        { mesh.normals[i], mesh.normals[i+1], mesh.normals[i+2] }
       });
   }
 
@@ -125,26 +135,16 @@ extern "C" GAME_INIT(Init) {
   auto &vao = *game_state->vao;
 
   vbo.SetData(vertices, BufferObject::Usage::StaticDraw);
-
-  vao.BindAttribute(vbo, 0, 3, GL_FLOAT, GL_FALSE, sizeof(vertices[0]), 0);
-  vao.BindAttribute(vbo, 1, 3, GL_FLOAT, GL_FALSE, sizeof(vertices[0]), sizeof(vertices[0].position));
-
   ibo.SetData(mesh.indices, BufferObject::Usage::StaticDraw);
 
-  vao.Unbind();
-  vbo.Unbind();
-  ibo.Unbind();
-  game_state->material->Unbind();
+  vao.SetCount(mesh.indices.size())
+     .SetPrimitive(VertexArray::Primitive::Triangles)
+     .SetIndexBuffer(ibo, 0, VertexArray::IndexType::UnsignedInt)
+     .AddVertexBuffer(vbo, 0, Attribute<glm::vec3>{0}, Attribute<glm::vec3>{1});
 
   auto entity_manager = game_state->injector->get_instance<EntityManager>();
   auto entity_id = entity_manager->Create();
   auto entity = entity_manager->Get(entity_id);
-
-  auto mesh_component = game_state->injector->get_instance<MeshComponent>();
-  mesh_component->Add(*entity, *game_state->material, *game_state->vao, mesh.indices.size());
-  mesh_component->GC(*entity_manager);
-
-  game_state->index_count = mesh.indices.size();
 
   // FlatBufferAllocator fb_alloc(alloc);
 
@@ -209,8 +209,8 @@ extern "C" GAME_UPDATE_AND_RENDER(UpdateAndRender) {
   auto material_manager = game_state->injector->get_instance<MaterialManager>();
   material_manager->PushUniforms(*game_state->material);
 
-  auto mesh_component = game_state->injector->get_instance<MeshComponent>();
-  mesh_component->Render();
+  auto &vao = *game_state->vao;
+  vao.Draw();
 
   ImGuiManager::EndFrame();
 
@@ -219,6 +219,5 @@ extern "C" GAME_UPDATE_AND_RENDER(UpdateAndRender) {
 
 extern "C" GAME_SHUTDOWN(Shutdown) {
   ImGuiManager::Shutdown();
-
   game_memory::Shutdown();
 }

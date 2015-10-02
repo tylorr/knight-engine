@@ -22,8 +22,6 @@ struct GameState : public knight::GameAllocatorState {
 
   knight::pointer<knight::di::Injector> injector;
 
-  uint32_t index_count;
-
   char string_buff[256];
   char foo_buff[256];
 };

@@ -14,6 +14,7 @@ set(SOURCES
     transform_component.cpp
     game_memory.cpp
     dependency_injection.cpp
+    attribute.cpp
     win32/file_read.cpp
     win32/file_write.cpp
     win32/file_util.cpp

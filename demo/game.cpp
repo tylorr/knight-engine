@@ -146,6 +146,10 @@ extern "C" GAME_INIT(Init) {
   auto entity_id = entity_manager->Create();
   auto entity = entity_manager->Get(entity_id);
 
+  auto mesh_component = game_state->injector->get_instance<MeshComponent>();
+  mesh_component->Add(*entity, *game_state->material, *game_state->mesh);
+  // mesh_component->GC(*entity_manager);
+
   // FlatBufferAllocator fb_alloc(alloc);
 
   // flatbuffers::FlatBufferBuilder fbb(1024, &fb_alloc);
@@ -209,8 +213,8 @@ extern "C" GAME_UPDATE_AND_RENDER(UpdateAndRender) {
   auto material_manager = game_state->injector->get_instance<MaterialManager>();
   material_manager->PushUniforms(*game_state->material);
 
-  auto &mesh = *game_state->mesh;
-  mesh.Draw();
+  auto mesh_component = game_state->injector->get_instance<MeshComponent>();
+  mesh_component->Render();
 
   ImGuiManager::EndFrame();
 

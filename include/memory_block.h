@@ -1,6 +1,7 @@
 #pragma once
 
 #include "pointers.h"
+#include "game_memory.h"
 
 #include <memory.h>
 

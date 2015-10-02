@@ -1,7 +1,7 @@
 set(SOURCES
     common.cpp
     buffer_object.cpp
-    vertex_array.cpp
+    mesh.cpp
     entity_manager.cpp
     uniform.cpp
     material.cpp

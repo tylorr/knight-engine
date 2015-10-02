@@ -1,36 +1,36 @@
-#include "vertex_array.h"
+#include "mesh.h"
 #include "common.h"
 #include "buffer_object.h"
 
 namespace knight {
 
-VertexArray::VertexArray() {
+Mesh::Mesh() {
   GL(glGenVertexArrays(1, &handle_));
 }
 
-VertexArray::VertexArray(VertexArray &&other) :
+Mesh::Mesh(Mesh &&other) :
     handle_{other.handle_} {
   other.handle_ = 0;
 }
 
-VertexArray &VertexArray::operator=(VertexArray &&other) {
+Mesh &Mesh::operator=(Mesh &&other) {
   handle_ = other.handle_;
   other.handle_ = 0;
   return *this;
 }
 
-VertexArray::~VertexArray() {
+Mesh::~Mesh() {
   if (handle_) {
     glDeleteVertexArrays(1, &handle_);
   }
 }
 
-void VertexArray::Bind() const {
+void Mesh::Bind() const {
   XASSERT(handle_, "Trying to bind an uninitialized vertex array");
   GL(glBindVertexArray(handle_));
 }
 
-void VertexArray::Unbind() const {
+void Mesh::Unbind() const {
   auto vertex_array_binding = GLint{};
   glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &vertex_array_binding);
   if (handle_ == (GLuint)vertex_array_binding) {
@@ -38,18 +38,18 @@ void VertexArray::Unbind() const {
   }
 }
 
-VertexArray &VertexArray::SetCount(GLsizei count) {
+Mesh &Mesh::SetCount(GLsizei count) {
   count_ = count;
   return *this;
 }
 
-VertexArray &VertexArray::SetPrimitive(Primitive primitive) {
+Mesh &Mesh::SetPrimitive(Primitive primitive) {
   primitive_ = primitive;
   return *this;
 }
 
-VertexArray &
-  VertexArray::SetIndexBuffer(
+Mesh &
+  Mesh::SetIndexBuffer(
     BufferObject &index_buffer, GLintptr offset, IndexType index_type) {
 
   XASSERT(index_buffer.target() == BufferObject::Target::ElementArray, "Only element arrays can be set as index buffers");
@@ -65,7 +65,7 @@ VertexArray &
   return *this;
 }
 
-void VertexArray::Draw() const {
+void Mesh::Draw() const {
   Bind();
 
   if (index_buffer_ == nullptr) {
@@ -75,7 +75,7 @@ void VertexArray::Draw() const {
   }
 }
  
-void VertexArray::AttributePointer(BufferObject &buffer, GLuint location, 
+void Mesh::AttributePointer(BufferObject &buffer, GLuint location, 
                                    GLint size, GLenum type, AttributeKind attribute_kind, 
                                    GLsizei stride, GLintptr offset) {
   Bind();

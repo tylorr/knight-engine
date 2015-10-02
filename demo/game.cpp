@@ -13,7 +13,7 @@
 #include "material.h"
 #include "flatbuffer_allocator.h"
 #include "buffer_object.h"
-#include "vertex_array.h"
+#include "mesh.h"
 
 #include "entity_resource_generated.h"
 #include "transform_component_generated.h"
@@ -115,31 +115,31 @@ extern "C" GAME_INIT(Init) {
 
   XASSERT(err.empty(), "Error loading model: %s", err.c_str());
 
-  auto &mesh = shapes[0].mesh;
+  auto &obj_mesh = shapes[0].mesh;
 
   Array<Vertex> vertices{scratch_allocator};
-  for (auto i = 0u; i < mesh.positions.size(); i += 3) {
+  for (auto i = 0u; i < obj_mesh.positions.size(); i += 3) {
     array::push_back(vertices, 
       Vertex {
-        { mesh.positions[i], mesh.positions[i+1], mesh.positions[i+2] },
-        { mesh.normals[i], mesh.normals[i+1], mesh.normals[i+2] }
+        { obj_mesh.positions[i], obj_mesh.positions[i+1], obj_mesh.positions[i+2] },
+        { obj_mesh.normals[i], obj_mesh.normals[i+1], obj_mesh.normals[i+2] }
       });
   }
 
   game_state->vbo = allocate_unique<BufferObject>(allocator, BufferObject::Target::Array);
   game_state->ibo = allocate_unique<BufferObject>(allocator, BufferObject::Target::ElementArray);
-  game_state->vao = allocate_unique<VertexArray>(allocator);
+  game_state->mesh = allocate_unique<Mesh>(allocator);
 
   auto &vbo = *game_state->vbo;
   auto &ibo = *game_state->ibo;
-  auto &vao = *game_state->vao;
+  auto &mesh = *game_state->mesh;
 
   vbo.SetData(vertices, BufferObject::Usage::StaticDraw);
-  ibo.SetData(mesh.indices, BufferObject::Usage::StaticDraw);
+  ibo.SetData(obj_mesh.indices, BufferObject::Usage::StaticDraw);
 
-  vao.SetCount(mesh.indices.size())
-     .SetPrimitive(VertexArray::Primitive::Triangles)
-     .SetIndexBuffer(ibo, 0, VertexArray::IndexType::UnsignedInt)
+  mesh.SetCount(obj_mesh.indices.size())
+     .SetPrimitive(Mesh::Primitive::Triangles)
+     .SetIndexBuffer(ibo, 0, Mesh::IndexType::UnsignedInt)
      .AddVertexBuffer(vbo, 0, Attribute<glm::vec3>{0}, Attribute<glm::vec3>{1});
 
   auto entity_manager = game_state->injector->get_instance<EntityManager>();
@@ -209,8 +209,8 @@ extern "C" GAME_UPDATE_AND_RENDER(UpdateAndRender) {
   auto material_manager = game_state->injector->get_instance<MaterialManager>();
   material_manager->PushUniforms(*game_state->material);
 
-  auto &vao = *game_state->vao;
-  vao.Draw();
+  auto &mesh = *game_state->mesh;
+  mesh.Draw();
 
   ImGuiManager::EndFrame();
 

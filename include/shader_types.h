@@ -16,7 +16,7 @@ class Uniform;
 class MaterialManager;
 class Material;
 class BufferObject;
-class VertexArray;
+class Mesh;
 
 
 // struct UniformManager {

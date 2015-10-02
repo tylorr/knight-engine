@@ -13,7 +13,7 @@ struct GameState : public knight::GameAllocatorState {
   knight::pointer<knight::BufferObject> vbo;
   knight::pointer<knight::BufferObject> ibo;
 
-  knight::pointer<knight::VertexArray> vao;
+  knight::pointer<knight::Mesh> mesh;
 
   glm::mat4 model_matrix;
   knight::Uniform<float, 4, 4> *mvp_uniform;

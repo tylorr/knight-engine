@@ -18,14 +18,14 @@ class MeshComponent : public Component<MeshComponent> {
 
     Entity *entity;
     Material **material;
-    GLuint *vao;
+    GLuint *mesh;
     uint32_t *index_count;
   };
 
   MeshComponent(foundation::Allocator &allocator);
   ~MeshComponent();
 
-  void Add(Entity e, Material &material, VertexArray &vao, uint32_t index_count);
+  void Add(Entity e, Material &material, Mesh &mesh, uint32_t index_count);
 
   void Render() const;
 

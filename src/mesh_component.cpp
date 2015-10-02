@@ -3,7 +3,7 @@
 #include "random.h"
 #include "material.h"
 #include "pointers.h"
-#include "vertex_array.h"
+#include "mesh.h"
 
 #include <hash.h>
 #include <logog.hpp>
@@ -21,7 +21,7 @@ MeshComponent::~MeshComponent() {
   allocator_.deallocate(data_.buffer);
 }
 
-void MeshComponent::Add(Entity e, Material &material, VertexArray &vao, uint32_t index_count) {
+void MeshComponent::Add(Entity e, Material &material, Mesh &mesh, uint32_t index_count) {
   if (data_.size + 1 >= data_.capacity) {
     Allocate((data_.capacity + 1) * 2);
   }
@@ -29,7 +29,7 @@ void MeshComponent::Add(Entity e, Material &material, VertexArray &vao, uint32_t
   auto index = data_.size;
   data_.entity[index] = e;
   data_.material[index] = &material;
-  data_.vao[index] = vao.handle();
+  data_.mesh[index] = mesh.handle();
   data_.index_count[index] = index_count;
 
   hash::set(map_, e.id, index);
@@ -39,7 +39,7 @@ void MeshComponent::Add(Entity e, Material &material, VertexArray &vao, uint32_t
 void MeshComponent::Render() const {
   for (auto i = 0u; i < data_.size; ++i) {
     data_.material[i]->Bind();
-    GL(glBindVertexArray(data_.vao[i]));
+    GL(glBindVertexArray(data_.mesh[i]));
     GL(glDrawElements(GL_TRIANGLES, data_.index_count[i], GL_UNSIGNED_INT, nullptr));
   }
 }
@@ -57,12 +57,12 @@ void MeshComponent::Allocate(uint32_t size) {
 
   new_data.entity = static_cast<Entity *>(new_data.buffer);
   new_data.material = reinterpret_cast<Material **>(new_data.entity + size);
-  new_data.vao = reinterpret_cast<GLuint *>(new_data.material + size);
-  new_data.index_count = reinterpret_cast<uint32_t *>(new_data.vao + size);
+  new_data.mesh = reinterpret_cast<GLuint *>(new_data.material + size);
+  new_data.index_count = reinterpret_cast<uint32_t *>(new_data.mesh + size);
 
   memcpy(new_data.entity, data_.entity, data_.size * sizeof(Entity));
   memcpy(new_data.material, data_.material, data_.size * sizeof(Material *));
-  memcpy(new_data.vao, data_.vao, data_.size * sizeof(GLuint));
+  memcpy(new_data.mesh, data_.mesh, data_.size * sizeof(GLuint));
   memcpy(new_data.index_count, data_.index_count, data_.size * sizeof(uint32_t));
 
   allocator_.deallocate(data_.buffer);
@@ -76,7 +76,7 @@ void MeshComponent::Destroy(uint32_t i) {
 
   data_.entity[i] = data_.entity[last];
   data_.material[i] = data_.material[last];
-  data_.vao[i] = data_.vao[last];
+  data_.mesh[i] = data_.mesh[last];
   data_.index_count[i] = data_.index_count[last];
 
   hash::set(map_, last_entity.id, i);

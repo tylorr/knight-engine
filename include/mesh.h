@@ -7,7 +7,7 @@
 
 namespace knight {
 
-class VertexArray {
+class Mesh {
  public:
   enum class IndexType {
     UnsignedByte = GL_UNSIGNED_BYTE,
@@ -30,15 +30,15 @@ class VertexArray {
     Patches = GL_PATCHES
   };
 
-  VertexArray();
+  Mesh();
 
-  VertexArray(const VertexArray &) = delete;
-  VertexArray &operator=(const VertexArray &) = delete;
+  Mesh(const Mesh &) = delete;
+  Mesh &operator=(const Mesh &) = delete;
 
-  VertexArray(VertexArray &&other);
-  VertexArray &operator=(VertexArray &&other);
+  Mesh(Mesh &&other);
+  Mesh &operator=(Mesh &&other);
 
-  ~VertexArray();
+  ~Mesh();
 
   GLuint handle() const { return handle_; }
 
@@ -46,14 +46,14 @@ class VertexArray {
   void Unbind() const;
 
   template<typename ...Attributes>
-  VertexArray &AddVertexBuffer(BufferObject &buffer, GLintptr offset, const Attributes&... attributes) {
+  Mesh &AddVertexBuffer(BufferObject &buffer, GLintptr offset, const Attributes&... attributes) {
     AddVertexBufferInternal(buffer, offset, StrideOfInterleaved(attributes...), attributes...);
     return *this;
   }
 
-  VertexArray &SetCount(GLsizei count);
-  VertexArray &SetPrimitive(Primitive primitive);
-  VertexArray &SetIndexBuffer(BufferObject &buffer, GLintptr offset, IndexType index_type);
+  Mesh &SetCount(GLsizei count);
+  Mesh &SetPrimitive(Primitive primitive);
+  Mesh &SetIndexBuffer(BufferObject &buffer, GLintptr offset, IndexType index_type);
 
   void Draw() const;
 

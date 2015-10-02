@@ -33,6 +33,22 @@ Material::Material(foundation::Allocator &alloc, GLuint program_handle,
   }
 }
 
+bool operator==(const Material &a, const Material &b) {
+  return a.program_handle() == b.program_handle();
+}
+
+bool operator!=(const Material &a, const Material &b) {
+  return !(a == b);
+}
+
+bool operator<(const Material &a, const Material &b) {
+  return a.program_handle() < b.program_handle();
+}
+
+bool operator>(const Material &a, const Material &b) {
+  return a.program_handle() > b.program_handle();
+}
+
 MaterialManager::MaterialManager(foundation::Allocator &alloc)
     : alloc_{alloc},
       global_uniforms_{alloc},

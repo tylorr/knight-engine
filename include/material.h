@@ -48,6 +48,11 @@ class Material {
   foundation::Hash<UniformBase *> uniforms_;
 };
 
+bool operator==(const Material &a, const Material &b);
+bool operator!=(const Material &a, const Material &b);
+bool operator<(const Material &a, const Material &b);
+bool operator>(const Material &a, const Material &b);
+
 
 class MaterialManager {
  public:

@@ -156,4 +156,9 @@ private:
                         AttributeKind attribute_kind, GLsizei stride, GLintptr offset);
 };
 
+bool operator==(const Mesh &a, const Mesh &b);
+bool operator!=(const Mesh &a, const Mesh &b);
+bool operator<(const Mesh &a, const Mesh &b);
+bool operator>(const Mesh &a, const Mesh &b);
+
 } // namespace knight

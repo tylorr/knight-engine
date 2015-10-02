@@ -95,7 +95,22 @@ void Mesh::AttributePointer(BufferObject &buffer, GLuint location,
       GL(glVertexAttribPointer(location, size, type, attribute_kind == AttributeKind::GenericNormalized, stride, offset_ptr));
       break;
   }
-  
+}
+
+bool operator==(const Mesh &a, const Mesh &b) {
+  return a.handle() == b.handle();
+}
+
+bool operator!=(const Mesh &a, const Mesh &b) {
+  return !(a == b);
+}
+
+bool operator<(const Mesh &a, const Mesh &b) {
+  return a.handle() < b.handle();
+}
+
+bool operator>(const Mesh &a, const Mesh &b) {
+  return a.handle() > b.handle();
 }
 
 } // namespace knight

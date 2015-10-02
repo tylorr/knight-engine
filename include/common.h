@@ -53,6 +53,7 @@ namespace knight {
         error_value = glGetError();                                 \
       }                                                             \
       printf("\n");                                                 \
+      stack_trace();                                                \
       abort();                                                      \
     }                                                               \
   } while (false)

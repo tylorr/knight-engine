@@ -14,6 +14,7 @@
 #include "flatbuffer_allocator.h"
 #include "buffer_object.h"
 #include "mesh.h"
+#include "dependency_injection.h"
 
 #include "entity_resource_generated.h"
 #include "transform_component_generated.h"

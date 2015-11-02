@@ -14,8 +14,9 @@ namespace knight {
 
 namespace di {
 
-template<typename InstanceType, typename Deleter, class ...Deps>
-using InstanceFactoryFunction = std::unique_ptr<InstanceType, Deleter>(*)(Deps *...);
+// template deduction does not work with type aliases in clang
+// template<typename InstanceType, typename Deleter, class ...Deps>
+// using InstanceFactoryFunction = std::unique_ptr<InstanceType, Deleter>(*)(Deps *...);
 
 class Injector {
   friend class InjectorConfig;
@@ -33,8 +34,8 @@ class Injector {
 
   template<typename InstanceType, typename Deleter, typename ...Deps>
   auto Inject(
-    InstanceFactoryFunction<InstanceType, Deleter, Deps...> 
-      instance_factory) const -> std::unique_ptr<InstanceType, Deleter>;
+    std::unique_ptr<InstanceType, Deleter>(* instance_factory)(Deps *...)) const 
+      -> std::unique_ptr<InstanceType, Deleter>;
 
  private:
   explicit Injector(foundation::Allocator &allocator) :
@@ -56,7 +57,7 @@ auto Injector::get_instance() const -> T * {
 
 template<typename InstanceType, typename Deleter, typename ...Deps>
 auto Injector::Inject(
-  InstanceFactoryFunction<InstanceType, Deleter, Deps...> instance_factory) const 
+  std::unique_ptr<InstanceType, Deleter>(* instance_factory)(Deps *...)) const 
     -> std::unique_ptr<InstanceType, Deleter> {
   return 
     instance_factory(
@@ -68,8 +69,7 @@ class InjectorConfig {
  public:
   template<typename InstanceType, typename Deleter, typename ...Deps>
   void Add(
-    InstanceFactoryFunction<InstanceType, Deleter, Deps...>
-      instance_factory);
+    std::unique_ptr<InstanceType, Deleter>(* instance_factory)(Deps *...));
 
   Injector BuildInjector(foundation::Allocator &allocator);
 
@@ -100,8 +100,7 @@ inline void passthru(Args ...args) { }
 
 template<typename InstanceType, typename Deleter, typename ...Deps>
 void InjectorConfig::Add(
-  InstanceFactoryFunction<InstanceType, Deleter, Deps...> 
-    instance_factory) {
+  std::unique_ptr<InstanceType, Deleter>(* instance_factory)(Deps *...)) {
 
   int instance_type_id = TypeMap<NodeInfo>::type_id<typename std::remove_const<InstanceType>::type>();
 

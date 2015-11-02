@@ -24,7 +24,7 @@ constexpr unsigned long long operator""_tib(unsigned long long n) {
   return n * 1024_gib;
 }
 
-class GLFWwindow;
+struct GLFWwindow;
 
 namespace knight {
 

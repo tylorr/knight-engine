@@ -45,8 +45,7 @@ namespace {
 	}
 
 	struct MemoryGlobals {
-		//static const size_t ALLOCATOR_MEMORY = (2 * sizeof(HeapAllocator)) + sizeof(ScratchAllocator) + sizeof(PageAllocator) + (128 * sizeof(size_t)) + 32;
-		static const size_t ALLOCATOR_MEMORY = 768;
+		static const size_t ALLOCATOR_MEMORY = (2 * sizeof(HeapAllocator)) + sizeof(ScratchAllocator) + sizeof(PageAllocator) + (128 * sizeof(size_t)) + 128;
 		char buffer[ALLOCATOR_MEMORY];
 
 		HeapAllocator *static_heap;

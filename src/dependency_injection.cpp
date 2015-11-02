@@ -24,7 +24,7 @@ Injector InjectorConfig::BuildInjector(foundation::Allocator &allocator) {
     initializers.pop();
   }
 
-  return std::move(inj);
+  return inj;
 }
 
 void InjectorConfig::ToposortVisitNode(

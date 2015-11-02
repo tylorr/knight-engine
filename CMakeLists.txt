@@ -7,7 +7,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 # set(CMAKE_RUNTIME_OUTPUT_DIRECTORY D:/projects/knight-engine/build/clion)
 
 message(STATUS ${CMAKE_CXX_COMPILER})
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -Wall -Wno-comment -Wno-switch")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -pthread -Wall -Wno-comment -Wno-switch")
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMakeModules)
 
@@ -47,7 +47,7 @@ macro(register_event_fbs _target)
 endmacro()
 
 macro(pdb target)
-  add_custom_command(TARGET ${target} POST_BUILD COMMAND cv2pdb $<TARGET_FILE:${target}>)
+  # add_custom_command(TARGET ${target} POST_BUILD COMMAND cv2pdb $<TARGET_FILE:${target}>)
 endmacro(pdb)
 
 set(FBSCHEMA_OUTPUT "${PROJECT_BINARY_DIR}/schema_headers/")

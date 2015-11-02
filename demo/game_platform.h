@@ -5,7 +5,7 @@
 
 #include <windows.h>
 
-class GLFWwindow;
+struct GLFWwindow;
 
 #define GAME_INIT(name) void name(knight::GameMemory *game_memory, GLFWwindow &window)
 typedef GAME_INIT(game_init);

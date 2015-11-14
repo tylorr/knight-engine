@@ -6,6 +6,7 @@ set(SOURCES
     # task_manager_test.cpp
     heap_test.cpp
     priority_queue_test.cpp
+    transform_component_test.cpp
 )
 
 add_definitions(-DLOGOG_USE_PREFIX)

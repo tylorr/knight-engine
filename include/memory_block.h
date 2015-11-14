@@ -12,7 +12,7 @@ namespace knight {
 namespace memory_block {
 
   template<typename ...Ts>
-  pointer<char[]> grow_contiguous(uint32_t original_capacity, uint32_t capacity, Ts&&... args);
+  pointer<char[]> grow_contiguous(foundation::Allocator &allocator, uint32_t original_capacity, uint32_t capacity, Ts&&... args);
 
   // TODO: Find a good home for this
   inline auto align_forward(uintptr_t offset, size_t align) {
@@ -21,16 +21,17 @@ namespace memory_block {
 
   namespace detail {
     auto grow_contiguous_helper(
+        foundation::Allocator &allocator,
         uint32_t original_capacity, 
         uint32_t capacity,
         uint32_t total_bytes) {
-      auto &allocator = game_memory::default_allocator();
       return allocate_unique<char[]>(allocator, total_bytes);
     }
 
     template<typename T, typename ...Ts>
     pointer<char[]> 
       grow_contiguous_helper(
+        foundation::Allocator &allocator,
         uint32_t original_capacity, 
         uint32_t capacity,
         uint32_t offset,
@@ -42,6 +43,7 @@ namespace memory_block {
 
       auto memory_block = 
         grow_contiguous_helper(
+          allocator,
           original_capacity,
           capacity,
           end_offset,
@@ -58,11 +60,12 @@ namespace memory_block {
   template<typename ...Ts>
   pointer<char[]> 
     grow_contiguous(
+      foundation::Allocator &allocator,
       uint32_t original_capacity, 
       uint32_t capacity, 
       Ts&&... args) {
     XASSERT(capacity >= original_capacity, "Cannot shrink contiguous memory");
-    return detail::grow_contiguous_helper(original_capacity, capacity, 0u, args...);
+    return detail::grow_contiguous_helper(allocator, original_capacity, capacity, 0u, args...);
   }
 
 } // namespace memory_block

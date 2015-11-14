@@ -8,19 +8,22 @@
 
 #include <glm/glm.hpp>
 
-struct GameState : public knight::GameAllocatorState {
-  std::shared_ptr<knight::Material> material;
-  knight::pointer<knight::BufferObject> vbo;
-  knight::pointer<knight::BufferObject> ibo;
+using namespace knight;
 
-  knight::pointer<knight::Mesh> mesh;
+struct GameState : public GameAllocatorState {
+  std::shared_ptr<Material> material;
+  pointer<BufferObject> vbo;
+  pointer<BufferObject> ibo;
 
-  glm::mat4 model_matrix;
-  knight::Uniform<float, 4, 4> *mvp_uniform;
-  knight::Uniform<float, 4, 4> *mv_matrix_uniform;
-  knight::Uniform<float, 3, 3> *normal_matrix_uniform;
+  pointer<Mesh> mesh;
 
-  knight::pointer<knight::di::Injector> injector;
+  Entity::ID entity_id;
+
+  Uniform<float, 4, 4> *mvp_uniform;
+  Uniform<float, 4, 4> *mv_matrix_uniform;
+  Uniform<float, 3, 3> *normal_matrix_uniform;
+
+  pointer<di::Injector> injector;
 
   char string_buff[256];
   char foo_buff[256];

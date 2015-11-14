@@ -7,6 +7,7 @@
 #include "imgui_manager.h"
 #include "platform_types.h"
 #include "mesh_component.h"
+#include "transform_component.h"
 #include "entity_manager.h"
 #include "types.h"
 #include "pointers.h"
@@ -75,6 +76,11 @@ auto MeshComponentFactory() {
   return allocate_unique<MeshComponent>(allocator, allocator);
 }
 
+auto TransformComponentFactory() {
+  auto &allocator = game_memory::default_allocator();
+  return allocate_unique<TransformComponent>(allocator, allocator);
+}
+
 void BuildInjector(GameState &game_state) {
   auto &allocator = game_memory::default_allocator();
   di::InjectorConfig config;
@@ -82,6 +88,7 @@ void BuildInjector(GameState &game_state) {
   config.Add(EntityManagerFactory);
   config.Add(MaterialManagerFactory);
   config.Add(MeshComponentFactory);
+  config.Add(TransformComponentFactory);
 
   game_state.injector = allocate_unique<di::Injector>(allocator, config.BuildInjector(allocator));
 }
@@ -106,8 +113,6 @@ extern "C" GAME_INIT(Init) {
   game_state->mvp_uniform = material->Get<float, 4, 4>("MVP");
   game_state->mv_matrix_uniform = material->Get<float, 4, 4>("ModelView");
   game_state->normal_matrix_uniform = material->Get<float, 3, 3>("NormalMatrix");
-
-  game_state->model_matrix = glm::mat4{1.0};
 
   std::vector<tinyobj::shape_t> shapes;
   std::vector<tinyobj::material_t> materials;
@@ -147,9 +152,13 @@ extern "C" GAME_INIT(Init) {
   auto entity_id = entity_manager->Create();
   auto entity = entity_manager->Get(entity_id);
 
+  game_state->entity_id = entity_id;
+
   auto mesh_component = game_state->injector->get_instance<MeshComponent>();
   mesh_component->Add(*entity, *game_state->material, *game_state->mesh);
-  // mesh_component->GC(*entity_manager);
+
+  auto transform_component = game_state->injector->get_instance<TransformComponent>();
+  transform_component->Add(*entity);
 
   // FlatBufferAllocator fb_alloc(alloc);
 
@@ -197,12 +206,20 @@ extern "C" GAME_UPDATE_AND_RENDER(UpdateAndRender) {
     ImGui::ShowTestWindow(&show_test_window);
   }
 
-  game_state->model_matrix = glm::rotate(game_state->model_matrix, (float)delta_time, glm::vec3(0.0f, 1.0f, 0.0f));
+  auto entity_manager = game_state->injector->get_instance<EntityManager>();
+  auto entity = entity_manager->Get(game_state->entity_id);
+
+  auto transform_component = game_state->injector->get_instance<TransformComponent>();
+  auto transform_instance = transform_component->Lookup(*entity);
+
+  auto local = transform_component->local(transform_instance);
+  local = glm::rotate(local, (float)delta_time, glm::vec3(0.0f, 1.0f, 0.0f));
+  transform_component->set_local(transform_instance, local);
 
   auto view_matrix = glm::translate(glm::mat4{1.0f}, glm::vec3{0, -8, -40});
   auto projection_matrix = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 100.f);
 
-  auto model_view_matrix = view_matrix * game_state->model_matrix;
+  auto model_view_matrix = view_matrix * local;
   game_state->mv_matrix_uniform->SetValue(glm::value_ptr(model_view_matrix));
 
   auto mvp_matrix = projection_matrix * model_view_matrix;

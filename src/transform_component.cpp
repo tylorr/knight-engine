@@ -1,6 +1,7 @@
 #include "transform_component.h"
 #include "random.h"
 #include "entity_manager.h"
+#include "memory_block.h"
 
 #include <array.h>
 #include <logog.hpp>
@@ -9,83 +10,73 @@ using namespace foundation;
 
 namespace knight {
 
-TransformComponent::TransformComponent(foundation::Allocator &allocator) 
-    : Component{allocator},
-      data_{},
-      allocator_{allocator} { }
+namespace transform {
 
-TransformComponent::~TransformComponent() {
-  allocator_.deallocate(data_.buffer);
+glm::mat4 GetRelative(const glm::mat4 &target, const glm::mat4 &transform) {
+  return transform * glm::inverse(target);
 }
 
-// void TransformComponent::Add(Entity e, Material &material, VertexArray &vao, uint32_t index_count) {
-//   if (data_.size + 1 >= data_.capacity) {
-//     Allocate((data_.capacity + 1) * 2);
-//   }
-  
-//   auto index = data_.size;
-//   data_.entity[index] = e;
-//   data_.material[index] = &material;
-//   data_.vao[index] = vao.handle();
-//   data_.index_count[index] = index_count;
+}
 
-//   hash::set(map_, e.id, index);
-//   ++data_.size;
-// }
+TransformComponent::TransformComponent(foundation::Allocator &allocator) :
+    Component{allocator},
+    allocator_{allocator},
+    data_{} {}
 
-// void TransformComponent::Render() const {
-//   for (auto i = 0u; i < data_.size; ++i) {
-//     data_.material[i]->Bind();
-//     GL(glBindVertexArray(data_.vao[i]));
-//     GL(glDrawElements(GL_TRIANGLES, data_.index_count[i], GL_UNSIGNED_INT, nullptr));
-//   }
-// }
+void TransformComponent::Add(Entity e) {
+  if (data_.size + 1 >= data_.capacity) {
+    // TODO: Find best growth strategy
+    Allocate(data_.capacity * 2 + 8);
+  }
 
-void TransformComponent::Allocate(uint32_t size) {
-  XASSERT(size > data_.size, "Cannot allocate smaller amount");
+  auto null_instance = MakeInstance(-1);
+  auto index = data_.size;
+  data_.entity[index] = e;
+  data_.local[index] = glm::mat4(1.0f);
+  data_.world[index] = glm::mat4(1.0f);
+  data_.parent[index] = null_instance;
+  data_.first_child[index] = null_instance;
+  data_.next_sibling[index] = null_instance;
+  data_.prev_sibling[index] = null_instance;
 
-  InstanceData new_data;
-  const auto bytes = size * (sizeof(Entity) + sizeof(glm::mat4) + 
-                             sizeof(glm::mat4) + (4 * sizeof(Instance)));
+  hash::set(map_, e.id, index);
+  ++data_.size;
+}
 
-  new_data.buffer = allocator_.allocate(bytes);
-  new_data.size = data_.size;
-  new_data.capacity = size;
+void TransformComponent::Add(Entity e, Instance parent) {
+  Add(e);
+  set_parent(Lookup(e), parent);
+}
 
-  new_data.entity = static_cast<Entity *>(new_data.buffer);
-  new_data.local = reinterpret_cast<glm::mat4 *>(new_data.entity + size);
-  new_data.world = new_data.local + size;
-  new_data.parent = reinterpret_cast<Instance *>(new_data.world + size);
-  new_data.first_child = new_data.parent + size;
-  new_data.next_sibling = new_data.first_child + size;
-  new_data.prev_sibling = new_data.next_sibling + size;
-
-  memcpy(new_data.entity, data_.entity, data_.size * sizeof(Entity));
-  memcpy(new_data.local, data_.local, data_.size * sizeof(glm::mat4));
-  memcpy(new_data.world, data_.world, data_.size * sizeof(glm::mat4));
-  memcpy(new_data.parent, data_.parent, data_.size * sizeof(Instance));
-  memcpy(new_data.first_child, data_.first_child, data_.size * sizeof(Instance));
-  memcpy(new_data.next_sibling, data_.next_sibling, data_.size * sizeof(Instance));
-  memcpy(new_data.prev_sibling, data_.prev_sibling, data_.size * sizeof(Instance));
-
-  allocator_.deallocate(data_.buffer);
-  data_ = new_data;
+void TransformComponent::Allocate(uint32_t capacity) {
+  data_.buffer = 
+    memory_block::grow_contiguous(
+      allocator_,
+      data_.capacity, capacity,
+      data_.entity,
+      data_.local,
+      data_.world,
+      data_.parent,
+      data_.first_child,
+      data_.next_sibling,
+      data_.prev_sibling);
+  data_.capacity = capacity;
 }
 
 void TransformComponent::Destroy(uint32_t i) {
-  // auto last = data_.size - 1;
-  // auto entity = data_.entity[i];
-  // auto last_entity = data_.entity[last];
+  auto last = data_.size - 1;
 
-  // data_.entity[i] = data_.entity[last];
-  // data_.material[i] = data_.material[last];
-  // data_.vao[i] = data_.vao[last];
-  // data_.index_count[i] = data_.index_count[last];
+  auto instance = MakeInstance(i);
+  auto last_instance = MakeInstance(last);
 
-  // hash::set(map_, last_entity.id, i);
-  // hash::remove(map_, entity.id);
+  auto entity = data_.entity[i];
+  auto last_entity = data_.entity[last];
 
-  // --data_.size;
+  Swap(instance, last_instance);
+  hash::set(map_, last_entity.id, i);
+  hash::remove(map_, entity.id);
+
+  --data_.size;
 }
 
 void TransformComponent::GC(const EntityManager &em) {
@@ -102,42 +93,115 @@ void TransformComponent::GC(const EntityManager &em) {
   }
 }
 
-bool TransformComponent::IsValid(Instance i) {
-  // treat index 0 as a null value
-  return i.i > 0 && (uint32_t)i.i < data_.size;
+bool TransformComponent::IsValid(Instance instance) const {
+  return instance.i >= 0 && (uint32_t)instance.i < data_.size;
 }
 
-void TransformComponent::set_local(Instance i, const glm::mat4 &m) {
-  data_.local[i.i] = m;
-  auto parent = data_.parent[i.i];
+void TransformComponent::set_local(Instance instance, const glm::mat4 &local) {
+  XASSERT(IsValid(instance), "Invalid instance");
+  data_.local[instance.i] = local;
+  auto parent = data_.parent[instance.i];
   auto parent_tm = IsValid(parent) ? data_.world[parent.i] : glm::mat4(1.0);
-  Transform(i, parent_tm);
+  Transform(instance, parent_tm);
 }
 
-void TransformComponent::Transform(Instance i, const glm::mat4 &p) {
-  Array<Instance> transforms{allocator_};
-
-  data_.world[i.i] = data_.local[i.i] * p;
-  GetChildren(i, transforms);
-
-  while (!array::empty(transforms)) {
-    auto transform = array::back(transforms);
-    array::pop_back(transforms);
-
-    auto parent = data_.parent[transform.i];
-    data_.world[transform.i] = data_.local[transform.i] * data_.world[parent.i];
-
-    GetChildren(transform, transforms);
-  }
+glm::mat4 TransformComponent::local(Instance instance) const {
+  XASSERT(IsValid(instance), "Invalid instance");
+  return data_.local[instance.i];
 }
 
-void TransformComponent::GetChildren(Instance i, 
-    foundation::Array<Instance> &children) {
-  auto child = data_.first_child[i.i];
+glm::mat4 TransformComponent::world(Instance instance) const {
+  XASSERT(IsValid(instance), "Invalid instance");
+  return data_.world[instance.i];
+}
+
+void TransformComponent::Transform(Instance instance, const glm::mat4 &parent_world) {
+  XASSERT(IsValid(instance), "Invalid instance");
+  data_.world[instance.i] = data_.local[instance.i] * parent_world;
+
+  auto child = data_.first_child[instance.i];
   while (IsValid(child)) {
-    array::push_back(children, child);
+    // TODO: Convert to iterative instead of recursive
+    Transform(child, data_.world[instance.i]); 
     child = data_.next_sibling[child.i];
   }
+}
+
+void TransformComponent::set_parent(Instance instance, Instance parent) {
+  XASSERT(IsValid(instance), "Invalid child");
+
+  if (data_.parent[instance.i].i != parent.i) {
+    auto original_parent = data_.parent[instance.i];
+    if (IsValid(original_parent)) {
+      auto prev_sibling = data_.prev_sibling[instance.i];
+      auto next_sibling = data_.next_sibling[instance.i];
+
+      if (IsValid(next_sibling)) {
+        data_.prev_sibling[next_sibling.i] = prev_sibling;
+      }
+
+      if (IsValid(prev_sibling)) {
+        data_.next_sibling[prev_sibling.i] = next_sibling;
+      } else {
+        data_.first_child[original_parent.i] = next_sibling;
+      }
+    }
+
+    data_.parent[instance.i] = parent;
+
+    if (IsValid(parent)) {
+      auto original_first_child = data_.first_child[parent.i];
+      data_.first_child[parent.i] = instance;
+
+      if (IsValid(original_first_child)) {
+        data_.next_sibling[instance.i] = original_first_child;
+        data_.prev_sibling[original_first_child.i] = instance;
+      } else {
+        data_.next_sibling[instance.i] = MakeInstance(-1);
+      }
+
+      data_.local[instance.i] = transform::GetRelative(data_.world[parent.i], data_.world[instance.i]);
+    }
+  }
+}
+
+void TransformComponent::Swap(Instance instance_a, Instance instance_b) {
+  auto move_instance = [this](Instance instance, int index) {
+    auto new_instance = MakeInstance(index);
+
+    data_.entity[index] = data_.entity[instance.i];
+    data_.local[index] = data_.local[instance.i];
+    data_.world[index] = data_.world[instance.i];
+    data_.parent[index] = data_.parent[instance.i];
+    data_.first_child[index] = data_.first_child[instance.i];
+
+    auto parent = data_.parent[index];
+
+    if (IsValid(parent)) {
+      auto next_sibling = data_.next_sibling[instance.i];
+      data_.next_sibling[index] = next_sibling;
+      if (IsValid(next_sibling)) {
+        data_.prev_sibling[next_sibling.i] = new_instance;
+      }
+
+      auto prev_sibling = data_.prev_sibling[instance.i];
+      data_.prev_sibling[index] = prev_sibling;
+      if (IsValid(prev_sibling)) {
+        data_.next_sibling[prev_sibling.i] = new_instance;
+      } else {
+        data_.first_child[parent.i] = new_instance;
+      }
+    }
+
+    return new_instance;
+  };
+
+  auto a_index = instance_a.i;
+  auto b_index = instance_b.i;
+
+  instance_a = move_instance(instance_a, data_.size);
+  move_instance(instance_b, a_index);
+  move_instance(instance_a, b_index);
 }
 
 } // namespace knight

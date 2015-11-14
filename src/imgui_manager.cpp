@@ -65,7 +65,6 @@ struct ImGuiManagerState {
   pointer<Mesh> mesh;
   pointer<BufferObject> vbo;
   pointer<BufferObject> ibo;
-  size_t buffer_size = 20000;
   GLuint font_texture_handle;
   GLint texture_location;
   Uniform<float, 4, 4> *projection_uniform;

@@ -4,6 +4,8 @@
 
 namespace knight {
 
+namespace templ {
+
 template<typename... Args>
 struct Reverse;
 
@@ -31,5 +33,14 @@ struct Reverse<First, Args...>  {
           std::forward<Reversed>(reversed)...);
     }
 };
+
+}
+
+constexpr std::size_t sizeof_sum() { return 0; }
+
+template<typename T, typename ...Args>
+constexpr std::size_t sizeof_sum(const T &value, const Args&... args) {
+  return sizeof(T) + sizeof_sum(args...);
+}
 
 } // namespace knight

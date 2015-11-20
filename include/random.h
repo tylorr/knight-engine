@@ -12,8 +12,8 @@ std::enable_if_t<std::is_floating_point<T>::value, T> random_in_range(T a, T b);
 
 namespace random_internal {
   inline auto &prng_engine() {
-    thread_local static std::random_device rd{};
-    thread_local static std::mt19937 engine{rd()};
+    thread_local std::random_device rd{};
+    thread_local std::mt19937 engine{rd()};
     return engine;
   }
 } // namespace random_internal

@@ -70,6 +70,7 @@ set(KNIGHT_ENGINE_INCLUDES
   ${PROJECT_SOURCE_DIR}/third-party/enet/include
   ${PROJECT_SOURCE_DIR}/third-party/utf8
   ${PROJECT_SOURCE_DIR}/third-party/tinyobjloader
+  ${PROJECT_SOURCE_DIR}/third-party/pcg/include
   ${FBSCHEMA_OUTPUT}
   #${LUA_INCLUDE_DIR}
 )

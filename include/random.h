@@ -1,5 +1,7 @@
 #pragma once
 
+#include <pcg_random.hpp>
+
 #include <random>
 
 namespace knight {
@@ -12,8 +14,9 @@ std::enable_if_t<std::is_floating_point<T>::value, T> random_in_range(T a, T b);
 
 namespace random_internal {
   inline auto &prng_engine() {
-    thread_local std::random_device rd{};
-    thread_local std::mt19937 engine{rd()};
+    static std::atomic<uint64_t> thread_count;
+    thread_local pcg_extras::seed_seq_from<std::random_device> seed_source;
+    thread_local pcg32 engine{42, thread_count.fetch_add(1, std::memory_order_relaxed)};
     return engine;
   }
 } // namespace random_internal

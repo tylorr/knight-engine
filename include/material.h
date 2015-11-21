@@ -89,11 +89,11 @@ class MaterialManager {
   foundation::Hash<uint32_t> material_version_;
   foundation::Hash<UniformBase *> uniforms_;
   foundation::Hash<DirtyUniform> dirty_uniforms_;
+
+  OpenglVersion opengl_version_;
   
   KNIGHT_DISALLOW_COPY_AND_ASSIGN(MaterialManager);
 };
-
-
 
 template<typename T, size_t row_count, size_t col_count>
 Uniform<T, row_count, col_count> *Material::Get(const char *name) const {

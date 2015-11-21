@@ -55,7 +55,10 @@ MaterialManager::MaterialManager(foundation::Allocator &alloc)
       shaders_{alloc},
       material_version_{alloc},
       uniforms_{alloc},
-      dirty_uniforms_{alloc} { }
+      dirty_uniforms_{alloc} {
+  glGetIntegerv(GL_MAJOR_VERSION, &opengl_version_.major);
+  glGetIntegerv(GL_MINOR_VERSION, &opengl_version_.minor);
+}
 
 MaterialManager::MaterialManager(foundation::Allocator &alloc, Array<const char *> global_uniforms)
     : alloc_{alloc},
@@ -63,7 +66,10 @@ MaterialManager::MaterialManager(foundation::Allocator &alloc, Array<const char 
       shaders_{alloc},
       material_version_{alloc},
       uniforms_{alloc},
-      dirty_uniforms_{alloc} { }
+      dirty_uniforms_{alloc} {
+  glGetIntegerv(GL_MAJOR_VERSION, &opengl_version_.major);
+  glGetIntegerv(GL_MINOR_VERSION, &opengl_version_.minor);
+}
 
 
 MaterialManager::~MaterialManager() {
@@ -113,13 +119,27 @@ GLuint MaterialManager::CreateShaderFromSource(uint64_t shader_id, const char *s
 
   auto program_handle = glCreateProgram();
 
+  // This only supports single digit major and minor versions
+  char version_string[] = {
+    (char)(opengl_version_.major + 48),
+    (char)(opengl_version_.minor + 48),
+    '0',
+    '\0'
+  };
+
   auto createAndAttachShader = [&](GLenum type) {
     auto shader_handle = GLuint{};
     GL(shader_handle = glCreateShader(type));
 
-    const char *full_source[3] = { "#version 440\n", getDefine(type), shader_source };
+    const char *full_source[] = { 
+      "#version ",
+      version_string,
+      "\n",
+      getDefine(type), 
+      shader_source
+    };
 
-    GL(glShaderSource(shader_handle, 3, full_source, nullptr));
+    GL(glShaderSource(shader_handle, 5, full_source, nullptr));
     GL(glCompileShader(shader_handle));
 
     auto result = GLint{};

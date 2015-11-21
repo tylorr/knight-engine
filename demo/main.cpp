@@ -124,16 +124,31 @@ void Initialize() {
   glClearColor(0.8f, 0.6f, 0.6f, 1.0f);
 }
 
+OpenglVersion supported_versions[] = {
+  { 4, 5 },
+  { 4, 4 },
+  { 4, 3 },
+  { 4, 2 },
+  { 4, 1 },
+  { 4, 0 },
+  { 3, 3 },
+};
+
 void InitWindow() {
   auto init_result = glfwInit();
   XASSERT(init_result, "Unable to initialize GLFW library");
 
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 4);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
   glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
-  window = glfwCreateWindow(current_width, current_height, "Hello World", nullptr, nullptr);
+  for (auto &&version : supported_versions) {
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, version.major);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, version.minor);
+    window = glfwCreateWindow(current_width, current_height, "Hello World", nullptr, nullptr);
+    if (window != nullptr)
+      break;
+  }
+
   XASSERT(window != nullptr, "Could not create a new rendering window");
 
   glfwMakeContextCurrent(window);

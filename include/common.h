@@ -90,4 +90,9 @@ void *knight_malloc(size_t size);
 void knight_free(void *ptr);
 void knight_no_memory();
 
+struct OpenglVersion {
+  int major;
+  int minor;
+};
+
 } // namespace knight

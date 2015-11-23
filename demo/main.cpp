@@ -27,6 +27,7 @@ GLFWwindow *window;
 void Initialize();
 void InitWindow();
 
+void GlfwErrorCallback(int error, const char *description);
 void GlfwMouseButtonCallback(GLFWwindow *window, int button, int action, int mods);
 void GlfwKeyCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
 void GlfwScrollCallback(GLFWwindow *window, double xoffset, double yoffset);
@@ -50,9 +51,9 @@ int main(int argc, char *argv[]) {
 
     auto udp_listener = UdpListener{};
     udp_listener.Start(1234);
-    
+
     Initialize();
-    
+
     auto &page_allocator = memory_globals::default_page_allocator();
 
     auto game_memory = GameMemory{};
@@ -67,7 +68,7 @@ int main(int argc, char *argv[]) {
     auto source_dll_name = "bin/libgame.dll";
     auto temp_dll_name = "bin/temp_libgame.dll";
     game_code::Load(game, source_dll_name, temp_dll_name);
-    
+
     if (game.Init) {
       game.Init(&game_memory, *window);
     }
@@ -91,7 +92,7 @@ int main(int argc, char *argv[]) {
     if (game.Shutdown) {
       game.Shutdown();
     }
-    
+
     udp_listener.Stop();
 
     glfwTerminate();
@@ -120,7 +121,7 @@ void Initialize() {
   }
 
   INFO("OpenGL %s", glGetString(GL_VERSION));
-  
+
   glClearColor(0.8f, 0.6f, 0.6f, 1.0f);
 }
 
@@ -135,6 +136,8 @@ OpenglVersion supported_versions[] = {
 };
 
 void InitWindow() {
+  glfwSetErrorCallback(GlfwErrorCallback);
+
   auto init_result = glfwInit();
   XASSERT(init_result, "Unable to initialize GLFW library");
 
@@ -159,6 +162,10 @@ void InitWindow() {
   glfwSetCharCallback(window, GlfwCharCallback);
 
   INFO("GLFW %s", glfwGetVersionString());
+}
+
+void GlfwErrorCallback(int error, const char *description) {
+  printf("GLFW error:\n%s\n\n", description);
 }
 
 void GlfwMouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {

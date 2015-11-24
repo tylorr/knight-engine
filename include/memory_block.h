@@ -19,7 +19,7 @@ template<std::size_t N, typename ...Args>
 void pack_data(char (&ptr)[N], Args&&... args);
 
 template<typename T, typename ...Args>
-void unpack_data(char *ptr, T *&value, Args&&... args);
+void unpack_data(const void *ptr, T &value, Args&&... args);
 
 // TODO: Find a good home for this
 inline auto align_forward(uintptr_t offset, size_t align) {
@@ -27,19 +27,19 @@ inline auto align_forward(uintptr_t offset, size_t align) {
 }
 
 namespace detail {
-  auto grow_contiguous_helper(
+  inline auto grow_contiguous_helper(
       foundation::Allocator &allocator,
-      uint32_t original_capacity, 
+      uint32_t original_capacity,
       uint32_t capacity,
       uint32_t total_bytes) {
     return allocate_unique<char[]>(allocator, total_bytes);
   }
 
   template<typename T, typename ...Ts>
-  pointer<char[]> 
+  pointer<char[]>
     grow_contiguous_helper(
       foundation::Allocator &allocator,
-      uint32_t original_capacity, 
+      uint32_t original_capacity,
       uint32_t capacity,
       uint32_t offset,
       T *&ptr,
@@ -48,7 +48,7 @@ namespace detail {
     auto aligned_offset = align_forward(offset, align);
     auto end_offset = aligned_offset + capacity * sizeof(T);
 
-    auto memory_block = 
+    auto memory_block =
       grow_contiguous_helper(
         allocator,
         original_capacity,
@@ -63,7 +63,7 @@ namespace detail {
     return std::move(memory_block);
   }
 
-  void pack_data_helper(char *ptr) { }
+  inline void pack_data_helper(char *ptr) { }
 
   template<typename T, typename ...Args>
   void pack_data_helper(char *ptr, T &&value, Args&&... args) {
@@ -74,11 +74,11 @@ namespace detail {
 } // namespace detail
 
 template<typename ...Ts>
-pointer<char[]> 
+pointer<char[]>
   grow_contiguous(
     foundation::Allocator &allocator,
-    uint32_t original_capacity, 
-    uint32_t capacity, 
+    uint32_t original_capacity,
+    uint32_t capacity,
     Ts&&... args) {
   XASSERT(capacity >= original_capacity, "Cannot shrink contiguous memory");
   return detail::grow_contiguous_helper(allocator, original_capacity, capacity, 0u, args...);
@@ -90,12 +90,13 @@ void pack_data(char (&ptr)[N], Args&&... args) {
   detail::pack_data_helper(ptr, std::forward<Args>(args)...);
 }
 
-void unpack_data(char *ptr) { }
+inline void unpack_data(const void *ptr) { }
 
 template<typename T, typename ...Args>
-void unpack_data(char *ptr, T *&value, Args&&... args) {
-  value = reinterpret_cast<T *>(ptr);
-  unpack_data(ptr + sizeof(T), std::forward<Args>(args)...);
+void unpack_data(const void *ptr, T &value, Args&&... args) {
+  value = *reinterpret_cast<T *>(const_cast<void *>(ptr));
+  auto char_ptr = (const char *)ptr;
+  unpack_data(char_ptr + sizeof(T), std::forward<Args>(args)...);
 }
 
 } // namespace memory_block

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "common.h"
+
 #include <memory.h>
 
 #include <memory>
@@ -23,7 +25,7 @@ struct StdAllocator {
   StdAllocator(const StdAllocator<T> &other) = default;
 
   template<typename U>
-  StdAllocator(const StdAllocator<U> &other) 
+  StdAllocator(const StdAllocator<U> &other)
     : allocator{other.allocator} { }
 
   T *allocate(std::size_t n) {
@@ -49,19 +51,19 @@ struct StdDeleter {
     array_size_{array_size} {}
 
   template<typename T>
-  std::enable_if_t<!std::is_array<T>::value> 
+  std::enable_if_t<!std::is_array<T>::value>
     operator()(T *p) const {
     XASSERT(allocator != nullptr, "Cannot delete pointer without foundation allocator");
     allocator->make_delete(p);
   }
 
   template<typename T>
-  std::enable_if_t<std::is_array<T>::value> 
+  std::enable_if_t<std::is_array<T>::value>
     operator()(T *p) const {
     XASSERT(allocator != nullptr, "Cannot delete pointer without foundation allocator");
     allocator->make_array_delete(p, array_size_);
   }
-  
+
   foundation::Allocator *allocator;
   uint32_t array_size_;
 };

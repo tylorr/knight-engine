@@ -6,7 +6,7 @@ set(SOURCES
     uniform.cpp
     material.cpp
     imgui_manager.cpp
-    task_manager.cpp
+    job_system.cpp
     stb_impl.cpp
     udp_listener.cpp
     string_util.cpp

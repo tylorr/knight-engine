@@ -16,6 +16,8 @@
 #include "buffer_object.h"
 #include "mesh.h"
 #include "dependency_injection.h"
+#include "job_system.h"
+
 
 #include "entity_resource_generated.h"
 #include "transform_component_generated.h"
@@ -97,6 +99,8 @@ extern "C" GAME_INIT(Init) {
   GameState *game_state;
   game_memory::Initialize(game_memory, &game_state);
 
+  JobSystem::Initialize();
+
   auto &allocator = game_memory::default_allocator();
   auto &scratch_allocator = game_memory::default_scratch_allocator();
 
@@ -125,7 +129,7 @@ extern "C" GAME_INIT(Init) {
 
   Array<Vertex> vertices{scratch_allocator};
   for (auto i = 0u; i < obj_mesh.positions.size(); i += 3) {
-    array::push_back(vertices, 
+    array::push_back(vertices,
       Vertex {
         { obj_mesh.positions[i], obj_mesh.positions[i+1], obj_mesh.positions[i+2] },
         { obj_mesh.normals[i], obj_mesh.normals[i+1], obj_mesh.normals[i+2] }
@@ -241,5 +245,6 @@ extern "C" GAME_UPDATE_AND_RENDER(UpdateAndRender) {
 
 extern "C" GAME_SHUTDOWN(Shutdown) {
   ImGuiManager::Shutdown();
+  JobSystem::Shutdown();
   game_memory::Shutdown();
 }

@@ -12,8 +12,8 @@ namespace knight {
 namespace JobSystem {
 
 class WorkStealingQueue {
-  static const uint32_t kNumberOfJobs = 4096u;
-  static const uint32_t kMask = kNumberOfJobs - 1u;
+  static const int64_t kNumberOfJobs = 4096u;
+  static const int64_t kMask = kNumberOfJobs - 1u;
 
  public:
   WorkStealingQueue()
@@ -27,8 +27,8 @@ class WorkStealingQueue {
  private:
   std::mutex mutex_;
   Job *jobs_[kNumberOfJobs];
-  int32_t bottom_;
-  int32_t top_;
+  std::atomic<int64_t> bottom_;
+  std::atomic<int64_t> top_;
 };
 
 namespace {
@@ -94,7 +94,6 @@ namespace {
   void Finish(Job *job) {
     const int32_t unfinished_jobs = --job->unfinished_jobs;
 
-    printf("%d finished | %d\n", GetThreadIndex(), unfinished_jobs);
     if (unfinished_jobs == 0 && job->parent != nullptr) {
       Finish(job->parent);
     }
@@ -112,54 +111,57 @@ namespace {
     while(worker_thread_active) {
       auto *job = GetJob();
       if (job != nullptr) {
-        printf("%d working\n", GetThreadIndex());
         Execute(job);
       }
 
       job_ready.Wait();
     }
-
-    printf("killed %d\n", GetThreadIndex());
   }
 } // namespace
 
 void WorkStealingQueue::Push(Job *job) {
-  {
-    std::lock_guard<std::mutex> guard(mutex_);
-    jobs_[bottom_ & kMask] = job;
-    ++bottom_;
-  }
+  auto bottom = bottom_.load(std::memory_order_relaxed);
+  jobs_[bottom & kMask] = job;
+
+  bottom_.store(bottom + 1, std::memory_order_release);
 
   job_ready.Notify();
   NotifyAllWaiting();
-  printf("pushed | %d\n", bottom_);
 }
 
 Job *WorkStealingQueue::Pop() {
-  std::lock_guard<std::mutex> guard(mutex_);
+  auto bottom = bottom_.fetch_sub(1, std::memory_order_seq_cst) - 1;
+  auto top = top_.load(std::memory_order_relaxed);
+  if (top <= bottom) {
+    auto *job = jobs_[bottom & kMask];
+    if (top != bottom) {
+      return job;
+    }
 
-  const int job_count = bottom_ - top_;
-  if (job_count <= 0) {
+    if (!top_.compare_exchange_strong(top, top + 1)) {
+      job = nullptr;
+    }
+
+    bottom_.store(top + 1, std::memory_order_relaxed);
+    return job;
+  } else {
+    bottom_.store(top, std::memory_order_relaxed);
     return nullptr;
   }
-
-  --bottom_;
-  return jobs_[bottom_ & kMask];
 }
 
 Job *WorkStealingQueue::Steal() {
-  std::lock_guard<std::mutex> guard(mutex_);
-
-  const int job_count = bottom_ - top_;
-  if (job_count <= 0) {
-    return nullptr;
+  auto top = top_.load(std::memory_order_relaxed);
+  auto bottom = bottom_.load(std::memory_order_acquire);
+  if (top < bottom) {
+    auto *job = jobs_[top & kMask];
+    if (!top_.compare_exchange_strong(top, top + 1)) {
+      return nullptr;
+    }
+    return job;
   }
 
-  auto *job = jobs_[top_ & kMask];
-  ++top_;
-
-  printf("%d stole | %d\n", GetThreadIndex(), job_count - 1);
-  return job;
+  return nullptr;
 }
 
 void Initialize() {
@@ -187,7 +189,7 @@ void Initialize() {
 void Shutdown() {
   worker_thread_active = false;
 
-  for (auto &&thread : work_threads) {
+  for (auto i = 0u; i < work_threads.size(); ++i) {
     job_ready.Notify();
   }
 
@@ -236,14 +238,11 @@ void Wait(const Job *job) {
   while (!HasJobCompleted(job)) {
     auto *next_job = GetJob();
     if (next_job != nullptr) {
-      printf("main working\n");
       Execute(next_job);
     }
 
     wait_events[GetThreadIndex()]->Wait();
   }
-
-  printf("finished waiting\n");
 }
 
 } // namespace JobSystem

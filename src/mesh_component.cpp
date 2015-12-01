@@ -3,7 +3,7 @@
 #include "random.h"
 #include "material.h"
 #include "pointers.h"
-#include "mesh.h"
+#include "array_object.h"
 #include "iterators.h"
 #include "array.h"
 
@@ -14,13 +14,13 @@ using namespace foundation;
 
 namespace knight {
 
-MeshComponent::MeshComponent(foundation::Allocator &allocator) : 
+MeshComponent::MeshComponent(foundation::Allocator &allocator) :
   Component{allocator},
   data_{allocator} {}
 
-void MeshComponent::Add(Entity e, Material &material, Mesh &mesh) {
+void MeshComponent::Add(Entity e, Material &material, ArrayObject &vao) {
   auto index = array::size(data_);
-  array::push_back(data_, {e, &material, &mesh });
+  array::push_back(data_, {e, &material, &vao });
   hash::set(map_, e.id, index);
 }
 
@@ -40,7 +40,7 @@ void MeshComponent::Destroy(uint32_t i) {
 void MeshComponent::Render() const {
   for (auto &&instance : data_) {
     instance.material->Bind();
-    instance.mesh->Draw();
+    instance.vao->Draw();
   }
 }
 

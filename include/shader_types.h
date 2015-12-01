@@ -16,14 +16,14 @@ class Uniform;
 class MaterialManager;
 class Material;
 class BufferObject;
-class Mesh;
+class ArrayObject;
 
 
 // struct UniformManager {
 //   UniformManager(foundation::Allocator &allocator);
 //   ~UniformManager();
 
-//   UniformBase *Create(ShaderProgram &shader_program, GLint location, 
+//   UniformBase *Create(ShaderProgram &shader_program, GLint location,
 //                       const char *name, GLenum type);
 
 //   template<typename T, size_t row_count, size_t col_count = 1>

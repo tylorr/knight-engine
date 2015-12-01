@@ -14,7 +14,7 @@
 #include "material.h"
 #include "flatbuffer_allocator.h"
 #include "buffer_object.h"
-#include "mesh.h"
+#include "array_object.h"
 #include "dependency_injection.h"
 #include "job_system.h"
 
@@ -138,18 +138,18 @@ extern "C" GAME_INIT(Init) {
 
   game_state->vbo = allocate_unique<BufferObject>(allocator, BufferObject::Target::Array);
   game_state->ibo = allocate_unique<BufferObject>(allocator, BufferObject::Target::ElementArray);
-  game_state->mesh = allocate_unique<Mesh>(allocator);
+  game_state->vao = allocate_unique<ArrayObject>(allocator);
 
   auto &vbo = *game_state->vbo;
   auto &ibo = *game_state->ibo;
-  auto &mesh = *game_state->mesh;
+  auto &vao = *game_state->vao;
 
   vbo.SetData(vertices, BufferObject::Usage::StaticDraw);
   ibo.SetData(obj_mesh.indices, BufferObject::Usage::StaticDraw);
 
-  mesh.SetCount(obj_mesh.indices.size())
-     .SetPrimitive(Mesh::Primitive::Triangles)
-     .SetIndexBuffer(ibo, 0, Mesh::IndexType::UnsignedInt)
+  vao.SetCount(obj_mesh.indices.size())
+     .SetPrimitive(ArrayObject::Primitive::Triangles)
+     .SetIndexBuffer(ibo, 0, ArrayObject::IndexType::UnsignedInt)
      .AddVertexBuffer(vbo, 0, Attribute<glm::vec3>{0}, Attribute<glm::vec3>{1});
 
   auto entity_manager = game_state->injector->get_instance<EntityManager>();
@@ -159,7 +159,7 @@ extern "C" GAME_INIT(Init) {
   game_state->entity_id = entity_id;
 
   auto mesh_component = game_state->injector->get_instance<MeshComponent>();
-  mesh_component->Add(*entity, *game_state->material, *game_state->mesh);
+  mesh_component->Add(*entity, *game_state->material, *game_state->vao);
 
   auto transform_component = game_state->injector->get_instance<TransformComponent>();
   transform_component->Add(*entity);

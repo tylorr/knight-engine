@@ -5,7 +5,7 @@
 #include "buffer_object.h"
 #include "pointers.h"
 #include "game_memory.h"
-#include "mesh.h"
+#include "array_object.h"
 #include "attribute.h"
 
 #include <GL/glew.h>
@@ -62,7 +62,7 @@ struct ImGuiManagerState {
   GLFWwindow *window;
 
   std::shared_ptr<Material> material;
-  pointer<Mesh> mesh;
+  pointer<ArrayObject> vao;
   pointer<BufferObject> vbo;
   pointer<BufferObject> ibo;
   GLuint font_texture_handle;
@@ -108,8 +108,8 @@ void RenderDrawLists(ImDrawData* draw_data) {
   imgui_manager_state.material_manager->PushUniforms(*material);
   GL(glUniform1i(imgui_manager_state.texture_location, 0));
 
-  auto &mesh = *imgui_manager_state.mesh;
-  mesh.Bind();
+  auto &vao = *imgui_manager_state.vao;
+  vao.Bind();
 
   auto &vbo = *imgui_manager_state.vbo;
   auto &ibo = *imgui_manager_state.ibo;
@@ -221,15 +221,15 @@ void CreateDeviceObjects() {
   auto &allocator = game_memory::default_allocator();
   imgui_manager_state.vbo = allocate_unique<BufferObject>(allocator, BufferObject::Target::Array);
   imgui_manager_state.ibo = allocate_unique<BufferObject>(allocator, BufferObject::Target::ElementArray);
-  imgui_manager_state.mesh = allocate_unique<Mesh>(allocator);
-  
-  auto &mesh = *imgui_manager_state.mesh;
+  imgui_manager_state.vao = allocate_unique<ArrayObject>(allocator);
+
+  auto &vao = *imgui_manager_state.vao;
   auto &vbo = *imgui_manager_state.vbo;
 
   using Im4Attribute = Attribute<ImVec4>;
   Im4Attribute color_attribute{2, Im4Attribute::DataType::UnsignedByte, Im4Attribute::DataOption::Normalized};
 
-  mesh.AddVertexBuffer(vbo, 0, Attribute<ImVec2>{0}, Attribute<ImVec2>{1}, color_attribute);
+  vao.AddVertexBuffer(vbo, 0, Attribute<ImVec2>{0}, Attribute<ImVec2>{1}, color_attribute);
 
   CreateFontsTexture();
 
@@ -290,7 +290,7 @@ void OnKey(const int &key, const int &action, const int &mods) {
   if (action == GLFW_PRESS) {
     io.KeysDown[key] = true;
   }
-  
+
   if (action == GLFW_RELEASE) {
     io.KeysDown[key] = false;
   }
@@ -315,7 +315,7 @@ void Shutdown() {
   imgui_manager_state.material.reset();
   imgui_manager_state.vbo.reset();
   imgui_manager_state.ibo.reset();
-  imgui_manager_state.mesh.reset();
+  imgui_manager_state.vao.reset();
 }
 
 } // namespace ImGuiManager

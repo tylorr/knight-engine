@@ -15,7 +15,7 @@ struct GameState : public GameAllocatorState {
   pointer<BufferObject> vbo;
   pointer<BufferObject> ibo;
 
-  pointer<Mesh> mesh;
+  pointer<ArrayObject> vao;
 
   Entity::ID entity_id;
 

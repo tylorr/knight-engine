@@ -7,7 +7,7 @@
 
 namespace knight {
 
-class Mesh {
+class ArrayObject {
  public:
   enum class IndexType {
     UnsignedByte = GL_UNSIGNED_BYTE,
@@ -30,15 +30,15 @@ class Mesh {
     Patches = GL_PATCHES
   };
 
-  Mesh();
+  ArrayObject();
 
-  Mesh(const Mesh &) = delete;
-  Mesh &operator=(const Mesh &) = delete;
+  ArrayObject(const ArrayObject &) = delete;
+  ArrayObject &operator=(const ArrayObject &) = delete;
 
-  Mesh(Mesh &&other);
-  Mesh &operator=(Mesh &&other);
+  ArrayObject(ArrayObject &&other);
+  ArrayObject &operator=(ArrayObject &&other);
 
-  ~Mesh();
+  ~ArrayObject();
 
   GLuint handle() const { return handle_; }
 
@@ -46,14 +46,14 @@ class Mesh {
   void Unbind() const;
 
   template<typename ...Attributes>
-  Mesh &AddVertexBuffer(BufferObject &buffer, GLintptr offset, const Attributes&... attributes) {
+  ArrayObject &AddVertexBuffer(BufferObject &buffer, GLintptr offset, const Attributes&... attributes) {
     AddVertexBufferInternal(buffer, offset, StrideOfInterleaved(attributes...), attributes...);
     return *this;
   }
 
-  Mesh &SetCount(GLsizei count);
-  Mesh &SetPrimitive(Primitive primitive);
-  Mesh &SetIndexBuffer(BufferObject &buffer, GLintptr offset, IndexType index_type);
+  ArrayObject &SetCount(GLsizei count);
+  ArrayObject &SetPrimitive(Primitive primitive);
+  ArrayObject &SetIndexBuffer(BufferObject &buffer, GLintptr offset, IndexType index_type);
 
   void Draw() const;
 
@@ -61,7 +61,7 @@ private:
   GLuint handle_;
   GLsizei count_;
   Primitive primitive_;
-  
+
   BufferObject *index_buffer_;
   GLintptr index_offset_;
   IndexType index_type_;
@@ -86,18 +86,18 @@ private:
   static GLsizei StrideOfInterleaved() { return 0; }
 
   template<typename T, typename ...Attributes>
-  void 
+  void
     AddVertexBufferInternal(
-      BufferObject &buffer, GLintptr offset, GLsizei stride, 
+      BufferObject &buffer, GLintptr offset, GLsizei stride,
       const Attribute<T> &attribute, const Attributes&... attributes) {
     AddVertexAttribute(buffer, attribute, offset, stride);
     AddVertexBufferInternal(buffer, offset + attribute.size(), stride, attributes...);
   }
 
   template<typename ...Attributes>
-  void 
+  void
     AddVertexBufferInternal(
-      BufferObject &buffer, GLintptr offset, GLsizei stride, 
+      BufferObject &buffer, GLintptr offset, GLsizei stride,
       GLintptr gap, const Attributes&... attributes) {
     AddVertexBufferInternal(buffer, offset + gap, stride, attributes...);
   }
@@ -105,11 +105,11 @@ private:
   void AddVertexBufferInternal(BufferObject &, GLintptr, GLsizei) {}
 
   template<typename T>
-  void 
+  void
     AddVertexAttribute(
-      std::enable_if_t<std::is_same<typename Attribute<T>::ScalarType, float>::value, BufferObject &>buffer, 
-      const Attribute<T> &attribute, 
-      GLintptr offset, 
+      std::enable_if_t<std::is_same<typename Attribute<T>::ScalarType, float>::value, BufferObject &>buffer,
+      const Attribute<T> &attribute,
+      GLintptr offset,
       GLsizei stride) {
     AttributePointer(buffer,
         attribute.location(),
@@ -121,11 +121,11 @@ private:
   }
 
   template<typename T>
-  void 
+  void
     AddVertexAttribute(
-      std::enable_if_t<std::is_integral<typename Attribute<T>::ScalarType>::value, BufferObject &>buffer, 
-      const Attribute<T> &attribute, 
-      GLintptr offset, 
+      std::enable_if_t<std::is_integral<typename Attribute<T>::ScalarType>::value, BufferObject &>buffer,
+      const Attribute<T> &attribute,
+      GLintptr offset,
       GLsizei stride) {
     AttributePointer(buffer,
         attribute.location(),
@@ -137,11 +137,11 @@ private:
   }
 
   template<typename T>
-  void 
+  void
     AddVertexAttribute(
-      std::enable_if_t<std::is_same<typename Attribute<T>::ScalarType, double>::value, BufferObject &>buffer, 
-      const Attribute<T> &attribute, 
-      GLintptr offset, 
+      std::enable_if_t<std::is_same<typename Attribute<T>::ScalarType, double>::value, BufferObject &>buffer,
+      const Attribute<T> &attribute,
+      GLintptr offset,
       GLsizei stride) {
     AttributePointer(buffer,
         attribute.location(),
@@ -152,13 +152,13 @@ private:
         offset);
   }
 
-  void AttributePointer(BufferObject &buffer, GLuint location, GLint size, GLenum type, 
+  void AttributePointer(BufferObject &buffer, GLuint location, GLint size, GLenum type,
                         AttributeKind attribute_kind, GLsizei stride, GLintptr offset);
 };
 
-bool operator==(const Mesh &a, const Mesh &b);
-bool operator!=(const Mesh &a, const Mesh &b);
-bool operator<(const Mesh &a, const Mesh &b);
-bool operator>(const Mesh &a, const Mesh &b);
+bool operator==(const ArrayObject &a, const ArrayObject &b);
+bool operator!=(const ArrayObject &a, const ArrayObject &b);
+bool operator<(const ArrayObject &a, const ArrayObject &b);
+bool operator>(const ArrayObject &a, const ArrayObject &b);
 
 } // namespace knight

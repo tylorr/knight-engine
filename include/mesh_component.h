@@ -15,12 +15,12 @@ class MeshComponent : public Component<MeshComponent> {
   struct InstanceData {
     Entity entity;
     Material *material;
-    Mesh *mesh;
+    ArrayObject *vao;
   };
 
   MeshComponent(foundation::Allocator &allocator);
 
-  void Add(Entity e, Material &material, Mesh &mesh);
+  void Add(Entity e, Material &material, ArrayObject &vao);
   void Destroy(uint32_t i);
 
   void Render() const;

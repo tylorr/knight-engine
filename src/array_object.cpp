@@ -1,36 +1,36 @@
-#include "mesh.h"
+#include "array_object.h"
 #include "common.h"
 #include "buffer_object.h"
 
 namespace knight {
 
-Mesh::Mesh() {
+ArrayObject::ArrayObject() {
   GL(glGenVertexArrays(1, &handle_));
 }
 
-Mesh::Mesh(Mesh &&other) :
+ArrayObject::ArrayObject(ArrayObject &&other) :
     handle_{other.handle_} {
   other.handle_ = 0;
 }
 
-Mesh &Mesh::operator=(Mesh &&other) {
+ArrayObject &ArrayObject::operator=(ArrayObject &&other) {
   handle_ = other.handle_;
   other.handle_ = 0;
   return *this;
 }
 
-Mesh::~Mesh() {
+ArrayObject::~ArrayObject() {
   if (handle_) {
     glDeleteVertexArrays(1, &handle_);
   }
 }
 
-void Mesh::Bind() const {
+void ArrayObject::Bind() const {
   XASSERT(handle_, "Trying to bind an uninitialized vertex array");
   GL(glBindVertexArray(handle_));
 }
 
-void Mesh::Unbind() const {
+void ArrayObject::Unbind() const {
   auto vertex_array_binding = GLint{};
   glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &vertex_array_binding);
   if (handle_ == (GLuint)vertex_array_binding) {
@@ -38,18 +38,18 @@ void Mesh::Unbind() const {
   }
 }
 
-Mesh &Mesh::SetCount(GLsizei count) {
+ArrayObject &ArrayObject::SetCount(GLsizei count) {
   count_ = count;
   return *this;
 }
 
-Mesh &Mesh::SetPrimitive(Primitive primitive) {
+ArrayObject &ArrayObject::SetPrimitive(Primitive primitive) {
   primitive_ = primitive;
   return *this;
 }
 
-Mesh &
-  Mesh::SetIndexBuffer(
+ArrayObject &
+  ArrayObject::SetIndexBuffer(
     BufferObject &index_buffer, GLintptr offset, IndexType index_type) {
 
   XASSERT(index_buffer.target() == BufferObject::Target::ElementArray, "Only element arrays can be set as index buffers");
@@ -65,7 +65,7 @@ Mesh &
   return *this;
 }
 
-void Mesh::Draw() const {
+void ArrayObject::Draw() const {
   Bind();
 
   if (index_buffer_ == nullptr) {
@@ -74,9 +74,9 @@ void Mesh::Draw() const {
     glDrawElements(GLenum(primitive_), count_, GLenum(index_type_), reinterpret_cast<GLvoid *>(index_offset_));
   }
 }
- 
-void Mesh::AttributePointer(BufferObject &buffer, GLuint location, 
-                                   GLint size, GLenum type, AttributeKind attribute_kind, 
+
+void ArrayObject::AttributePointer(BufferObject &buffer, GLuint location,
+                                   GLint size, GLenum type, AttributeKind attribute_kind,
                                    GLsizei stride, GLintptr offset) {
   Bind();
   GL(glEnableVertexAttribArray(location));
@@ -97,19 +97,19 @@ void Mesh::AttributePointer(BufferObject &buffer, GLuint location,
   }
 }
 
-bool operator==(const Mesh &a, const Mesh &b) {
+bool operator==(const ArrayObject &a, const ArrayObject &b) {
   return a.handle() == b.handle();
 }
 
-bool operator!=(const Mesh &a, const Mesh &b) {
+bool operator!=(const ArrayObject &a, const ArrayObject &b) {
   return !(a == b);
 }
 
-bool operator<(const Mesh &a, const Mesh &b) {
+bool operator<(const ArrayObject &a, const ArrayObject &b) {
   return a.handle() < b.handle();
 }
 
-bool operator>(const Mesh &a, const Mesh &b) {
+bool operator>(const ArrayObject &a, const ArrayObject &b) {
   return a.handle() > b.handle();
 }
 

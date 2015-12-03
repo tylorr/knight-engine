@@ -41,19 +41,44 @@ be generated for each file processed:
     fail (or none are specified) it will try to load relative to the path of
     the schema file being parsed.
 
+-   `-M` : Print make rules for generated files.
+
 -   `--strict-json` : Require & generate strict JSON (field names are enclosed
     in quotes, no trailing commas in tables/vectors). By default, no quotes are
     required/generated, and trailing commas are allowed.
 
+-   `--defaults-json` : Output fields whose value is equal to the default value
+    when writing JSON text.
+
 -   `--no-prefix` : Don't prefix enum values in generated C++ by their enum
     type.
 
--   `--gen-includes` : Generate include statements for included schemas the
+-   `--scoped-enums` : Use C++11 style scoped and strongly typed enums in
+    generated C++. This also implies `--no-prefix`.
+
+-   `--gen-includes` : (deprecated), this is the default behavior.
+                       If the original behavior is required (no include
+	                   statements) use `--no-includes.`
+
+-   `--no-includes` : Don't generate include statements for included schemas the
     generated file depends on (C++).
+
+-   `--gen-mutable` : Generate additional non-const accessors for mutating
+    FlatBuffers in-place.
+
+-   `--gen-onefile` :  Generate single output file (useful for C#)
+
+-   `--raw-binary` : Allow binaries without a file_indentifier to be read.
+    This may crash flatc given a mismatched schema.
 
 -   `--proto`: Expect input files to be .proto files (protocol buffers).
     Output the corresponding .fbs file.
-    Currently supports: `package`, `message`, `enum`.
-    Does not support, but will skip without error: `import`, `option`.
-    Does not support, will generate error: `service`, `extend`, `extensions`,
-    `oneof`, `group`, custom options, nested declarations.
+    Currently supports: `package`, `message`, `enum`, nested declarations,
+    `import` (use `-I` for paths), `extend`, `oneof`, `group`.
+    Does not support, but will skip without error: `option`, `service`,
+    `extensions`, and most everything else.
+
+-   `--schema`: Serialize schemas instead of JSON (use with -b). This will
+    output a binary version of the specified schema that itself corresponds
+    to the reflection/reflection.fbs schema. Loading this binary file is the
+    basis for reflection functionality.

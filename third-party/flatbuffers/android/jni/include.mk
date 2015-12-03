@@ -66,6 +66,8 @@ FLATBUFFERS_FLATC_PATH?=$(FLATBUFFERS_CMAKELISTS_DIR)
 FLATBUFFERS_FLATC := $(FLATBUFFERS_FLATC_PATH)/Debug/flatc
 endif
 
+FLATBUFFERS_FLATC_ARGS?=
+
 # Search for cmake.
 CMAKE_ROOT := $(realpath $(LOCAL_PATH)/../../../../../../prebuilts/cmake)
 ifeq (,$(CMAKE))
@@ -82,6 +84,14 @@ endif
 endif
 ifeq (,$(CMAKE))
 CMAKE := cmake
+endif
+
+# Windows friendly portable local path.
+# GNU-make doesn't like : in paths, must use relative paths on Windows.
+ifeq (Windows,$(PROJECT_OS))
+PORTABLE_LOCAL_PATH =
+else
+PORTABLE_LOCAL_PATH = $(LOCAL_PATH)/
 endif
 
 # Generate a host build rule for the flatbuffers compiler.
@@ -148,13 +158,24 @@ define flatbuffers_header_build_rule
 $(eval \
   $(call flatbuffers_fbs_to_h,$(2),$(3),$(1)): $(1) $(flatc_target)
 	$(call host-echo-build-step,generic,Generate) \
-		$(subst $(LOCAL_PATH)/,,$(call flatbuffers_fbs_to_h,$(2),$(3),$(1)))
-	$(hide) $$(FLATBUFFERS_FLATC) --gen-includes \
-	  $(foreach include,$(4),-I $(include)) -o $$(dir $$@) -c $$<)
+      $(subst $(LOCAL_PATH)/,,$(call flatbuffers_fbs_to_h,$(2),$(3),$(1)))
+	$(hide) $$(FLATBUFFERS_FLATC) $(FLATBUFFERS_FLATC_ARGS) \
+      $(foreach include,$(4),-I $(include)) -o $$(dir $$@) -c $$<)
 endef
 
 # $(flatbuffers_header_build_rules schema_files,schema_dir,output_dir,\
-#   schema_include_dirs,src_files))
+#   schema_include_dirs,src_files,[build_target],[dependencies]))
+#
+# $(1) schema_files: Space separated list of flatbuffer schema files.
+# $(2) schema_dir: Directory containing the flatbuffer schemas.
+# $(3) output_dir: Where to place the generated files.
+# $(4) schema_include_dirs: Directories to include when generating schemas.
+# $(5) src_files: Files that should depend upon the headers generated from the
+#   flatbuffer schemas.
+# $(6) build_target: Name of a build target that depends upon all generated
+#   headers.
+# $(7) dependencies: Space seperated list of additional build targets src_files
+#   should depend upon.
 #
 # Use this in your own Android.mk file to generate build rules that will
 # generate header files for your flatbuffer schemas as well as automatically
@@ -166,11 +187,21 @@ endef
 define flatbuffers_header_build_rules
 $(foreach schema,$(1),\
   $(call flatbuffers_header_build_rule,\
-	  $(schema),$(strip $(2)),$(strip $(3)),$(strip $(4))))\
+    $(schema),$(strip $(2)),$(strip $(3)),$(strip $(4))))\
 $(foreach src,$(strip $(5)),\
-  $(eval $(LOCAL_PATH)/$$(src): \
-	  $(foreach schema,$(strip $(1)),\
-		  $(call flatbuffers_fbs_to_h,$(strip $(2)),$(strip $(3)),$(schema)))))
+  $(eval $(PORTABLE_LOCAL_PATH)$$(src): \
+    $(foreach schema,$(strip $(1)),\
+      $(call flatbuffers_fbs_to_h,$(strip $(2)),$(strip $(3)),$(schema)))))\
+$(if $(6),\
+  $(foreach schema,$(strip $(1)),\
+    $(eval $(6): \
+      $(call flatbuffers_fbs_to_h,$(strip $(2)),$(strip $(3)),$(schema)))),)\
+$(if $(7),\
+  $(foreach src,$(strip $(5)),\
+      $(eval $(PORTABLE_LOCAL_PATH)$$(src): $(strip $(7)))),)\
+$(if $(7),\
+  $(foreach dependency,$(strip $(7)),\
+      $(eval $(6): $(dependency))),)
 endef
 
 endif  # FLATBUFFERS_INCLUDE_MK_

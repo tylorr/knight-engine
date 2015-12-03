@@ -60,7 +60,12 @@ template<typename T> void Print(T val, Type type, int /*indent*/,
       return;
     }
   }
-  text += NumToString(val);
+
+  if (type.base_type == BASE_TYPE_BOOL) {
+    text += val != 0 ? "true" : "false";
+  } else {
+    text += NumToString(val);
+  }
 }
 
 // Print a vector a sequence of JSON values, comma separated, wrapped in "[]".
@@ -80,7 +85,7 @@ template<typename T> void PrintVector(const Vector<T> &v, Type type,
       Print(v.GetStructFromOffset(i * type.struct_def->bytesize), type,
             indent + Indent(opts), nullptr, opts, _text);
     else
-      Print(v.Get(i), type, indent + Indent(opts), nullptr,
+      Print(v[i], type, indent + Indent(opts), nullptr,
             opts, _text);
   }
   text += NewLine(opts);
@@ -92,7 +97,7 @@ static void EscapeString(const String &s, std::string *_text) {
   std::string &text = *_text;
   text += "\"";
   for (uoffset_t i = 0; i < s.size(); i++) {
-    char c = s.Get(i);
+    char c = s[i];
     switch (c) {
       case '\n': text += "\\n"; break;
       case '\t': text += "\\t"; break;
@@ -159,7 +164,8 @@ template<> void Print<const void *>(const void *val,
       type = type.VectorType();
       // Call PrintVector above specifically for each element type:
       switch (type.base_type) {
-        #define FLATBUFFERS_TD(ENUM, IDLTYPE, CTYPE, JTYPE, GTYPE, NTYPE) \
+        #define FLATBUFFERS_TD(ENUM, IDLTYPE, CTYPE, JTYPE, GTYPE, NTYPE, \
+          PTYPE) \
           case BASE_TYPE_ ## ENUM: \
             PrintVector<CTYPE>( \
               *reinterpret_cast<const Vector<CTYPE> *>(val), \
@@ -215,8 +221,11 @@ static void GenStruct(const StructDef &struct_def, const Table *table,
        it != struct_def.fields.vec.end();
        ++it) {
     FieldDef &fd = **it;
-    if (struct_def.fixed || table->CheckField(fd.value.offset)) {
-      // The field is present.
+    auto is_present = struct_def.fixed || table->CheckField(fd.value.offset);
+    auto output_anyway = opts.output_default_scalars_in_json &&
+                         IsScalar(fd.value.type.base_type) &&
+                         !fd.deprecated;
+    if (is_present || output_anyway) {
       if (fieldout++) {
         text += ",";
       }
@@ -224,28 +233,36 @@ static void GenStruct(const StructDef &struct_def, const Table *table,
       text.append(indent + Indent(opts), ' ');
       OutputIdentifier(fd.name, opts, _text);
       text += ": ";
-      switch (fd.value.type.base_type) {
-         #define FLATBUFFERS_TD(ENUM, IDLTYPE, CTYPE, JTYPE, GTYPE, NTYPE) \
-           case BASE_TYPE_ ## ENUM: \
-              GenField<CTYPE>(fd, table, struct_def.fixed, \
-                              opts, indent + Indent(opts), _text); \
+      if (is_present) {
+        switch (fd.value.type.base_type) {
+           #define FLATBUFFERS_TD(ENUM, IDLTYPE, CTYPE, JTYPE, GTYPE, NTYPE, \
+             PTYPE) \
+             case BASE_TYPE_ ## ENUM: \
+                GenField<CTYPE>(fd, table, struct_def.fixed, \
+                                opts, indent + Indent(opts), _text); \
+                break;
+            FLATBUFFERS_GEN_TYPES_SCALAR(FLATBUFFERS_TD)
+          #undef FLATBUFFERS_TD
+          // Generate drop-thru case statements for all pointer types:
+          #define FLATBUFFERS_TD(ENUM, IDLTYPE, CTYPE, JTYPE, GTYPE, NTYPE, \
+            PTYPE) \
+            case BASE_TYPE_ ## ENUM:
+            FLATBUFFERS_GEN_TYPES_POINTER(FLATBUFFERS_TD)
+          #undef FLATBUFFERS_TD
+              GenFieldOffset(fd, table, struct_def.fixed, indent + Indent(opts),
+                             union_sd, opts, _text);
               break;
-          FLATBUFFERS_GEN_TYPES_SCALAR(FLATBUFFERS_TD)
-        #undef FLATBUFFERS_TD
-        // Generate drop-thru case statements for all pointer types:
-        #define FLATBUFFERS_TD(ENUM, IDLTYPE, CTYPE, JTYPE, GTYPE, NTYPE) \
-          case BASE_TYPE_ ## ENUM:
-          FLATBUFFERS_GEN_TYPES_POINTER(FLATBUFFERS_TD)
-        #undef FLATBUFFERS_TD
-            GenFieldOffset(fd, table, struct_def.fixed, indent + Indent(opts),
-                           union_sd, opts, _text);
-            break;
+        }
+        if (fd.value.type.base_type == BASE_TYPE_UTYPE) {
+          auto enum_val = fd.value.type.enum_def->ReverseLookup(
+                                  table->GetField<uint8_t>(fd.value.offset, 0));
+          assert(enum_val);
+          union_sd = enum_val->struct_def;
+        }
       }
-      if (fd.value.type.base_type == BASE_TYPE_UTYPE) {
-        auto enum_val = fd.value.type.enum_def->ReverseLookup(
-                                 table->GetField<uint8_t>(fd.value.offset, 0));
-        assert(enum_val);
-        union_sd = enum_val->struct_def;
+      else
+      {
+        text += fd.value.constant;
       }
     }
   }
@@ -258,9 +275,9 @@ static void GenStruct(const StructDef &struct_def, const Table *table,
 void GenerateText(const Parser &parser, const void *flatbuffer,
                   const GeneratorOptions &opts, std::string *_text) {
   std::string &text = *_text;
-  assert(parser.root_struct_def);  // call SetRootType()
+  assert(parser.root_struct_def_);  // call SetRootType()
   text.reserve(1024);   // Reduce amount of inevitable reallocs.
-  GenStruct(*parser.root_struct_def,
+  GenStruct(*parser.root_struct_def_,
             GetRoot<Table>(flatbuffer),
             0,
             opts,
@@ -277,7 +294,7 @@ bool GenerateTextFile(const Parser &parser,
                       const std::string &path,
                       const std::string &file_name,
                       const GeneratorOptions &opts) {
-  if (!parser.builder_.GetSize() || !parser.root_struct_def) return true;
+  if (!parser.builder_.GetSize() || !parser.root_struct_def_) return true;
   std::string text;
   GenerateText(parser, parser.builder_.GetBufferPointer(), opts,
                &text);
@@ -290,12 +307,12 @@ std::string TextMakeRule(const Parser &parser,
                          const std::string &path,
                          const std::string &file_name,
                          const GeneratorOptions & /*opts*/) {
-  if (!parser.builder_.GetSize() || !parser.root_struct_def) return "";
+  if (!parser.builder_.GetSize() || !parser.root_struct_def_) return "";
   std::string filebase = flatbuffers::StripPath(
       flatbuffers::StripExtension(file_name));
   std::string make_rule = TextFileName(path, filebase) + ": " + file_name;
   auto included_files = parser.GetIncludedFilesRecursive(
-      parser.root_struct_def->file);
+      parser.root_struct_def_->file);
   for (auto it = included_files.begin();
        it != included_files.end(); ++it) {
     make_rule += " " + *it;

@@ -17,7 +17,6 @@
 //#define UNSAFE_BYTEBUFFER  // uncomment this line to use faster ByteBuffer
 
 using System;
-using System.Linq;
 
 namespace FlatBuffers
 {
@@ -36,13 +35,23 @@ namespace FlatBuffers
 
         public byte[] Data { get { return _buffer; } }
 
-        public ByteBuffer(byte[] buffer)
+        public ByteBuffer(byte[] buffer) : this(buffer, 0) { }
+
+        public ByteBuffer(byte[] buffer, int pos)
         {
             _buffer = buffer;
-            _pos = 0;
+            _pos = pos;
         }
 
-        public int position() { return _pos; }
+        public int Position {
+            get { return _pos; }
+            set { _pos = value; }
+        }
+
+        public void Reset()
+        {
+            _pos = 0;
+        }
 
         // Pre-allocated helper arrays for convertion.
         private float[] floathelper = new[] { 0.0f };
@@ -93,7 +102,6 @@ namespace FlatBuffers
                     _buffer[offset + count - 1 - i] = (byte)(data >> i * 8);
                 }
             }
-            _pos = offset;
         }
 
         protected ulong ReadLittleEndian(int offset, int count)
@@ -130,14 +138,18 @@ namespace FlatBuffers
         {
             AssertOffsetAndLength(offset, sizeof(sbyte));
             _buffer[offset] = (byte)value;
-            _pos = offset;
         }
 
         public void PutByte(int offset, byte value)
         {
             AssertOffsetAndLength(offset, sizeof(byte));
             _buffer[offset] = value;
-            _pos = offset;
+        }
+
+        // this method exists in order to conform with Java ByteBuffer standards
+        public void Put(int offset, byte value)
+        {
+            PutByte(offset, value);
         }
 
 #if UNSAFE_BYTEBUFFER

@@ -7,7 +7,8 @@ import java.lang.*;
 import java.util.*;
 import com.google.flatbuffers.*;
 
-public class Stat extends Table {
+@SuppressWarnings("unused")
+public final class Stat extends Table {
   public static Stat getRootAsStat(ByteBuffer _bb) { return getRootAsStat(_bb, new Stat()); }
   public static Stat getRootAsStat(ByteBuffer _bb, Stat obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__init(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
   public Stat __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; return this; }
@@ -15,7 +16,9 @@ public class Stat extends Table {
   public String id() { int o = __offset(4); return o != 0 ? __string(o + bb_pos) : null; }
   public ByteBuffer idAsByteBuffer() { return __vector_as_bytebuffer(4, 1); }
   public long val() { int o = __offset(6); return o != 0 ? bb.getLong(o + bb_pos) : 0; }
+  public boolean mutateVal(long val) { int o = __offset(6); if (o != 0) { bb.putLong(o + bb_pos, val); return true; } else { return false; } }
   public int count() { int o = __offset(8); return o != 0 ? bb.getShort(o + bb_pos) & 0xFFFF : 0; }
+  public boolean mutateCount(int count) { int o = __offset(8); if (o != 0) { bb.putShort(o + bb_pos, (short)count); return true; } else { return false; } }
 
   public static int createStat(FlatBufferBuilder builder,
       int id,

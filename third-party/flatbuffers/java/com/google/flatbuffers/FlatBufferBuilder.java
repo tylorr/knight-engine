@@ -52,6 +52,13 @@ public class FlatBufferBuilder {
         bb = newByteBuffer(initial_size);
     }
 
+   /**
+    * Start with a buffer of 1KiB, then grow as required.
+    */
+    public FlatBufferBuilder() {
+        this(1024);
+    }
+
     /**
      * Alternative constructor allowing reuse of {@link ByteBuffer}s.  The builder
      * can still grow the buffer as necessary.  User classes should make sure
@@ -259,6 +266,21 @@ public class FlatBufferBuilder {
         startVector(1, utf8.length, 1);
         bb.position(space -= utf8.length);
         bb.put(utf8, 0, utf8.length);
+        return endVector();
+    }
+
+   /**
+    * Encode the string {@code s} in the buffer using UTF-8.
+    *
+    * @param s An already encoded UTF-8 string
+    * @return The offset in the buffer where the encoded string starts
+    */
+    public int createString(ByteBuffer s) {
+        int length = s.remaining();
+        addByte((byte)0);
+        startVector(1, length, 1);
+        bb.position(space -= length);
+        bb.put(s);
         return endVector();
     }
 

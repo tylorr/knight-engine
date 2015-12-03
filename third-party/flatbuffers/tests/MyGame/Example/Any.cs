@@ -3,14 +3,11 @@
 namespace MyGame.Example
 {
 
-public class Any
+public enum Any : byte
 {
-  public static readonly byte NONE = 0;
-  public static readonly byte Monster = 1;
-
-  private static readonly string[] names = { "NONE", "Monster", };
-
-  public static string Name(int e) { return names[e]; }
+ NONE = 0,
+ Monster = 1,
+ TestSimpleTableWithEnum = 2,
 };
 
 

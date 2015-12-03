@@ -72,7 +72,9 @@ since they won't bloat up the buffer sizes if they're not actually used.
 We do something similarly for the union field `test` by specifying a `0` offset
 and the `NONE` enum value (part of every union) to indicate we don't actually
 want to write this field. You can use `0` also as a default for other
-non-scalar types, such as strings, vectors and tables.
+non-scalar types, such as strings, vectors and tables. To pass an actual
+table, pass a preconstructed table as `mytable.Union()` that corresponds to
+union enum you're passing.
 
 Tables (like `Monster`) give you full flexibility on what fields you write
 (unlike `Vec3`, which always has all fields set because it is a `struct`).
@@ -162,6 +164,75 @@ Similarly, we can access elements of the inventory array:
     assert(inv);
     assert(inv->Get(9) == 9);
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+### Mutating FlatBuffers
+
+As you saw above, typically once you have created a FlatBuffer, it is
+read-only from that moment on. There are however cases where you have just
+received a FlatBuffer, and you'd like to modify something about it before
+sending it on to another recipient. With the above functionality, you'd have
+to generate an entirely new FlatBuffer, while tracking what you modify in your
+own data structures. This is inconvenient.
+
+For this reason FlatBuffers can also be mutated in-place. While this is great
+for making small fixes to an existing buffer, you generally want to create
+buffers from scratch whenever possible, since it is much more efficient and
+the API is much more general purpose.
+
+To get non-const accessors, invoke `flatc` with `--gen-mutable`.
+
+Similar to the reading API above, you now can:
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
+    auto monster = GetMutableMonster(buffer_pointer);  // non-const
+    monster->mutate_hp(10);                      // Set table field.
+    monster->mutable_pos()->mutate_z(4);         // Set struct field.
+    monster->mutable_inventory()->Mutate(0, 1);  // Set vector element.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We use the somewhat verbose term `mutate` instead of `set` to indicate that
+this is a special use case, not to be confused with the default way of
+constructing FlatBuffer data.
+
+After the above mutations, you can send on the FlatBuffer to a new recipient
+without any further work!
+
+Note that any `mutate_` functions on tables return a bool, which is false
+if the field we're trying to set isn't present in the buffer. Fields are not
+present if they weren't set, or even if they happen to be equal to the
+default value. For example, in the creation code above we set the `mana` field
+to `150`, which is the default value, so it was never stored in the buffer.
+Trying to call mutate_mana() on such data will return false, and the value won't
+actually be modified!
+
+One way to solve this is to call `ForceDefaults()` on a
+`FlatBufferBuilder` to force all fields you set to actually be written. This
+of course increases the size of the buffer somewhat, but this may be
+acceptable for a mutable buffer.
+
+Alternatively, you can use the more powerful reflection functionality:
+
+### Reflection (& Resizing)
+
+If the above ways of accessing a buffer are still too static for you, there is
+experimental support for reflection in FlatBuffers, allowing you to read and
+write data even if you don't know the exact format of a buffer, and even allows
+you to change sizes of strings and vectors in-place.
+
+The way this works is very elegant, there is actually a FlatBuffer schema that
+describes schemas (!) which you can find in `reflection/reflection.fbs`.
+The compiler `flatc` can write out any schemas it has just parsed as a binary
+FlatBuffer, corresponding to this meta-schema.
+
+Loading in one of these binary schemas at runtime allows you traverse any
+FlatBuffer data that corresponds to it without knowing the exact format. You
+can query what fields are present, and then read/write them after.
+
+For convenient field manipulation, you can include the header
+`flatbuffers/reflection.h` which includes both the generated code from the meta
+schema, as well as a lot of helper functions.
+
+And example of usage for the moment you can find in `test.cpp/ReflectionTest()`.
 
 ### Storing maps / dictionaries in a FlatBuffer
 

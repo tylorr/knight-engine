@@ -50,12 +50,12 @@ func (rcv *Monster) Hp() int16 {
 	return 100
 }
 
-func (rcv *Monster) Name() string {
+func (rcv *Monster) Name() []byte {
 	o := flatbuffers.UOffsetT(rcv._tab.Offset(10))
 	if o != 0 {
-		return rcv._tab.String(o + rcv._tab.Pos)
+		return rcv._tab.ByteVector(o + rcv._tab.Pos)
 	}
-	return ""
+	return nil
 }
 
 func (rcv *Monster) Inventory(j int) byte {
@@ -73,6 +73,14 @@ func (rcv *Monster) InventoryLength() int {
 		return rcv._tab.VectorLen(o)
 	}
 	return 0
+}
+
+func (rcv *Monster) InventoryBytes() []byte {
+	o := flatbuffers.UOffsetT(rcv._tab.Offset(14))
+	if o != 0 {
+		return rcv._tab.ByteVector(o + rcv._tab.Pos)
+	}
+	return nil
 }
 
 func (rcv *Monster) Color() int8 {
@@ -122,13 +130,13 @@ func (rcv *Monster) Test4Length() int {
 	return 0
 }
 
-func (rcv *Monster) Testarrayofstring(j int) string {
+func (rcv *Monster) Testarrayofstring(j int) []byte {
 	o := flatbuffers.UOffsetT(rcv._tab.Offset(24))
 	if o != 0 {
 		a := rcv._tab.Vector(o)
-		return rcv._tab.String(a + flatbuffers.UOffsetT(j * 4))
+		return rcv._tab.ByteVector(a + flatbuffers.UOffsetT(j * 4))
 	}
-	return ""
+	return nil
 }
 
 func (rcv *Monster) TestarrayofstringLength() int {
@@ -192,6 +200,14 @@ func (rcv *Monster) TestnestedflatbufferLength() int {
 		return rcv._tab.VectorLen(o)
 	}
 	return 0
+}
+
+func (rcv *Monster) TestnestedflatbufferBytes() []byte {
+	o := flatbuffers.UOffsetT(rcv._tab.Offset(30))
+	if o != 0 {
+		return rcv._tab.ByteVector(o + rcv._tab.Pos)
+	}
+	return nil
 }
 
 func (rcv *Monster) Testempty(obj *Stat) *Stat {
@@ -279,7 +295,24 @@ func (rcv *Monster) Testhashu64Fnv1a() uint64 {
 	return 0
 }
 
-func MonsterStart(builder *flatbuffers.Builder) { builder.StartObject(24) }
+func (rcv *Monster) Testarrayofbools(j int) byte {
+	o := flatbuffers.UOffsetT(rcv._tab.Offset(52))
+	if o != 0 {
+		a := rcv._tab.Vector(o)
+		return rcv._tab.GetByte(a + flatbuffers.UOffsetT(j * 1))
+	}
+	return 0
+}
+
+func (rcv *Monster) TestarrayofboolsLength() int {
+	o := flatbuffers.UOffsetT(rcv._tab.Offset(52))
+	if o != 0 {
+		return rcv._tab.VectorLen(o)
+	}
+	return 0
+}
+
+func MonsterStart(builder *flatbuffers.Builder) { builder.StartObject(25) }
 func MonsterAddPos(builder *flatbuffers.Builder, pos flatbuffers.UOffsetT) { builder.PrependStructSlot(0, flatbuffers.UOffsetT(pos), 0) }
 func MonsterAddMana(builder *flatbuffers.Builder, mana int16) { builder.PrependInt16Slot(1, mana, 150) }
 func MonsterAddHp(builder *flatbuffers.Builder, hp int16) { builder.PrependInt16Slot(2, hp, 100) }
@@ -313,4 +346,7 @@ func MonsterAddTesthashs32Fnv1a(builder *flatbuffers.Builder, testhashs32Fnv1a i
 func MonsterAddTesthashu32Fnv1a(builder *flatbuffers.Builder, testhashu32Fnv1a uint32) { builder.PrependUint32Slot(21, testhashu32Fnv1a, 0) }
 func MonsterAddTesthashs64Fnv1a(builder *flatbuffers.Builder, testhashs64Fnv1a int64) { builder.PrependInt64Slot(22, testhashs64Fnv1a, 0) }
 func MonsterAddTesthashu64Fnv1a(builder *flatbuffers.Builder, testhashu64Fnv1a uint64) { builder.PrependUint64Slot(23, testhashu64Fnv1a, 0) }
+func MonsterAddTestarrayofbools(builder *flatbuffers.Builder, testarrayofbools flatbuffers.UOffsetT) { builder.PrependUOffsetTSlot(24, flatbuffers.UOffsetT(testarrayofbools), 0) }
+func MonsterStartTestarrayofboolsVector(builder *flatbuffers.Builder, numElems int) flatbuffers.UOffsetT { return builder.StartVector(1, numElems, 1)
+}
 func MonsterEnd(builder *flatbuffers.Builder) flatbuffers.UOffsetT { return builder.EndObject() }

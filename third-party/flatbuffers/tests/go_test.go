@@ -21,12 +21,13 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
-	flatbuffers "github.com/google/flatbuffers/go"
 	"io/ioutil"
 	"os"
 	"reflect"
 	"sort"
 	"testing"
+
+	flatbuffers "github.com/google/flatbuffers/go"
 )
 
 var (
@@ -66,6 +67,13 @@ func TestAll(t *testing.T) {
 	// Verify that the Go FlatBuffers runtime library generates the
 	// expected bytes (does not use any schema):
 	CheckByteLayout(t.Fatalf)
+
+	// Verify that panics are raised during exceptional conditions:
+	CheckNotInObjectError(t.Fatalf)
+	CheckObjectIsNestedError(t.Fatalf)
+	CheckStringIsNestedError(t.Fatalf)
+	CheckByteStringIsNestedError(t.Fatalf)
+	CheckStructIsNotInlineError(t.Fatalf)
 
 	// Verify that using the generated Go code builds a buffer without
 	// returning errors:
@@ -131,7 +139,7 @@ func CheckReadBuffer(buf []byte, offset flatbuffers.UOffsetT, fail func(string, 
 		fail(FailString("mana", 150, got))
 	}
 
-	if got := monster.Name(); "MyMonster" != got {
+	if got := monster.Name(); !bytes.Equal([]byte("MyMonster"), got) {
 		fail(FailString("name", "MyMonster", got))
 	}
 
@@ -195,10 +203,6 @@ func CheckReadBuffer(buf []byte, offset flatbuffers.UOffsetT, fail func(string, 
 		fail(FailString("monster.TestType()", example.AnyMonster, got))
 	}
 
-	if unionType := monster.TestType(); unionType != example.AnyMonster {
-		fail("monster.TestType()")
-	}
-
 	// initialize a Table from a union field Test(...)
 	var table2 flatbuffers.Table
 	if ok := monster.Test(&table2); !ok {
@@ -209,8 +213,13 @@ func CheckReadBuffer(buf []byte, offset flatbuffers.UOffsetT, fail func(string, 
 	var monster2 example.Monster
 	monster2.Init(table2.Bytes, table2.Pos)
 
-	if got := monster2.Name(); "Fred" != got {
+	if got := monster2.Name(); !bytes.Equal([]byte("Fred"), got) {
 		fail(FailString("monster2.Name()", "Fred", got))
+	}
+
+	inventorySlice := monster.InventoryBytes()
+	if len(inventorySlice) != monster.InventoryLength() {
+		fail(FailString("len(monster.InventoryBytes) != monster.InventoryLength", len(inventorySlice), monster.InventoryLength()))
 	}
 
 	if got := monster.InventoryLength(); 5 != got {
@@ -221,6 +230,9 @@ func CheckReadBuffer(buf []byte, offset flatbuffers.UOffsetT, fail func(string, 
 	l := monster.InventoryLength()
 	for i := 0; i < l; i++ {
 		v := monster.Inventory(i)
+		if v != inventorySlice[i] {
+			fail(FailString("monster inventory slice[i] != Inventory(i)", v, inventorySlice[i]))
+		}
 		invsum += int(v)
 	}
 	if invsum != 10 {
@@ -259,11 +271,11 @@ func CheckReadBuffer(buf []byte, offset flatbuffers.UOffsetT, fail func(string, 
 		fail(FailString("Testarrayofstring length", 2, got))
 	}
 
-	if got := monster.Testarrayofstring(0); "test1" != got {
+	if got := monster.Testarrayofstring(0); !bytes.Equal([]byte("test1"), got) {
 		fail(FailString("Testarrayofstring(0)", "test1", got))
 	}
 
-	if got := monster.Testarrayofstring(1); "test2" != got {
+	if got := monster.Testarrayofstring(1); !bytes.Equal([]byte("test2"), got) {
 		fail(FailString("Testarrayofstring(1)", "test2", got))
 	}
 }
@@ -356,7 +368,7 @@ func checkFuzz(fuzzFields, fuzzObjects int, fail func(string, ...interface{})) {
 
 		for j := 0; j < fuzzFields; j++ {
 			f := flatbuffers.VOffsetT((flatbuffers.VtableMetadataFields + j) * flatbuffers.SizeVOffsetT)
-			choice := int(l.Next()) % testValuesMax
+			choice := l.Next() % uint32(testValuesMax)
 
 			switch choice {
 			case 0:
@@ -479,6 +491,20 @@ func CheckByteLayout(fail func(string, ...interface{})) {
 	b.EndVector(2)
 	check([]byte{2, 0, 0, 0, 2, 1, 0, 0}) // padding
 
+	// test 3b: 11xbyte vector matches builder size
+
+	b = flatbuffers.NewBuilder(12)
+	b.StartVector(flatbuffers.SizeByte, 8, 1)
+	start := []byte{}
+	check(start)
+	for i := 1; i < 12; i++ {
+		b.PrependByte(byte(i))
+		start = append([]byte{byte(i)}, start...)
+		check(start)
+	}
+	b.EndVector(8)
+	check(append([]byte{8, 0, 0, 0}, start...))
+
 	// test 4: 1xuint16 vector
 
 	b = flatbuffers.NewBuilder(0)
@@ -507,6 +533,26 @@ func CheckByteLayout(fail func(string, ...interface{})) {
 	b.CreateString("foo")
 	check([]byte{3, 0, 0, 0, 'f', 'o', 'o', 0}) // 0-terminated, no pad
 	b.CreateString("moop")
+	check([]byte{4, 0, 0, 0, 'm', 'o', 'o', 'p', 0, 0, 0, 0, // 0-terminated, 3-byte pad
+		3, 0, 0, 0, 'f', 'o', 'o', 0})
+
+	// test 6b: CreateString unicode
+
+	b = flatbuffers.NewBuilder(0)
+	// These characters are chinese from blog.golang.org/strings
+	// We use escape codes here so that editors without unicode support
+	// aren't bothered:
+	uni_str := "\u65e5\u672c\u8a9e"
+	b.CreateString(uni_str)
+	check([]byte{9, 0, 0, 0, 230, 151, 165, 230, 156, 172, 232, 170, 158, 0, //  null-terminated, 2-byte pad
+		0, 0})
+
+	// test 6c: CreateByteString
+
+	b = flatbuffers.NewBuilder(0)
+	b.CreateByteString([]byte("foo"))
+	check([]byte{3, 0, 0, 0, 'f', 'o', 'o', 0}) // 0-terminated, no pad
+	b.CreateByteString([]byte("moop"))
 	check([]byte{4, 0, 0, 0, 'm', 'o', 'o', 'p', 0, 0, 0, 0, // 0-terminated, 3-byte pad
 		3, 0, 0, 0, 'f', 'o', 'o', 0})
 
@@ -1053,6 +1099,76 @@ func CheckVtableDeduplication(fail func(string, ...interface{})) {
 	testTable(table2, 0, 77, 88, 99)
 }
 
+// CheckNotInObjectError verifies that `EndObject` fails if not inside an
+// object.
+func CheckNotInObjectError(fail func(string, ...interface{})) {
+	b := flatbuffers.NewBuilder(0)
+
+	defer func() {
+		r := recover()
+		if r == nil {
+			fail("expected panic in CheckNotInObjectError")
+		}
+	}()
+	b.EndObject()
+}
+
+// CheckObjectIsNestedError verifies that an object can not be created inside
+// another object.
+func CheckObjectIsNestedError(fail func(string, ...interface{})) {
+	b := flatbuffers.NewBuilder(0)
+	b.StartObject(0)
+	defer func() {
+		r := recover()
+		if r == nil {
+			fail("expected panic in CheckObjectIsNestedError")
+		}
+	}()
+	b.StartObject(0)
+}
+
+// CheckStringIsNestedError verifies that a string can not be created inside
+// another object.
+func CheckStringIsNestedError(fail func(string, ...interface{})) {
+	b := flatbuffers.NewBuilder(0)
+	b.StartObject(0)
+	defer func() {
+		r := recover()
+		if r == nil {
+			fail("expected panic in CheckStringIsNestedError")
+		}
+	}()
+	b.CreateString("foo")
+}
+
+// CheckByteStringIsNestedError verifies that a bytestring can not be created
+// inside another object.
+func CheckByteStringIsNestedError(fail func(string, ...interface{})) {
+	b := flatbuffers.NewBuilder(0)
+	b.StartObject(0)
+	defer func() {
+		r := recover()
+		if r == nil {
+			fail("expected panic in CheckByteStringIsNestedError")
+		}
+	}()
+	b.CreateByteString([]byte("foo"))
+}
+
+// CheckStructIsNotInlineError verifies that writing a struct in a location
+// away from where it is used will cause a panic.
+func CheckStructIsNotInlineError(fail func(string, ...interface{})) {
+	b := flatbuffers.NewBuilder(0)
+	b.StartObject(0)
+	defer func() {
+		r := recover()
+		if r == nil {
+			fail("expected panic in CheckStructIsNotInlineError")
+		}
+	}()
+	b.PrependStructSlot(0, 1, 0)
+}
+
 // CheckDocExample checks that the code given in FlatBuffers documentation
 // is syntactically correct.
 func CheckDocExample(buf []byte, off flatbuffers.UOffsetT, fail func(string, ...interface{})) {
@@ -1160,5 +1276,130 @@ func BenchmarkVtableDeduplication(b *testing.B) {
 			builder.PrependInt16Slot(j, int16(j), 0)
 		}
 		builder.EndObject()
+	}
+}
+
+// BenchmarkParseGold measures the speed of parsing the 'gold' data
+// used throughout this test suite.
+func BenchmarkParseGold(b *testing.B) {
+	buf, offset := CheckGeneratedBuild(b.Fatalf)
+	monster := example.GetRootAsMonster(buf, offset)
+
+	// use these to prevent allocations:
+	reuse_pos := example.Vec3{}
+	reuse_test3 := example.Test{}
+	reuse_table2 := flatbuffers.Table{}
+	reuse_monster2 := example.Monster{}
+	reuse_test4_0 := example.Test{}
+	reuse_test4_1 := example.Test{}
+
+	b.SetBytes(int64(len(buf[offset:])))
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		monster.Hp()
+		monster.Mana()
+		name := monster.Name()
+		_ = name[0]
+		_ = name[len(name)-1]
+
+		monster.Pos(&reuse_pos)
+		reuse_pos.X()
+		reuse_pos.Y()
+		reuse_pos.Z()
+		reuse_pos.Test1()
+		reuse_pos.Test2()
+		reuse_pos.Test3(&reuse_test3)
+		reuse_test3.A()
+		reuse_test3.B()
+		monster.TestType()
+		monster.Test(&reuse_table2)
+		reuse_monster2.Init(reuse_table2.Bytes, reuse_table2.Pos)
+		name2 := reuse_monster2.Name()
+		_ = name2[0]
+		_ = name2[len(name2)-1]
+		monster.InventoryLength()
+		l := monster.InventoryLength()
+		for i := 0; i < l; i++ {
+			monster.Inventory(i)
+		}
+		monster.Test4Length()
+		monster.Test4(&reuse_test4_0, 0)
+		monster.Test4(&reuse_test4_1, 1)
+
+		reuse_test4_0.A()
+		reuse_test4_0.B()
+		reuse_test4_1.A()
+		reuse_test4_1.B()
+
+		monster.TestarrayofstringLength()
+		str0 := monster.Testarrayofstring(0)
+		_ = str0[0]
+		_ = str0[len(str0)-1]
+		str1 := monster.Testarrayofstring(1)
+		_ = str1[0]
+		_ = str1[len(str1)-1]
+	}
+}
+
+// BenchmarkBuildGold uses generated code to build the example Monster.
+func BenchmarkBuildGold(b *testing.B) {
+	buf, offset := CheckGeneratedBuild(b.Fatalf)
+	bytes_length := int64(len(buf[offset:]))
+
+	reuse_str := "MyMonster"
+	reuse_test1 := "test1"
+	reuse_test2 := "test2"
+	reuse_fred := "Fred"
+
+	b.SetBytes(bytes_length)
+	bldr := flatbuffers.NewBuilder(0)
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		bldr.Reset()
+
+		str := bldr.CreateString(reuse_str)
+		test1 := bldr.CreateString(reuse_test1)
+		test2 := bldr.CreateString(reuse_test2)
+		fred := bldr.CreateString(reuse_fred)
+
+		example.MonsterStartInventoryVector(bldr, 5)
+		bldr.PrependByte(4)
+		bldr.PrependByte(3)
+		bldr.PrependByte(2)
+		bldr.PrependByte(1)
+		bldr.PrependByte(0)
+		inv := bldr.EndVector(5)
+
+		example.MonsterStart(bldr)
+		example.MonsterAddName(bldr, fred)
+		mon2 := example.MonsterEnd(bldr)
+
+		example.MonsterStartTest4Vector(bldr, 2)
+		example.CreateTest(bldr, 10, 20)
+		example.CreateTest(bldr, 30, 40)
+		test4 := bldr.EndVector(2)
+
+		example.MonsterStartTestarrayofstringVector(bldr, 2)
+		bldr.PrependUOffsetT(test2)
+		bldr.PrependUOffsetT(test1)
+		testArrayOfString := bldr.EndVector(2)
+
+		example.MonsterStart(bldr)
+
+		pos := example.CreateVec3(bldr, 1.0, 2.0, 3.0, 3.0, 2, 5, 6)
+		example.MonsterAddPos(bldr, pos)
+
+		example.MonsterAddHp(bldr, 80)
+		example.MonsterAddName(bldr, str)
+		example.MonsterAddInventory(bldr, inv)
+		example.MonsterAddTestType(bldr, 1)
+		example.MonsterAddTest(bldr, mon2)
+		example.MonsterAddTest4(bldr, test4)
+		example.MonsterAddTestarrayofstring(bldr, testArrayOfString)
+		mon := example.MonsterEnd(bldr)
+
+		bldr.Finish(mon)
 	}
 }

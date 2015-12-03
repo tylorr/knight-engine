@@ -23,7 +23,7 @@ inline const char **EnumNamesColor() {
   return names;
 }
 
-inline const char *EnumNameColor(Color e) { return EnumNamesColor()[e]; }
+inline const char *EnumNameColor(Color e) { return EnumNamesColor()[static_cast<int>(e)]; }
 
 enum Any {
   Any_NONE = 0,
@@ -35,7 +35,7 @@ inline const char **EnumNamesAny() {
   return names;
 }
 
-inline const char *EnumNameAny(Any e) { return EnumNamesAny()[e]; }
+inline const char *EnumNameAny(Any e) { return EnumNamesAny()[static_cast<int>(e)]; }
 
 inline bool VerifyAny(flatbuffers::Verifier &verifier, const void *union_obj, Any type);
 
@@ -50,18 +50,27 @@ MANUALLY_ALIGNED_STRUCT(4) Vec3 FLATBUFFERS_FINAL_CLASS {
     : x_(flatbuffers::EndianScalar(x)), y_(flatbuffers::EndianScalar(y)), z_(flatbuffers::EndianScalar(z)) { }
 
   float x() const { return flatbuffers::EndianScalar(x_); }
+  void mutate_x(float x) { flatbuffers::WriteScalar(&x_, x); }
   float y() const { return flatbuffers::EndianScalar(y_); }
+  void mutate_y(float y) { flatbuffers::WriteScalar(&y_, y); }
   float z() const { return flatbuffers::EndianScalar(z_); }
+  void mutate_z(float z) { flatbuffers::WriteScalar(&z_, z); }
 };
 STRUCT_END(Vec3, 12);
 
 struct Monster FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   const Vec3 *pos() const { return GetStruct<const Vec3 *>(4); }
+  Vec3 *mutable_pos() { return GetStruct<Vec3 *>(4); }
   int16_t mana() const { return GetField<int16_t>(6, 150); }
+  bool mutate_mana(int16_t mana) { return SetField(6, mana); }
   int16_t hp() const { return GetField<int16_t>(8, 100); }
+  bool mutate_hp(int16_t hp) { return SetField(8, hp); }
   const flatbuffers::String *name() const { return GetPointer<const flatbuffers::String *>(10); }
+  flatbuffers::String *mutable_name() { return GetPointer<flatbuffers::String *>(10); }
   const flatbuffers::Vector<uint8_t> *inventory() const { return GetPointer<const flatbuffers::Vector<uint8_t> *>(14); }
+  flatbuffers::Vector<uint8_t> *mutable_inventory() { return GetPointer<flatbuffers::Vector<uint8_t> *>(14); }
   Color color() const { return static_cast<Color>(GetField<int8_t>(16, 2)); }
+  bool mutate_color(Color color) { return SetField(16, static_cast<int8_t>(color)); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<Vec3>(verifier, 4 /* pos */) &&
@@ -118,11 +127,13 @@ inline bool VerifyAny(flatbuffers::Verifier &verifier, const void *union_obj, An
   }
 }
 
-inline const Monster *GetMonster(const void *buf) { return flatbuffers::GetRoot<Monster>(buf); }
+inline const MyGame::Sample::Monster *GetMonster(const void *buf) { return flatbuffers::GetRoot<MyGame::Sample::Monster>(buf); }
 
-inline bool VerifyMonsterBuffer(flatbuffers::Verifier &verifier) { return verifier.VerifyBuffer<Monster>(); }
+inline Monster *GetMutableMonster(void *buf) { return flatbuffers::GetMutableRoot<Monster>(buf); }
 
-inline void FinishMonsterBuffer(flatbuffers::FlatBufferBuilder &fbb, flatbuffers::Offset<Monster> root) { fbb.Finish(root); }
+inline bool VerifyMonsterBuffer(flatbuffers::Verifier &verifier) { return verifier.VerifyBuffer<MyGame::Sample::Monster>(); }
+
+inline void FinishMonsterBuffer(flatbuffers::FlatBufferBuilder &fbb, flatbuffers::Offset<MyGame::Sample::Monster> root) { fbb.Finish(root); }
 
 }  // namespace Sample
 }  // namespace MyGame

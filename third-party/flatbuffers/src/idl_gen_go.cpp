@@ -144,6 +144,19 @@ static void GetVectorLen(const StructDef &struct_def,
   code += "\treturn 0\n}\n\n";
 }
 
+// Get a [ubyte] vector as a byte slice.
+static void GetUByteSlice(const StructDef &struct_def,
+                          const FieldDef &field,
+                          std::string *code_ptr) {
+  std::string &code = *code_ptr;
+
+  GenReceiver(struct_def, code_ptr);
+  code += " " + MakeCamel(field.name) + "Bytes(";
+  code += ") []byte " + OffsetPrefix(field);
+  code += "\t\treturn rcv._tab.ByteVector(o + rcv._tab.Pos)\n\t}\n";
+  code += "\treturn nil\n}\n\n";
+}
+
 // Get the value of a struct's scalar.
 static void GetScalarFieldOfStruct(const StructDef &struct_def,
                                    const FieldDef &field,
@@ -225,7 +238,7 @@ static void GetStringField(const StructDef &struct_def,
   code += " " +  MakeCamel(field.name);
   code += "() " + TypeName(field) + " ";
   code += OffsetPrefix(field) + "\t\treturn " + GenGetter(field.value.type);
-  code += "(o + rcv._tab.Pos)\n\t}\n\treturn \"\"\n";
+  code += "(o + rcv._tab.Pos)\n\t}\n\treturn nil\n";
   code += "}\n\n";
 }
 
@@ -288,7 +301,7 @@ static void GetMemberOfVectorOfNonStruct(const StructDef &struct_def,
   code += NumToString(InlineSize(vectortype)) + "))\n";
   code += "\t}\n";
   if (vectortype.base_type == BASE_TYPE_STRING) {
-    code += "\treturn \"\"\n";
+    code += "\treturn nil\n";
   } else {
     code += "\treturn 0\n";
   }
@@ -317,9 +330,9 @@ static void StructBuilderArgs(const StructDef &struct_def,
     if (IsStruct(field.value.type)) {
       // Generate arguments for a struct inside a struct. To ensure names
       // don't clash, and to make it obvious these arguments are constructing
-      // a nested struct, prefix the name with the struct name.
+      // a nested struct, prefix the name with the field name.
       StructBuilderArgs(*field.value.type.struct_def,
-                        (field.value.type.struct_def->name + "_").c_str(),
+                        (nameprefix + (field.name + "_")).c_str(),
                         code_ptr);
     } else {
       std::string &code = *code_ptr;
@@ -352,7 +365,7 @@ static void StructBuilderBody(const StructDef &struct_def,
       code += "    builder.Pad(" + NumToString(field.padding) + ")\n";
     if (IsStruct(field.value.type)) {
       StructBuilderBody(*field.value.type.struct_def,
-                        (field.value.type.struct_def->name + "_").c_str(),
+                        (nameprefix + (field.name + "_")).c_str(),
                         code_ptr);
     } else {
       code += "    builder.Prepend" + GenMethod(field) + "(";
@@ -443,7 +456,7 @@ static void GenReceiver(const StructDef &struct_def, std::string *code_ptr) {
 static void GenStructAccessor(const StructDef &struct_def,
                               const FieldDef &field,
                               std::string *code_ptr) {
-  GenComment(field.doc_comment, code_ptr, "");
+  GenComment(field.doc_comment, code_ptr, nullptr, "");
   if (IsScalar(field.value.type.base_type)) {
     if (struct_def.fixed) {
       GetScalarFieldOfStruct(struct_def, field, code_ptr);
@@ -480,6 +493,9 @@ static void GenStructAccessor(const StructDef &struct_def,
   }
   if (field.value.type.base_type == BASE_TYPE_VECTOR) {
     GetVectorLen(struct_def, field, code_ptr);
+    if (field.value.type.element == BASE_TYPE_UCHAR) {
+      GetUByteSlice(struct_def, field, code_ptr);
+    }
   }
 }
 
@@ -510,7 +526,7 @@ static void GenStruct(const StructDef &struct_def,
                       StructDef *root_struct_def) {
   if (struct_def.generated) return;
 
-  GenComment(struct_def.doc_comment, code_ptr);
+  GenComment(struct_def.doc_comment, code_ptr, nullptr);
   BeginClass(struct_def, code_ptr);
   if (&struct_def == root_struct_def) {
     // Generate a special accessor for the table that has been declared as
@@ -542,13 +558,13 @@ static void GenStruct(const StructDef &struct_def,
 static void GenEnum(const EnumDef &enum_def, std::string *code_ptr) {
   if (enum_def.generated) return;
 
-  GenComment(enum_def.doc_comment, code_ptr);
+  GenComment(enum_def.doc_comment, code_ptr, nullptr);
   BeginEnum(code_ptr);
   for (auto it = enum_def.vals.vec.begin();
        it != enum_def.vals.vec.end();
        ++it) {
     auto &ev = **it;
-    GenComment(ev.doc_comment, code_ptr, "\t");
+    GenComment(ev.doc_comment, code_ptr, nullptr, "\t");
     EnumMember(enum_def, ev, code_ptr);
   }
   EndEnum(code_ptr);
@@ -557,7 +573,7 @@ static void GenEnum(const EnumDef &enum_def, std::string *code_ptr) {
 // Returns the function name that is able to read a value of the given type.
 static std::string GenGetter(const Type &type) {
   switch (type.base_type) {
-    case BASE_TYPE_STRING: return "rcv._tab.String";
+    case BASE_TYPE_STRING: return "rcv._tab.ByteVector";
     case BASE_TYPE_UNION: return "rcv._tab.Union";
     case BASE_TYPE_VECTOR: return GenGetter(type.VectorType());
     default:
@@ -600,7 +616,8 @@ static bool SaveType(const Parser &parser, const Definition &def,
 
 static std::string GenTypeBasic(const Type &type) {
   static const char *ctypename[] = {
-    #define FLATBUFFERS_TD(ENUM, IDLTYPE, CTYPE, JTYPE, GTYPE, NTYPE) #GTYPE,
+    #define FLATBUFFERS_TD(ENUM, IDLTYPE, CTYPE, JTYPE, GTYPE, NTYPE, PTYPE) \
+      #GTYPE,
       FLATBUFFERS_GEN_TYPES(FLATBUFFERS_TD)
     #undef FLATBUFFERS_TD
   };
@@ -610,7 +627,7 @@ static std::string GenTypeBasic(const Type &type) {
 static std::string GenTypePointer(const Type &type) {
   switch (type.base_type) {
     case BASE_TYPE_STRING:
-      return "string";
+      return "[]byte";
     case BASE_TYPE_VECTOR:
       return GenTypeGet(type.VectorType());
     case BASE_TYPE_STRUCT:
@@ -660,7 +677,7 @@ bool GenerateGo(const Parser &parser,
   for (auto it = parser.structs_.vec.begin();
        it != parser.structs_.vec.end(); ++it) {
     std::string declcode;
-    go::GenStruct(**it, &declcode, parser.root_struct_def);
+    go::GenStruct(**it, &declcode, parser.root_struct_def_);
     if (!go::SaveType(parser, **it, declcode, path, true))
       return false;
   }

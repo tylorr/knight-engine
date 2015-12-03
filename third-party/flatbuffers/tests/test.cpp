@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#define FLATBUFFERS_DEBUG_VERIFICATION_FAILURE 1
+
 #include "flatbuffers/flatbuffers.h"
 #include "flatbuffers/idl.h"
 #include "flatbuffers/util.h"
@@ -28,6 +30,7 @@ using namespace MyGame::Example;
   #include <android/log.h>
   #define TEST_OUTPUT_LINE(...) \
     __android_log_print(ANDROID_LOG_INFO, "FlatBuffers", __VA_ARGS__)
+  #define FLATBUFFERS_NO_FILE_TESTS
 #else
   #define TEST_OUTPUT_LINE(...) \
     { printf(__VA_ARGS__); printf("\n"); }
@@ -35,20 +38,33 @@ using namespace MyGame::Example;
 
 int testing_fails = 0;
 
+void TestFail(const char *expval, const char *val, const char *exp,
+              const char *file, int line) {
+  TEST_OUTPUT_LINE("TEST FAILED: %s:%d, %s (%s) != %s", file, line,
+                   exp, expval, val);
+  assert(0);
+  testing_fails++;
+}
+
+void TestEqStr(const char *expval, const char *val, const char *exp,
+               const char *file, int line) {
+  if (strcmp(expval, val) != 0) {
+    TestFail(expval, val, exp, file, line);
+  }
+}
+
 template<typename T, typename U>
 void TestEq(T expval, U val, const char *exp, const char *file, int line) {
-  if (expval != val) {
-    auto expval_str = flatbuffers::NumToString(expval);
-    auto val_str = flatbuffers::NumToString(val);
-    TEST_OUTPUT_LINE("TEST FAILED: %s:%d, %s (%s) != %s", file, line,
-                     exp, expval_str.c_str(), val_str.c_str());
-    assert(0);
-    testing_fails++;
+  if (U(expval) != val) {
+    TestFail(flatbuffers::NumToString(expval).c_str(),
+             flatbuffers::NumToString(val).c_str(),
+             exp, file, line);
   }
 }
 
 #define TEST_EQ(exp, val) TestEq(exp,         val,   #exp, __FILE__, __LINE__)
 #define TEST_NOTNULL(exp) TestEq(exp == NULL, false, #exp, __FILE__, __LINE__)
+#define TEST_EQ_STR(exp, val) TestEqStr(exp,  val,   #exp, __FILE__, __LINE__)
 
 // Include simple random number generator to ensure results will be the
 // same cross platform.
@@ -127,7 +143,7 @@ flatbuffers::unique_ptr_t CreateFlatBufferTest(std::string &buffer) {
 }
 
 //  example of accessing a buffer loaded in memory:
-void AccessFlatBufferTest(const uint8_t *flatbuf, const std::size_t length) {
+void AccessFlatBufferTest(const uint8_t *flatbuf, size_t length) {
 
   // First, verify the buffers integrity (optional)
   flatbuffers::Verifier verifier(flatbuf, length);
@@ -135,13 +151,14 @@ void AccessFlatBufferTest(const uint8_t *flatbuf, const std::size_t length) {
 
   TEST_EQ(strcmp(MonsterIdentifier(), "MONS"), 0);
   TEST_EQ(MonsterBufferHasIdentifier(flatbuf), true);
+  TEST_EQ(strcmp(MonsterExtension(), "mon"), 0);
 
   // Access the buffer from the root.
   auto monster = GetMonster(flatbuf);
 
   TEST_EQ(monster->hp(), 80);
   TEST_EQ(monster->mana(), 150);  // default
-  TEST_EQ(strcmp(monster->name()->c_str(), "MyMonster"), 0);
+  TEST_EQ_STR(monster->name()->c_str(), "MyMonster");
   // Can't access the following field, it is deprecated in the schema,
   // which means accessors are not generated:
   // monster.friendly()
@@ -159,26 +176,28 @@ void AccessFlatBufferTest(const uint8_t *flatbuf, const std::size_t length) {
   for (auto it = inventory->begin(); it != inventory->end(); ++it)
     TEST_EQ(*it, inv_data[it - inventory->begin()]);
 
+  TEST_EQ(monster->color(), Color_Blue);
+
   // Example of accessing a union:
   TEST_EQ(monster->test_type(), Any_Monster);  // First make sure which it is.
   auto monster2 = reinterpret_cast<const Monster *>(monster->test());
   TEST_NOTNULL(monster2);
-  TEST_EQ(strcmp(monster2->name()->c_str(), "Fred"), 0);
+  TEST_EQ_STR(monster2->name()->c_str(), "Fred");
 
   // Example of accessing a vector of strings:
   auto vecofstrings = monster->testarrayofstring();
   TEST_EQ(vecofstrings->Length(), 2U);
-  TEST_EQ(strcmp(vecofstrings->Get(0)->c_str(), "bob"), 0);
-  TEST_EQ(strcmp(vecofstrings->Get(1)->c_str(), "fred"), 0);
+  TEST_EQ_STR(vecofstrings->Get(0)->c_str(), "bob");
+  TEST_EQ_STR(vecofstrings->Get(1)->c_str(), "fred");
 
   // Example of accessing a vector of tables:
   auto vecoftables = monster->testarrayoftables();
   TEST_EQ(vecoftables->Length(), 3U);
   for (auto it = vecoftables->begin(); it != vecoftables->end(); ++it)
     TEST_EQ(strlen(it->name()->c_str()) >= 4, true);
-  TEST_EQ(strcmp(vecoftables->Get(0)->name()->c_str(), "Barney"), 0);
-  TEST_EQ(strcmp(vecoftables->Get(1)->name()->c_str(), "Fred"), 0);
-  TEST_EQ(strcmp(vecoftables->Get(2)->name()->c_str(), "Wilma"), 0);
+  TEST_EQ_STR(vecoftables->Get(0)->name()->c_str(), "Barney");
+  TEST_EQ_STR(vecoftables->Get(1)->name()->c_str(), "Fred");
+  TEST_EQ_STR(vecoftables->Get(2)->name()->c_str(), "Wilma");
   TEST_NOTNULL(vecoftables->LookupByKey("Barney"));
   TEST_NOTNULL(vecoftables->LookupByKey("Fred"));
   TEST_NOTNULL(vecoftables->LookupByKey("Wilma"));
@@ -200,7 +219,39 @@ void AccessFlatBufferTest(const uint8_t *flatbuf, const std::size_t length) {
   for (auto it = tests->begin(); it != tests->end(); ++it) {
     TEST_EQ(it->a() == 10 || it->a() == 30, true);  // Just testing iterators.
   }
+}
 
+// Change a FlatBuffer in-place, after it has been constructed.
+void MutateFlatBuffersTest(uint8_t *flatbuf, std::size_t length) {
+  // Get non-const pointer to root.
+  auto monster = GetMutableMonster(flatbuf);
+
+  // Each of these tests mutates, then tests, then set back to the original,
+  // so we can test that the buffer in the end still passes our original test.
+  auto hp_ok = monster->mutate_hp(10);
+  TEST_EQ(hp_ok, true);  // Field was present.
+  TEST_EQ(monster->hp(), 10);
+  monster->mutate_hp(80);
+
+  auto mana_ok = monster->mutate_mana(10);
+  TEST_EQ(mana_ok, false);  // Field was NOT present, because default value.
+
+  // Mutate structs.
+  auto pos = monster->mutable_pos();
+  auto test3 = pos->mutable_test3();  // Struct inside a struct.
+  test3.mutate_a(50);                 // Struct fields never fail.
+  TEST_EQ(test3.a(), 50);
+  test3.mutate_a(10);
+
+  // Mutate vectors.
+  auto inventory = monster->mutable_inventory();
+  inventory->Mutate(9, 100);
+  TEST_EQ(inventory->Get(9), 100);
+  inventory->Mutate(9, 9);
+
+  // Run the verifier and the regular test to make sure we didn't trample on
+  // anything.
+  AccessFlatBufferTest(flatbuf, length);
 }
 
 // example of parsing text straight into a buffer, and generating
@@ -239,6 +290,132 @@ void ParseAndGenerateTextTest() {
   }
 }
 
+void ReflectionTest(uint8_t *flatbuf, size_t length) {
+  // Load a binary schema.
+  std::string bfbsfile;
+  TEST_EQ(flatbuffers::LoadFile(
+    "tests/monster_test.bfbs", true, &bfbsfile), true);
+
+  // Verify it, just in case:
+  flatbuffers::Verifier verifier(
+    reinterpret_cast<const uint8_t *>(bfbsfile.c_str()), bfbsfile.length());
+  TEST_EQ(reflection::VerifySchemaBuffer(verifier), true);
+
+  // Make sure the schema is what we expect it to be.
+  auto &schema = *reflection::GetSchema(bfbsfile.c_str());
+  auto root_table = schema.root_table();
+  TEST_EQ_STR(root_table->name()->c_str(), "Monster");
+  auto fields = root_table->fields();
+  auto hp_field_ptr = fields->LookupByKey("hp");
+  TEST_NOTNULL(hp_field_ptr);
+  auto &hp_field = *hp_field_ptr;
+  TEST_EQ_STR(hp_field.name()->c_str(), "hp");
+  TEST_EQ(hp_field.id(), 2);
+  TEST_EQ(hp_field.type()->base_type(), reflection::Short);
+
+  // Now use it to dynamically access a buffer.
+  auto &root = *flatbuffers::GetAnyRoot(flatbuf);
+  auto hp = flatbuffers::GetFieldI<uint16_t>(root, hp_field);
+  TEST_EQ(hp, 80);
+
+  // Rather than needing to know the type, we can also get the value of
+  // any field as an int64_t/double/string, regardless of what it actually is.
+  auto hp_int64 = flatbuffers::GetAnyFieldI(root, hp_field);
+  TEST_EQ(hp_int64, 80);
+  auto hp_double = flatbuffers::GetAnyFieldF(root, hp_field);
+  TEST_EQ(hp_double, 80.0);
+  auto hp_string = flatbuffers::GetAnyFieldS(root, hp_field, &schema);
+  TEST_EQ_STR(hp_string.c_str(), "80");
+
+  // We can also modify it.
+  flatbuffers::SetField<uint16_t>(&root, hp_field, 200);
+  hp = flatbuffers::GetFieldI<uint16_t>(root, hp_field);
+  TEST_EQ(hp, 200);
+
+  // We can also set fields generically:
+  flatbuffers::SetAnyFieldI(&root, hp_field, 300);
+  hp_int64 = flatbuffers::GetAnyFieldI(root, hp_field);
+  TEST_EQ(hp_int64, 300);
+  flatbuffers::SetAnyFieldF(&root, hp_field, 300.5);
+  hp_int64 = flatbuffers::GetAnyFieldI(root, hp_field);
+  TEST_EQ(hp_int64, 300);
+  flatbuffers::SetAnyFieldS(&root, hp_field, "300");
+  hp_int64 = flatbuffers::GetAnyFieldI(root, hp_field);
+  TEST_EQ(hp_int64, 300);
+
+  // Reset it, for further tests.
+  flatbuffers::SetField<uint16_t>(&root, hp_field, 80);
+
+  // More advanced functionality: changing the size of items in-line!
+  // First we put the FlatBuffer inside an std::vector.
+  std::vector<uint8_t> resizingbuf(flatbuf, flatbuf + length);
+  // Find the field we want to modify.
+  auto &name_field = *fields->LookupByKey("name");
+  // Get the root.
+  // This time we wrap the result from GetAnyRoot in a smartpointer that
+  // will keep rroot valid as resizingbuf resizes.
+  auto rroot = flatbuffers::piv(flatbuffers::GetAnyRoot(resizingbuf.data()),
+                                resizingbuf);
+  SetString(schema, "totally new string", GetFieldS(**rroot, name_field),
+            &resizingbuf);
+  // Here resizingbuf has changed, but rroot is still valid.
+  TEST_EQ_STR(GetFieldS(**rroot, name_field)->c_str(), "totally new string");
+  // Now lets extend a vector by 100 elements (10 -> 110).
+  auto &inventory_field = *fields->LookupByKey("inventory");
+  auto rinventory = flatbuffers::piv(
+                     flatbuffers::GetFieldV<uint8_t>(**rroot, inventory_field),
+                     resizingbuf);
+  flatbuffers::ResizeVector<uint8_t>(schema, 110, 50, *rinventory,
+                                     &resizingbuf);
+  // rinventory still valid, so lets read from it.
+  TEST_EQ(rinventory->Get(10), 50);
+
+  // For reflection uses not covered already, there is a more powerful way:
+  // we can simply generate whatever object we want to add/modify in a
+  // FlatBuffer of its own, then add that to an existing FlatBuffer:
+  // As an example, let's add a string to an array of strings.
+  // First, find our field:
+  auto &testarrayofstring_field = *fields->LookupByKey("testarrayofstring");
+  // Find the vector value:
+  auto rtestarrayofstring = flatbuffers::piv(
+         flatbuffers::GetFieldV<flatbuffers::Offset<flatbuffers::String>>(
+           **rroot, testarrayofstring_field),
+         resizingbuf);
+  // It's a vector of 2 strings, to which we add one more, initialized to
+  // offset 0.
+  flatbuffers::ResizeVector<flatbuffers::Offset<flatbuffers::String>>(
+        schema, 3, 0, *rtestarrayofstring, &resizingbuf);
+  // Here we just create a buffer that contans a single string, but this
+  // could also be any complex set of tables and other values.
+  flatbuffers::FlatBufferBuilder stringfbb;
+  stringfbb.Finish(stringfbb.CreateString("hank"));
+  // Add the contents of it to our existing FlatBuffer.
+  // We do this last, so the pointer doesn't get invalidated (since it is
+  // at the end of the buffer):
+  auto string_ptr = flatbuffers::AddFlatBuffer(resizingbuf,
+                                               stringfbb.GetBufferPointer(),
+                                               stringfbb.GetSize());
+  // Finally, set the new value in the vector.
+  rtestarrayofstring->MutateOffset(2, string_ptr);
+  TEST_EQ_STR(rtestarrayofstring->Get(0)->c_str(), "bob");
+  TEST_EQ_STR(rtestarrayofstring->Get(2)->c_str(), "hank");
+  // As an additional test, also set it on the name field.
+  // Note: unlike the name change above, this just overwrites the offset,
+  // rather than changing the string in-place.
+  SetFieldT(*rroot, name_field, string_ptr);
+  TEST_EQ_STR(GetFieldS(**rroot, name_field)->c_str(), "hank");
+
+  // Using reflection, rather than mutating binary FlatBuffers, we can also copy
+  // tables and other things out of other FlatBuffers into a FlatBufferBuilder,
+  // either part or whole.
+  flatbuffers::FlatBufferBuilder fbb;
+  auto root_offset = flatbuffers::CopyTable(fbb, schema, *root_table,
+                                            *flatbuffers::GetAnyRoot(flatbuf));
+  fbb.Finish(root_offset, MonsterIdentifier());
+  // Test that it was copied correctly:
+  AccessFlatBufferTest(fbb.GetBufferPointer(), fbb.GetSize());
+}
+
 // Parse a .proto schema, output as .fbs
 void ParseProtoTest() {
   // load the .proto and the golden file from disk
@@ -251,10 +428,12 @@ void ParseProtoTest() {
 
   // Parse proto.
   flatbuffers::Parser parser(false, true);
-  TEST_EQ(parser.Parse(protofile.c_str(), nullptr), true);
+  const char *include_directories[] = { "tests/prototest", nullptr };
+  TEST_EQ(parser.Parse(protofile.c_str(), include_directories), true);
 
   // Generate fbs.
   flatbuffers::GeneratorOptions opts;
+  opts.include_dependence_headers = false;
   auto fbs = flatbuffers::GenerateFBS(parser, "test", opts);
 
   // Ensure generated file is parsable.
@@ -329,7 +508,7 @@ void FuzzTest1() {
 
   lcg_reset();  // Reset.
 
-  uint8_t *eob = builder.GetBufferPointer() + builder.GetSize();
+  uint8_t *eob = builder.GetCurrentBufferPointer() + builder.GetSize();
 
   // Test that all objects we generated are readable and return the
   // expected values. We generate random objects in the same order
@@ -456,6 +635,11 @@ void FuzzTest2() {
             // refer to.
             Dummy();
           }
+          break;
+        case flatbuffers::BASE_TYPE_BOOL:
+          AddToSchemaAndInstances("bool", deprecated
+                                  ? ""
+                                  : (lcg_rand() % 2 ? "true" : "false"));
           break;
         default:
           // All the scalar types.
@@ -626,8 +810,11 @@ int main(int /*argc*/, const char * /*argv*/[]) {
                        rawbuf.length());
   AccessFlatBufferTest(flatbuf.get(), rawbuf.length());
 
-  #ifndef __ANDROID__  // requires file access
+  MutateFlatBuffersTest(flatbuf.get(), rawbuf.length());
+
+  #ifndef FLATBUFFERS_NO_FILE_TESTS
   ParseAndGenerateTextTest();
+  ReflectionTest(flatbuf.get(), rawbuf.length());
   ParseProtoTest();
   #endif
 

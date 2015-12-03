@@ -66,7 +66,7 @@ namespace FlatBuffers
         }
 
         // Initialize any Table-derived type to point to the union at the given offset.
-        protected Table __union(Table t, int offset)
+        protected TTable __union<TTable>(TTable t, int offset) where TTable : Table
         {
             offset += bb_pos;
             t.bb_pos = offset + bb.GetInt(offset);
@@ -81,7 +81,7 @@ namespace FlatBuffers
 
             for (var i = 0; i < FlatBufferConstants.FileIdentifierLength; i++)
             {
-                if (ident[i] != (char)bb.Get(bb.position() + sizeof(int) + i)) return false;
+                if (ident[i] != (char)bb.Get(bb.Position + sizeof(int) + i)) return false;
             }
 
             return true;

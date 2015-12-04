@@ -18,11 +18,14 @@
 #include "dependency_injection.h"
 #include "job_system.h"
 
-
-#include "entity_resource_generated.h"
+#include "entity_generated.h"
+// #include "entity_resource_generated.h"
 #include "transform_component_generated.h"
 #include "mesh_component_generated.h"
 #include "types_generated.h"
+
+#include <flatbuffers/idl.h>
+#include <flatbuffers/reflection.h>
 
 #include <logog.hpp>
 #include <string_stream.h>
@@ -41,14 +44,19 @@
 
 #include <cstdio>
 #include <vector>
+#include <string>
 
 using namespace knight;
 using namespace foundation;
+using namespace gsl;
+using namespace string_stream;
 
 using std::shared_ptr;
 using std::unique_ptr;
 
-namespace knight { namespace detail {
+namespace knight {
+
+namespace detail {
 
   template<>
   struct attribute_traits<glm::vec3> : float_traits, component_traits<3> {};
@@ -56,7 +64,26 @@ namespace knight { namespace detail {
   template<>
   struct attribute_traits<glm::vec4> : float_traits, component_traits<4> {};
 
-}} // namespace knight::detail
+} // namespace detail
+
+namespace schema {
+
+  vec4 convert(const glm::vec4 &glm_vec) {
+    return { glm_vec.x, glm_vec.y, glm_vec.z, glm_vec.w };
+  }
+
+  mat4 convert(const glm::mat4 &glm_mat) {
+    return {
+      convert(glm_mat[0]),
+      convert(glm_mat[1]),
+      convert(glm_mat[2]),
+      convert(glm_mat[3])
+    };
+  }
+
+} // namespace shcema
+
+} // namespace knight
 
 struct Vertex {
   glm::vec3 position;
@@ -93,6 +120,11 @@ void BuildInjector(GameState &game_state) {
   config.Add(TransformComponentFactory);
 
   game_state.injector = allocate_unique<di::Injector>(allocator, config.BuildInjector(allocator));
+}
+
+void ReadFile(czstring path, Buffer &buffer) {
+  FileRead file{path};
+  file.Read(buffer);
 }
 
 extern "C" GAME_INIT(Init) {
@@ -164,13 +196,99 @@ extern "C" GAME_INIT(Init) {
   auto transform_component = game_state->injector->get_instance<TransformComponent>();
   transform_component->Add(*entity);
 
-  // FlatBufferAllocator fb_alloc(alloc);
+  auto transform_instance = transform_component->Lookup(*entity);
+  auto local = transform_component->local(transform_instance);
+  auto world = transform_component->world(transform_instance);
 
-  // flatbuffers::FlatBufferBuilder fbb(1024, &fb_alloc);
+  auto schema_local = schema::convert(local);
+  auto schema_world = schema::convert(world);
+
+  FlatBufferAllocator fb_alloc(allocator);
+
+  flatbuffers::FlatBufferBuilder fbb(1024, &fb_alloc);
+
+  auto transform_location = schema::CreateTransformComponent(fbb, &schema_local, &schema_world);
+  auto transform_data_location = schema::CreateComponentData(fbb, schema::Component_TransformComponent, transform_location.Union());
+
+  flatbuffers::Offset<schema::ComponentData> components[] = { transform_data_location };
+  auto component_locations = fbb.CreateVector(components, 1);
+
+  auto entity_location = CreateEntity(fbb, component_locations);
+
+  fbb.Finish(entity_location);
+
+  flatbuffers::Parser parser;
+
+  {
+    FileRead file{"../schema/types.fbs"};
+    Buffer buf{allocator};
+    file.Read(buf);
+    parser.Parse(c_str(buf));
+  }
+
+  {
+    FileRead file{"../schema/transform_component.fbs"};
+    Buffer buf{allocator};
+    file.Read(buf);
+    parser.Parse(c_str(buf));
+  }
+
+  {
+    FileRead file{"../schema/entity.fbs"};
+    Buffer buf{allocator};
+    file.Read(buf);
+    parser.Parse(c_str(buf));
+  }
+
+  auto *entity_table = schema::GetEntity(fbb.GetBufferPointer());
+  auto *schema_component_data = entity_table->components()->Get(0);
+  auto &transform_root = *reinterpret_cast<const flatbuffers::Table *>(schema_component_data->component());
+
+
+  Buffer buffer{allocator};
+  ReadFile("schema_headers/transform_component.bfbs", buffer);
+  auto &transform_schema = *reflection::GetSchema(c_str(buffer));
+
+  auto *root_table = transform_schema.root_table();
+  auto *fields = root_table->fields();
+
+  auto &local_field = *fields->LookupByKey("local_position");
+  auto &local_type = *local_field.type();
+  auto index = local_type.index();
+
+  auto *local_obj = transform_schema.objects()->Get(index);
+
+  printf("%s\n", local_obj->name()->c_str());
+
+  // auto *local_value = flatbuffers::GetAnyFieldAddressOf<schema::mat4>(transform_root, local_field);
+
+  // printf("%f\n", local_value->col0().y());
+  // for (auto &&component_data : *entity_table->components()) {
+
+  // }
+
+  // Buffer entity_schema_buffer{allocator};
+  // ReadFile("schema_headers/entity.bfbs", entity_schema_buffer);
+  // auto &enity_schema = *reflection::GetSchema(c_str(entity_schema_buffer));
+
+  // auto *root_Table = enity_schema.root_table();
+  // auto *fields = root_Table->fields();
+
+  // auto &entity_root = *flatbuffers::GetAnyRoot(fbb.GetBufferPointer());
+  // auto &components_field = *fields->LookupByKey("components");
+
+  // auto *component_tables = flatbuffers::GetFieldV<flatbuffers::Table>(entity_root, components_field);
+
+  // std::string json;
+  // GenerateText(parser, fbb.GetBufferPointer(),
+  //              flatbuffers::GeneratorOptions(), &json);
+
+  //printf("%s\n", json.c_str());
 
   // auto material = fbb.CreateString("../shaders/blinn_phong.shader");
   // auto mesh_location = schema::CreateMeshComponent(fbb, material);
   // auto mesh_data_location = schema::CreateComponentData(fbb, schema::Component_MeshComponent, mesh_location.Union());
+
 
   // flatbuffers::Offset<schema::ComponentData> components[] = { mesh_data_location };
   // auto component_locations = fbb.CreateVector(components, 1);

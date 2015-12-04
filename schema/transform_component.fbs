@@ -3,9 +3,11 @@ namespace knight.schema;
 table TransformComponent {
   local_position:mat4;
   world_position:mat4;
-  parent:TransformComponent;
-  next_sibling:TransformComponent;
-  prev_sibling:TransformComponent;
+}
+
+table TransformComponentList {
+  entity_index:[uint];
+  transforms:[TransformComponent];
 }
 
 root_type TransformComponent;

@@ -1,0 +1,19 @@
+namespace knight.schema;
+
+union ComponentList {
+  TransformComponentList
+}
+
+table ComponentListData {
+  component_list:ComponentList;
+}
+
+table EntityList {
+  entity_count:uint;
+  parent_index:[uint];
+  component_lists:[ComponentListData];
+}
+
+root_type EntityList;
+
+

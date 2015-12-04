@@ -17,7 +17,13 @@ pdb(demo)
 
 cotire(demo)
 
-add_library(game SHARED game.cpp)
+add_library(game SHARED
+    game.cpp
+    # TODO: Find a better way to do this
+    ../third-party/flatbuffers/src/idl_parser.cpp
+    ../third-party/flatbuffers/src/idl_gen_text.cpp
+    ../third-party/flatbuffers/src/reflection.cpp
+)
 target_link_libraries(game knight-engine)
 target_link_libraries(game dbghelp)
 pdb(game)

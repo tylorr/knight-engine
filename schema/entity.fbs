@@ -9,9 +9,11 @@ table ComponentData {
   component:Component;
 }
 
-table EntityResource {
+table Entity {
   components:[ComponentData];
-  children:[EntityResource];
+  children:[Entity];
 }
 
-root_type EntityResource;
+root_type Entity;
+
+

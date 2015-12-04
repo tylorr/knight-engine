@@ -14,8 +14,8 @@ struct vec4 {
 }
 
 struct mat4 {
-  v0:vec4;
-  v1:vec4;
-  v2:vec4;
-  v3:vec4;
+  col0:vec4;
+  col1:vec4;
+  col2:vec4;
+  col3:vec4;
 }

@@ -4,8 +4,10 @@
 
 #include <memory_types.h>
 
+#include <cstdint>
+
 struct GameCode {
-  GameCode(foundation::Allocator &allocator) 
+  GameCode(foundation::Allocator &allocator)
     : allocator_{allocator} { }
 
   game_init *Init;

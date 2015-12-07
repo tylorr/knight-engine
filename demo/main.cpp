@@ -56,13 +56,13 @@ int main(int argc, char *argv[]) {
 
     auto &page_allocator = memory_globals::default_page_allocator();
 
-    auto game_memory = GameMemory{};
+    // auto game_memory = GameMemory{};
 
-    game_memory.temporary_memory_size = 512_mib;
-    game_memory.memory_size = 256_mib + game_memory.temporary_memory_size;
-    game_memory.memory = page_allocator.allocate(game_memory.memory_size);
+    // game_memory.temporary_memory_size = 512_mib;
+    // game_memory.memory_size = 256_mib + game_memory.temporary_memory_size;
+    // game_memory.memory = page_allocator.allocate(game_memory.memory_size);
 
-    XASSERT(game_memory.memory != nullptr, "Page allocation failed");
+    // XASSERT(game_memory.memory != nullptr, "Page allocation failed");
 
     // TODO: TR Get these from cmake
     auto source_dll_name = "bin/libgame.dll";
@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
     game_code::Load(game, source_dll_name, temp_dll_name);
 
     if (game.Init) {
-      game.Init(&game_memory, *window);
+      game.Init(*window);
     }
 
     while (!glfwWindowShouldClose(window)) {
@@ -82,7 +82,7 @@ int main(int argc, char *argv[]) {
       glViewport(0, 0, current_width, current_height);
 
       if (game.UpdateAndRender) {
-        game.UpdateAndRender(&game_memory);
+        game.UpdateAndRender();
       }
 
       glfwSwapBuffers(window);
@@ -96,8 +96,6 @@ int main(int argc, char *argv[]) {
     udp_listener.Stop();
 
     glfwTerminate();
-
-    page_allocator.deallocate(game_memory.memory);
   }
   LOGOG_SHUTDOWN();
   game_code::Unload(game);

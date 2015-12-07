@@ -4,7 +4,6 @@
 #include "material.h"
 #include "buffer_object.h"
 #include "pointers.h"
-#include "game_memory.h"
 #include "array_object.h"
 #include "attribute.h"
 
@@ -218,7 +217,7 @@ void CreateDeviceObjects() {
 
   imgui_manager_state.projection_uniform = material->Get<float, 4, 4>("ProjMtx");
 
-  auto &allocator = game_memory::default_allocator();
+  auto &allocator = foundation::memory_globals::default_allocator();
   imgui_manager_state.vbo = allocate_unique<BufferObject>(allocator, BufferObject::Target::Array);
   imgui_manager_state.ibo = allocate_unique<BufferObject>(allocator, BufferObject::Target::ElementArray);
   imgui_manager_state.vao = allocate_unique<ArrayObject>(allocator);

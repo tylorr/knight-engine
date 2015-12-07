@@ -1,7 +1,6 @@
 #pragma once
 
 #include "pointers.h"
-#include "game_memory.h"
 #include "template_util.h"
 
 #include <memory.h>

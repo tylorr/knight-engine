@@ -12,7 +12,6 @@ set(SOURCES
     string_util.cpp
     mesh_component.cpp
     transform_component.cpp
-    game_memory.cpp
     dependency_injection.cpp
     attribute.cpp
     win32/file_read.cpp

@@ -1,6 +1,5 @@
 #include "game.h"
 #include "game_platform.h"
-#include "game_memory.h"
 #include "common.h"
 #include "shader_types.h"
 #include "uniform.h"
@@ -91,27 +90,27 @@ struct Vertex {
 };
 
 auto EntityManagerFactory() {
-  auto &allocator = game_memory::default_allocator();
+  auto &allocator = memory_globals::default_allocator();
   return allocate_unique<EntityManager>(allocator, allocator);
 }
 
 auto MaterialManagerFactory() {
-  auto &allocator = game_memory::default_allocator();
+  auto &allocator = memory_globals::default_allocator();
   return allocate_unique<MaterialManager>(allocator, allocator);
 }
 
 auto MeshComponentFactory() {
-  auto &allocator = game_memory::default_allocator();
+  auto &allocator = memory_globals::default_allocator();
   return allocate_unique<MeshComponent>(allocator, allocator);
 }
 
 auto TransformComponentFactory() {
-  auto &allocator = game_memory::default_allocator();
+  auto &allocator = memory_globals::default_allocator();
   return allocate_unique<TransformComponent>(allocator, allocator);
 }
 
 void BuildInjector(GameState &game_state) {
-  auto &allocator = game_memory::default_allocator();
+  auto &allocator = memory_globals::default_allocator();
   di::InjectorConfig config;
 
   config.Add(EntityManagerFactory);
@@ -127,28 +126,28 @@ void ReadFile(czstring path, Buffer &buffer) {
   file.Read(buffer);
 }
 
+GameState game_state;
+
 extern "C" GAME_INIT(Init) {
-  GameState *game_state;
-  game_memory::Initialize(game_memory, &game_state);
 
   JobSystem::Initialize();
 
-  auto &allocator = game_memory::default_allocator();
-  auto &scratch_allocator = game_memory::default_scratch_allocator();
+  auto &allocator = memory_globals::default_allocator();
+  auto &scratch_allocator = memory_globals::default_scratch_allocator();
 
-  BuildInjector(*game_state);
+  BuildInjector(game_state);
 
-  auto material_manager = game_state->injector->get_instance<MaterialManager>();
+  auto material_manager = game_state.injector->get_instance<MaterialManager>();
 
   ImGuiManager::Initialize(window, *material_manager);
 
-  game_state->material = material_manager->CreateMaterial("../shaders/blinn_phong.shader");
+  game_state.material = material_manager->CreateMaterial("../shaders/blinn_phong.shader");
 
-  auto material = game_state->material;
+  auto material = game_state.material;
 
-  game_state->mvp_uniform = material->Get<float, 4, 4>("MVP");
-  game_state->mv_matrix_uniform = material->Get<float, 4, 4>("ModelView");
-  game_state->normal_matrix_uniform = material->Get<float, 3, 3>("NormalMatrix");
+  game_state.mvp_uniform = material->Get<float, 4, 4>("MVP");
+  game_state.mv_matrix_uniform = material->Get<float, 4, 4>("ModelView");
+  game_state.normal_matrix_uniform = material->Get<float, 3, 3>("NormalMatrix");
 
   std::vector<tinyobj::shape_t> shapes;
   std::vector<tinyobj::material_t> materials;
@@ -168,13 +167,13 @@ extern "C" GAME_INIT(Init) {
       });
   }
 
-  game_state->vbo = allocate_unique<BufferObject>(allocator, BufferObject::Target::Array);
-  game_state->ibo = allocate_unique<BufferObject>(allocator, BufferObject::Target::ElementArray);
-  game_state->vao = allocate_unique<ArrayObject>(allocator);
+  game_state.vbo = allocate_unique<BufferObject>(allocator, BufferObject::Target::Array);
+  game_state.ibo = allocate_unique<BufferObject>(allocator, BufferObject::Target::ElementArray);
+  game_state.vao = allocate_unique<ArrayObject>(allocator);
 
-  auto &vbo = *game_state->vbo;
-  auto &ibo = *game_state->ibo;
-  auto &vao = *game_state->vao;
+  auto &vbo = *game_state.vbo;
+  auto &ibo = *game_state.ibo;
+  auto &vao = *game_state.vao;
 
   vbo.SetData(vertices, BufferObject::Usage::StaticDraw);
   ibo.SetData(obj_mesh.indices, BufferObject::Usage::StaticDraw);
@@ -184,16 +183,16 @@ extern "C" GAME_INIT(Init) {
      .SetIndexBuffer(ibo, 0, ArrayObject::IndexType::UnsignedInt)
      .AddVertexBuffer(vbo, 0, Attribute<glm::vec3>{0}, Attribute<glm::vec3>{1});
 
-  auto entity_manager = game_state->injector->get_instance<EntityManager>();
+  auto entity_manager = game_state.injector->get_instance<EntityManager>();
   auto entity_id = entity_manager->Create();
   auto entity = entity_manager->Get(entity_id);
 
-  game_state->entity_id = entity_id;
+  game_state.entity_id = entity_id;
 
-  auto mesh_component = game_state->injector->get_instance<MeshComponent>();
-  mesh_component->Add(*entity, *game_state->material, *game_state->vao);
+  auto mesh_component = game_state.injector->get_instance<MeshComponent>();
+  mesh_component->Add(*entity, *game_state.material, *game_state.vao);
 
-  auto transform_component = game_state->injector->get_instance<TransformComponent>();
+  auto transform_component = game_state.injector->get_instance<TransformComponent>();
   transform_component->Add(*entity);
 
   auto transform_instance = transform_component->Lookup(*entity);
@@ -304,9 +303,6 @@ extern "C" GAME_INIT(Init) {
 }
 
 extern "C" GAME_UPDATE_AND_RENDER(UpdateAndRender) {
-  GameState *game_state;
-  game_memory::Initialize(game_memory, &game_state);
-
   static auto prev_time = 0.0;
   auto current_time = glfwGetTime();
   auto delta_time = current_time - prev_time;
@@ -319,8 +315,8 @@ extern "C" GAME_UPDATE_AND_RENDER(UpdateAndRender) {
   ImGui::Text("Hello, world!");
   ImGui::Text("This one too!");
 
-  ImGui::InputText("string", game_state->string_buff, 256);
-  ImGui::InputText("foo", game_state->foo_buff, 256);
+  ImGui::InputText("string", game_state.string_buff, 256);
+  ImGui::InputText("foo", game_state.foo_buff, 256);
 
   static bool show_test_window = true;
 
@@ -328,10 +324,10 @@ extern "C" GAME_UPDATE_AND_RENDER(UpdateAndRender) {
     ImGui::ShowTestWindow(&show_test_window);
   }
 
-  auto entity_manager = game_state->injector->get_instance<EntityManager>();
-  auto entity = entity_manager->Get(game_state->entity_id);
+  auto entity_manager = game_state.injector->get_instance<EntityManager>();
+  auto entity = entity_manager->Get(game_state.entity_id);
 
-  auto transform_component = game_state->injector->get_instance<TransformComponent>();
+  auto transform_component = game_state.injector->get_instance<TransformComponent>();
   auto transform_instance = transform_component->Lookup(*entity);
 
   auto local = transform_component->local(transform_instance);
@@ -342,27 +338,26 @@ extern "C" GAME_UPDATE_AND_RENDER(UpdateAndRender) {
   auto projection_matrix = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 100.f);
 
   auto model_view_matrix = view_matrix * local;
-  game_state->mv_matrix_uniform->SetValue(glm::value_ptr(model_view_matrix));
+  game_state.mv_matrix_uniform->SetValue(glm::value_ptr(model_view_matrix));
 
   auto mvp_matrix = projection_matrix * model_view_matrix;
-  game_state->mvp_uniform->SetValue(glm::value_ptr(mvp_matrix));
+  game_state.mvp_uniform->SetValue(glm::value_ptr(mvp_matrix));
 
   auto normal_matrix = glm::inverseTranspose(glm::mat3(model_view_matrix));
-  game_state->normal_matrix_uniform->SetValue(glm::value_ptr(normal_matrix));
+  game_state.normal_matrix_uniform->SetValue(glm::value_ptr(normal_matrix));
 
-  auto material_manager = game_state->injector->get_instance<MaterialManager>();
-  material_manager->PushUniforms(*game_state->material);
+  auto material_manager = game_state.injector->get_instance<MaterialManager>();
+  material_manager->PushUniforms(*game_state.material);
 
-  auto mesh_component = game_state->injector->get_instance<MeshComponent>();
+  auto mesh_component = game_state.injector->get_instance<MeshComponent>();
   mesh_component->Render();
 
   ImGuiManager::EndFrame();
 
-  game_state->material->Unbind();
+  game_state.material->Unbind();
 }
 
 extern "C" GAME_SHUTDOWN(Shutdown) {
   ImGuiManager::Shutdown();
   JobSystem::Shutdown();
-  game_memory::Shutdown();
 }

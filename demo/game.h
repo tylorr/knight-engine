@@ -1,6 +1,5 @@
 #pragma once
 
-#include "game_memory.h"
 #include "shader_types.h"
 #include "pointers.h"
 #include "types.h"
@@ -10,7 +9,7 @@
 
 using namespace knight;
 
-struct GameState : public GameAllocatorState {
+struct GameState {
   std::shared_ptr<Material> material;
   pointer<BufferObject> vbo;
   pointer<BufferObject> ibo;

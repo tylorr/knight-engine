@@ -16,6 +16,7 @@
 #include "array_object.h"
 #include "dependency_injection.h"
 #include "job_system.h"
+#include "file_util.h"
 
 #include "entity_generated.h"
 // #include "entity_resource_generated.h"
@@ -141,7 +142,7 @@ extern "C" GAME_INIT(Init) {
 
   ImGuiManager::Initialize(window, *material_manager);
 
-  game_state.material = material_manager->CreateMaterial("../shaders/blinn_phong.shader");
+  game_state.material = material_manager->CreateMaterial("../assets/shaders/blinn_phong.shader");
 
   auto material = game_state.material;
 
@@ -152,7 +153,7 @@ extern "C" GAME_INIT(Init) {
   std::vector<tinyobj::shape_t> shapes;
   std::vector<tinyobj::material_t> materials;
 
-  std::string err = tinyobj::LoadObj(shapes, materials, "../models/bench.obj", "../models/");
+  std::string err = tinyobj::LoadObj(shapes, materials, "../assets/models/bench.obj", "../assets/models/");
 
   XASSERT(err.empty(), "Error loading model: %s", err.c_str());
 
@@ -195,69 +196,71 @@ extern "C" GAME_INIT(Init) {
   auto transform_component = game_state.injector->get_instance<TransformComponent>();
   transform_component->Add(*entity);
 
-  auto transform_instance = transform_component->Lookup(*entity);
-  auto local = transform_component->local(transform_instance);
-  auto world = transform_component->world(transform_instance);
+  file_util::ListDirectoryContents("../assets");
 
-  auto schema_local = schema::convert(local);
-  auto schema_world = schema::convert(world);
+  // auto transform_instance = transform_component->Lookup(*entity);
+  // auto local = transform_component->local(transform_instance);
+  // auto world = transform_component->world(transform_instance);
 
-  FlatBufferAllocator fb_alloc(allocator);
+  // auto schema_local = schema::convert(local);
+  // auto schema_world = schema::convert(world);
 
-  flatbuffers::FlatBufferBuilder fbb(1024, &fb_alloc);
+  // FlatBufferAllocator fb_alloc(allocator);
 
-  auto transform_location = schema::CreateTransformComponent(fbb, &schema_local, &schema_world);
-  auto transform_data_location = schema::CreateComponentData(fbb, schema::Component_TransformComponent, transform_location.Union());
+  // flatbuffers::FlatBufferBuilder fbb(1024, &fb_alloc);
 
-  flatbuffers::Offset<schema::ComponentData> components[] = { transform_data_location };
-  auto component_locations = fbb.CreateVector(components, 1);
+  // auto transform_location = schema::CreateTransformComponent(fbb, &schema_local, &schema_world);
+  // auto transform_data_location = schema::CreateComponentData(fbb, schema::Component_TransformComponent, transform_location.Union());
 
-  auto entity_location = CreateEntity(fbb, component_locations);
+  // flatbuffers::Offset<schema::ComponentData> components[] = { transform_data_location };
+  // auto component_locations = fbb.CreateVector(components, 1);
 
-  fbb.Finish(entity_location);
+  // auto entity_location = CreateEntity(fbb, component_locations);
 
-  flatbuffers::Parser parser;
+  // fbb.Finish(entity_location);
 
-  {
-    FileRead file{"../schema/types.fbs"};
-    Buffer buf{allocator};
-    file.Read(buf);
-    parser.Parse(c_str(buf));
-  }
+  // flatbuffers::Parser parser;
 
-  {
-    FileRead file{"../schema/transform_component.fbs"};
-    Buffer buf{allocator};
-    file.Read(buf);
-    parser.Parse(c_str(buf));
-  }
+  // {
+  //   FileRead file{"../assets/schema/types.fbs"};
+  //   Buffer buf{allocator};
+  //   file.Read(buf);
+  //   parser.Parse(c_str(buf));
+  // }
 
-  {
-    FileRead file{"../schema/entity.fbs"};
-    Buffer buf{allocator};
-    file.Read(buf);
-    parser.Parse(c_str(buf));
-  }
+  // {
+  //   FileRead file{"../assets/schema/transform_component.fbs"};
+  //   Buffer buf{allocator};
+  //   file.Read(buf);
+  //   parser.Parse(c_str(buf));
+  // }
 
-  auto *entity_table = schema::GetEntity(fbb.GetBufferPointer());
-  auto *schema_component_data = entity_table->components()->Get(0);
-  auto &transform_root = *reinterpret_cast<const flatbuffers::Table *>(schema_component_data->component());
+  // {
+  //   FileRead file{"../assets/schema/entity.fbs"};
+  //   Buffer buf{allocator};
+  //   file.Read(buf);
+  //   parser.Parse(c_str(buf));
+  // }
+
+  // auto *entity_table = schema::GetEntity(fbb.GetBufferPointer());
+  // auto *schema_component_data = entity_table->components()->Get(0);
+  // auto &transform_root = *reinterpret_cast<const flatbuffers::Table *>(schema_component_data->component());
 
 
-  Buffer buffer{allocator};
-  ReadFile("schema_headers/transform_component.bfbs", buffer);
-  auto &transform_schema = *reflection::GetSchema(c_str(buffer));
+  // Buffer buffer{allocator};
+  // ReadFile("schema_headers/transform_component.bfbs", buffer);
+  // auto &transform_schema = *reflection::GetSchema(c_str(buffer));
 
-  auto *root_table = transform_schema.root_table();
-  auto *fields = root_table->fields();
+  // auto *root_table = transform_schema.root_table();
+  // auto *fields = root_table->fields();
 
-  auto &local_field = *fields->LookupByKey("local_position");
-  auto &local_type = *local_field.type();
-  auto index = local_type.index();
+  // auto &local_field = *fields->LookupByKey("local_position");
+  // auto &local_type = *local_field.type();
+  // auto index = local_type.index();
 
-  auto *local_obj = transform_schema.objects()->Get(index);
+  // auto *local_obj = transform_schema.objects()->Get(index);
 
-  printf("%s\n", local_obj->name()->c_str());
+  // printf("%s\n", local_obj->name()->c_str());
 
   // auto *local_value = flatbuffers::GetAnyFieldAddressOf<schema::mat4>(transform_root, local_field);
 
@@ -312,11 +315,21 @@ extern "C" GAME_UPDATE_AND_RENDER(UpdateAndRender) {
 
   ImGuiManager::BeginFrame(delta_time);
 
-  ImGui::Text("Hello, world!");
-  ImGui::Text("This one too!");
+  bool tree_open = ImGui::TreeNode((void *)0, "");
+  ImGui::SameLine();
 
-  ImGui::InputText("string", game_state.string_buff, 256);
-  ImGui::InputText("foo", game_state.foo_buff, 256);
+  static bool selected = false;
+  ImGui::Selectable("models", &selected);
+  if (tree_open)
+  {
+    ImGui::TreePop();
+  }
+
+  // ImGui::Text("Hello, world!");
+  // ImGui::Text("This one too!");
+
+  //ImGui::InputText("string", game_state.string_buff, 256);
+  //ImGui::InputText("foo", game_state.foo_buff, 256);
 
   static bool show_test_window = true;
 

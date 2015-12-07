@@ -153,10 +153,11 @@ using basic_string_view = array_view<CharT>;
 using string_view = basic_string_view<char>;
 using cstring_view = basic_string_view<const char>;
 
-using zstring = char *;
-using czstring = const char *;
-
-
 } // namespace gsl
+
+using zstring = char *;
+using wzstring = wchar_t *;
+using czstring = const char *;
+using cwzstring = const wchar_t *;
 
 } // namespace knight

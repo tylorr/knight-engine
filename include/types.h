@@ -1,6 +1,9 @@
 #pragma once
 
 #include "common.h"
+#include "std_allocator.h"
+
+#include <vector>
 
 namespace knight {
 
@@ -43,6 +46,9 @@ class Entity {
   
   Entity() : id(0) { }
 };
+
+template<typename T>
+using Vector = std::vector<T, StdAllocator<T>>;
 
 template <typename T>
 class Component;

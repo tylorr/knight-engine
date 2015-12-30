@@ -39,6 +39,9 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/matrix_inverse.hpp>
+#include <glm/gtx/string_cast.hpp>
+#include <glm/gtx/matrix_decompose.hpp>
+#include <glm/ext.hpp>
 
 #include <tiny_obj_loader.h>
 
@@ -78,6 +81,19 @@ namespace schema {
       convert(glm_mat[1]),
       convert(glm_mat[2]),
       convert(glm_mat[3])
+    };
+  }
+
+  glm::vec4 convert(const vec4 &vec) {
+    return glm::vec4{vec.x(), vec.y(), vec.z(), vec.w()};
+  }
+
+  glm::mat4 convert(const mat4 &mat) {
+    return glm::mat4{
+      convert(mat.col0()),
+      convert(mat.col1()),
+      convert(mat.col2()),
+      convert(mat.col3()),
     };
   }
 
@@ -128,6 +144,15 @@ void ReadFile(czstring path, Buffer &buffer) {
 }
 
 GameState game_state;
+
+//const flatbuffers::Vector<flatbuffers::Offset<reflection::Field>> *fields;
+const reflection::Field *field;
+flatbuffers::Table *transform_root;
+
+pointer<FlatBufferAllocator> fb_alloc;
+pointer<flatbuffers::FlatBufferBuilder> fbb_ptr;
+
+
 
 extern "C" GAME_INIT(Init) {
 
@@ -196,28 +221,25 @@ extern "C" GAME_INIT(Init) {
   auto transform_component = game_state.injector->get_instance<TransformComponent>();
   transform_component->Add(*entity);
 
-  //file_util::ListDirectoryContents("../assets");
+  auto transform_instance = transform_component->Lookup(*entity);
+  auto local = transform_component->local(transform_instance);
 
-  // auto transform_instance = transform_component->Lookup(*entity);
-  // auto local = transform_component->local(transform_instance);
-  // auto world = transform_component->world(transform_instance);
+  auto schema_local = schema::convert(local);
 
-  // auto schema_local = schema::convert(local);
-  // auto schema_world = schema::convert(world);
+  fb_alloc = allocate_unique<FlatBufferAllocator>(allocator, allocator);
+  fbb_ptr = allocate_unique<flatbuffers::FlatBufferBuilder>(allocator, 1024, fb_alloc.get());
 
-  // FlatBufferAllocator fb_alloc(allocator);
+  auto &fbb = *fbb_ptr;
 
-  // flatbuffers::FlatBufferBuilder fbb(1024, &fb_alloc);
+  auto transform_location = schema::CreateTransformComponent(fbb, &schema_local);
+  auto transform_data_location = schema::CreateComponentData(fbb, schema::Component_TransformComponent, transform_location.Union());
 
-  // auto transform_location = schema::CreateTransformComponent(fbb, &schema_local, &schema_world);
-  // auto transform_data_location = schema::CreateComponentData(fbb, schema::Component_TransformComponent, transform_location.Union());
+  flatbuffers::Offset<schema::ComponentData> components[] = { transform_data_location };
+  auto component_locations = fbb.CreateVector(components, 1);
 
-  // flatbuffers::Offset<schema::ComponentData> components[] = { transform_data_location };
-  // auto component_locations = fbb.CreateVector(components, 1);
+  auto entity_location = CreateEntity(fbb, component_locations);
 
-  // auto entity_location = CreateEntity(fbb, component_locations);
-
-  // fbb.Finish(entity_location);
+  fbb.Finish(entity_location);
 
   // flatbuffers::Parser parser;
 
@@ -246,6 +268,9 @@ extern "C" GAME_INIT(Init) {
   // auto *schema_component_data = entity_table->components()->Get(0);
   // auto &transform_root = *reinterpret_cast<const flatbuffers::Table *>(schema_component_data->component());
 
+  // auto *entity_table = schema::GetEntity(fbb.GetBufferPointer());
+  // auto *schema_component_data = entity_table->components()->Get(0);
+  // transform_root = const_cast<flatbuffers::Table *>(reinterpret_cast<const flatbuffers::Table *>(schema_component_data->component()));
 
   // Buffer buffer{allocator};
   // ReadFile("schema_headers/transform_component.bfbs", buffer);
@@ -253,6 +278,7 @@ extern "C" GAME_INIT(Init) {
 
   // auto *root_table = transform_schema.root_table();
   // auto *fields = root_table->fields();
+  // field = fields->Get(0);
 
   // auto &local_field = *fields->LookupByKey("local_position");
   // auto &local_type = *local_field.type();
@@ -305,6 +331,74 @@ extern "C" GAME_INIT(Init) {
   // }
 }
 
+bool DrawVector(czstring name, glm::vec3 &vector) {
+  return ImGui::DragFloat3(name, &vector[0], 0.5f);
+}
+
+bool DrawQuat(czstring name, glm::quat &quat, glm::vec3 &euler_offset) {
+  auto euler = eulerAngles(quat);
+  euler -= euler_offset;
+
+  auto euler_deg = degrees(euler);
+  if (DrawVector(name, euler_deg)) {
+    euler = radians(euler_deg);
+
+    auto xrot = angleAxis(euler.x, glm::highp_vec3{1.0f, 0.0f, 0.0f});
+    auto yrot = angleAxis(euler.y, glm::highp_vec3{0.0f, 1.0f, 0.0f});
+    auto zrot = angleAxis(euler.z, glm::highp_vec3{0.0f, 0.0f, 1.0f});
+    quat = yrot  * xrot * zrot;
+
+    auto new_euler = eulerAngles(quat);
+    euler_offset = new_euler - euler;
+    return true;
+  }
+
+  return false;
+}
+
+
+// bool DrawTransform(glm::mat4 &matrix) {
+//   bool value_changed = false;
+
+//   glm::vec3 scale;
+//   glm::quat rotation;
+//   glm::vec3 translation;
+//   glm::vec3 skew;
+//   glm::vec4 perspective;
+//   glm::decompose(matrix, scale, rotation, translation, skew, perspective);
+
+//   value_changed |= DrawVector("position", translation);
+//   value_changed |= DrawQuat("rotation", rotation);
+//   value_changed |= DrawVector("scale", scale);
+
+//   if (value_changed) {
+//     //auto translation_mat = glm::translate(glm::mat4{1.0f}, translation);
+//     //auto scale_mat = glm::scale(glm::mat4{1.0f}, scale);
+//     //matrix = translation_mat * rotation_mat * scale_mat;
+//     //matrix = rotation_mat;
+//   }
+
+//   return value_changed;
+// }
+
+// void DrawTransform(flatbuffers::Table *table, const reflection::Field *field) {
+//   auto &schema_matrix = *flatbuffers::GetAnyFieldAddressOf<schema::mat4>(*table, *field);
+//   auto matrix = convert(schema_matrix);
+//   if (DrawTransform(matrix)) {
+//     schema_matrix = schema::convert(matrix);
+
+//     auto entity_manager = game_state.injector->get_instance<EntityManager>();
+//     auto entity = entity_manager->Get(game_state.entity_id);
+
+//     auto transform_component = game_state.injector->get_instance<TransformComponent>();
+//     auto transform_instance = transform_component->Lookup(*entity);
+//     transform_component->set_local(transform_instance, matrix);
+//   }
+// }
+
+glm::quat rotation;
+glm::vec3 euler_offset;
+
 extern "C" GAME_UPDATE_AND_RENDER(UpdateAndRender) {
   static auto prev_time = 0.0;
   auto current_time = glfwGetTime();
@@ -315,21 +409,30 @@ extern "C" GAME_UPDATE_AND_RENDER(UpdateAndRender) {
 
   ImGuiManager::BeginFrame(delta_time);
 
-  bool tree_open = ImGui::TreeNode((void *)0, "");
-  ImGui::SameLine();
+  // bool tree_open = ImGui::TreeNode((void *)0, "");
+  // ImGui::SameLine();
 
-  static bool selected = false;
-  ImGui::Selectable("models", &selected);
-  if (tree_open)
-  {
-    ImGui::TreePop();
-  }
+  // static bool selected = false;
+  // ImGui::Selectable("models", &selected);
+  // if (tree_open)
+  // {
+  //   ImGui::TreePop();
+  // }
 
   // ImGui::Text("Hello, world!");
   // ImGui::Text("This one too!");
 
-  //ImGui::InputText("string", game_state.string_buff, 256);
-  //ImGui::InputText("foo", game_state.foo_buff, 256);
+  // ImGui::InputText("string", game_state.string_buff, 256);
+  // ImGui::InputText("foo", game_state.foo_buff, 256);
+
+  //for (const auto &field : *fields) {
+    //DrawTransform(transform_root, field);
+
+  //}
+
+  //DrawTransform(transform_root, field);
+
+  DrawQuat("rotation", rotation, euler_offset);
 
   static bool show_test_window = true;
 
@@ -344,8 +447,17 @@ extern "C" GAME_UPDATE_AND_RENDER(UpdateAndRender) {
   auto transform_instance = transform_component->Lookup(*entity);
 
   auto local = transform_component->local(transform_instance);
-  local = glm::rotate(local, (float)delta_time, glm::vec3(0.0f, 1.0f, 0.0f));
-  transform_component->set_local(transform_instance, local);
+  local = mat4_cast(rotation);
+
+  // auto rotation_radions = radians(rotation);
+
+  // DrawTransform(local);
+
+  // transform_component->set_local(transform_instance, local);
+
+  //local = glm::eulerAngleYXZ(rotation_radions.y, rotation_radions.x, rotation_radions.z);
+  // local = glm::rotate(local, (float)delta_time, glm::vec3(0.0f, 1.0f, 0.0f));
+  // transform_component->set_local(transform_instance, local);
 
   auto view_matrix = glm::translate(glm::mat4{1.0f}, glm::vec3{0, -8, -40});
   auto projection_matrix = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 100.f);

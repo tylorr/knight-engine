@@ -97,7 +97,7 @@ if (FBSCHEMAS)
 
   add_custom_command(
       OUTPUT ${FBSCHEMA_HEADERS}
-      COMMAND flatc -c -b --schema -o "${FBSCHEMA_OUTPUT}" ${FBSCHEMAS}
+      COMMAND flatc -c -b --schema --gen-mutable -o "${FBSCHEMA_OUTPUT}" ${FBSCHEMAS}
       WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
       DEPENDS ${FBSCHEMAS} flatc)
 

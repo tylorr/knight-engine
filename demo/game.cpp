@@ -196,7 +196,7 @@ extern "C" GAME_INIT(Init) {
   auto transform_component = game_state.injector->get_instance<TransformComponent>();
   transform_component->Add(*entity);
 
-  file_util::ListDirectoryContents("../assets");
+  //file_util::ListDirectoryContents("../assets");
 
   // auto transform_instance = transform_component->Lookup(*entity);
   // auto local = transform_component->local(transform_instance);

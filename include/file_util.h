@@ -23,7 +23,7 @@ namespace file_util {
 
 uint64_t GetLastWriteTime(czstring filename);
 
-Vector<DirectoryContent>ListDirectoryContents(
+bool ListDirectoryContents(
   foundation::Allocator &allocator, czstring directory_path);
 
 } // namespace file_util

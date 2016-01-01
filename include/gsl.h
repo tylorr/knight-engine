@@ -110,14 +110,26 @@ struct type_trait<const void> {
 };
 
 template<typename T>
-class array_view {
+class span {
  public:
-  array_view(T *data, std::size_t size) :
+  using value_type = T;
+  using reference = std::add_lvalue_reference_t<value_type>;
+  using pointer = std::add_pointer_t<value_type>;
+
+  span() : span(nullptr, 0) {}
+  span(std::nullptr_t) : span(nullptr, 0) {}
+
+  template <class IntType, typename = std::enable_if_t<std::is_integral<IntType>::value>>
+  span(std::nullptr_t, IntType size) : span(nullptr, 0) {
+    XASSERT(size == 0, "Cannot create nullptr span with size other than 0");
+  }
+
+  span(pointer data, std::size_t size) :
     data_{data},
     size_{size} {}
 
   template<typename U, std::size_t N, typename Dummy = std::enable_if_t<std::is_convertible<U*, T*>::value, void>>
-  array_view(U (&data)[N]) :
+  span(U (&data)[N]) :
     data_{data},
     size_{N} {}
 
@@ -150,10 +162,10 @@ class array_view {
 };
 
 template<typename CharT>
-using basic_string_view = array_view<CharT>;
+using basic_string_span = span<CharT>;
 
-using string_view = basic_string_view<char>;
-using cstring_view = basic_string_view<const char>;
+using string_span = basic_string_span<char>;
+using cstring_span = basic_string_span<const char>;
 
 } // namespace gsl
 

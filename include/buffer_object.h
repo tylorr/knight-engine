@@ -56,8 +56,8 @@ class BufferObject {
   void Bind() const;
   void Unbind() const;
 
-  void SetData(gsl::array_view<const void> data, BufferObject::Usage usage);
-  void SetSubData(GLintptr offset, gsl::array_view<const void> data);
+  void SetData(gsl::span<const void> data, BufferObject::Usage usage);
+  void SetSubData(GLintptr offset, gsl::span<const void> data);
 
   template<typename T>
   void SetData(const foundation::Array<T> &data, BufferObject::Usage usage) {

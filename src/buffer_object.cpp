@@ -3,7 +3,7 @@
 
 namespace knight {
 
-using gsl::array_view;
+using gsl::span;
 
 BufferObject::BufferObject(Target target) :
     target_{target} {
@@ -65,12 +65,12 @@ void BufferObject::Unbind() const {
   }
 }
 
-void BufferObject::SetData(array_view<const void> data, Usage usage) {
+void BufferObject::SetData(span<const void> data, Usage usage) {
   Bind();
   GL(glBufferData(GLenum(target_), data.size(), data.data(), GLenum(usage)));
 }
 
-void BufferObject::SetSubData(GLintptr offset, array_view<const void> data) {
+void BufferObject::SetSubData(GLintptr offset, span<const void> data) {
   Bind();
   GL(glBufferSubData(GLenum(target_), offset, data.size(), data.data()));
 }

@@ -21,10 +21,10 @@ struct DirectoryContent {
 
 namespace file_util {
 
-uint64_t GetLastWriteTime(czstring filename);
+uint64_t GetLastWriteTime(gsl::czstring<> filename);
 
 bool ListDirectoryContents(
-  foundation::Allocator &allocator, czstring directory_path);
+  foundation::Allocator &allocator, gsl::czstring<> directory_path);
 
 } // namespace file_util
 

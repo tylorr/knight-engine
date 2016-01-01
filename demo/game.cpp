@@ -138,7 +138,7 @@ void BuildInjector(GameState &game_state) {
   game_state.injector = allocate_unique<di::Injector>(allocator, config.BuildInjector(allocator));
 }
 
-void ReadFile(czstring path, Buffer &buffer) {
+void ReadFile(czstring<> path, Buffer &buffer) {
   FileRead file{path};
   file.Read(buffer);
 }
@@ -331,11 +331,11 @@ extern "C" GAME_INIT(Init) {
   // }
 }
 
-bool DrawVector(czstring name, glm::vec3 &vector) {
+bool DrawVector(czstring<> name, glm::vec3 &vector) {
   return ImGui::DragFloat3(name, &vector[0], 0.5f);
 }
 
-bool DrawQuat(czstring name, glm::quat &quat, glm::vec3 &euler_offset) {
+bool DrawQuat(czstring<> name, glm::quat &quat, glm::vec3 &euler_offset) {
   auto euler = eulerAngles(quat);
   euler -= euler_offset;
 

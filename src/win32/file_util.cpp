@@ -7,6 +7,7 @@
 
 using namespace foundation;
 using namespace string_stream;
+using namespace gsl;
 
 namespace knight {
 
@@ -24,7 +25,7 @@ namespace detail {
   }
 
   bool ListDirectoryContents(
-      foundation::Allocator &allocator, cwzstring directory_path, int depth) { 
+      foundation::Allocator &allocator, cwzstring<> directory_path, int depth) { 
     // WIN32_FIND_DATA find_data; 
     // HANDLE find_handle = nullptr; 
 
@@ -69,7 +70,7 @@ namespace detail {
   }
 }
 
-uint64_t GetLastWriteTime(czstring filename) {
+uint64_t GetLastWriteTime(czstring<> filename) {
   FILETIME last_write_time;
 
   foundation::TempAllocator128 alloc;
@@ -82,7 +83,7 @@ uint64_t GetLastWriteTime(czstring filename) {
 }
 
 bool ListDirectoryContents(
-    foundation::Allocator &allocator, czstring directory_path) {
+    foundation::Allocator &allocator, czstring<> directory_path) {
   foundation::TempAllocator2048 alloc;
   return detail::ListDirectoryContents(allocator, c_str(Widen(alloc, directory_path)), 0);
 }

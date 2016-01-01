@@ -65,12 +65,7 @@ void BufferObject::Unbind() const {
   }
 }
 
-void BufferObject::SetData(span<const void> data, Usage usage) {
-  Bind();
-  GL(glBufferData(GLenum(target_), data.size(), data.data(), GLenum(usage)));
-}
-
-void BufferObject::SetSubData(GLintptr offset, span<const void> data) {
+void BufferObject::SetSubData(GLintptr offset, span<const char> data) {
   Bind();
   GL(glBufferSubData(GLenum(target_), offset, data.size(), data.data()));
 }

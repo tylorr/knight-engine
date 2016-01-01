@@ -71,6 +71,7 @@ set(KNIGHT_ENGINE_INCLUDES
   ${PROJECT_SOURCE_DIR}/third-party/utf8
   ${PROJECT_SOURCE_DIR}/third-party/tinyobjloader
   ${PROJECT_SOURCE_DIR}/third-party/pcg/include
+  ${PROJECT_SOURCE_DIR}/third-party/gsl/include
   ${FBSCHEMA_OUTPUT}
   #${LUA_INCLUDE_DIR}
 )
@@ -82,6 +83,7 @@ add_subdirectory(third-party/flatbuffers)
 add_subdirectory(third-party/foundation)
 add_subdirectory(third-party/enet)
 add_subdirectory(third-party/tinyobjloader)
+add_subdirectory(third-party/gsl)
 add_subdirectory(type_erasure)
 add_subdirectory(src)
 add_subdirectory(demo)

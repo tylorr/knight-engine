@@ -23,6 +23,8 @@
 #include "transform_component_generated.h"
 #include "mesh_component_generated.h"
 #include "types_generated.h"
+#include "schema_binaries.h"
+
 
 #include <flatbuffers/idl.h>
 #include <flatbuffers/reflection.h>
@@ -84,6 +86,10 @@ namespace schema {
     };
   }
 
+  glm::vec3 convert(const vec3 &vec) {
+    return glm::vec3{vec.x(), vec.y(), vec.z()};
+  }
+
   glm::vec4 convert(const vec4 &vec) {
     return glm::vec4{vec.x(), vec.y(), vec.z(), vec.w()};
   }
@@ -143,19 +149,17 @@ void ReadFile(czstring<> path, Buffer &buffer) {
   file.Read(buffer);
 }
 
-GameState game_state;
+std::unordered_map<czstring<>, const unsigned char *> componet_map {
+  { "TransformComponent", transform_component_bfbs }
+};
 
-//const flatbuffers::Vector<flatbuffers::Offset<reflection::Field>> *fields;
-const reflection::Field *field;
-flatbuffers::Table *transform_root;
+GameState game_state;
 
 pointer<FlatBufferAllocator> fb_alloc;
 pointer<flatbuffers::FlatBufferBuilder> fbb_ptr;
-
-
+const schema::ComponentData *component_data;
 
 extern "C" GAME_INIT(Init) {
-
   JobSystem::Initialize();
 
   auto &allocator = memory_globals::default_allocator();
@@ -221,17 +225,13 @@ extern "C" GAME_INIT(Init) {
   auto transform_component = game_state.injector->get_instance<TransformComponent>();
   transform_component->Add(*entity);
 
-  auto transform_instance = transform_component->Lookup(*entity);
-  auto local = transform_component->local(transform_instance);
-
-  auto schema_local = schema::convert(local);
-
   fb_alloc = allocate_unique<FlatBufferAllocator>(allocator, allocator);
   fbb_ptr = allocate_unique<flatbuffers::FlatBufferBuilder>(allocator, 1024, fb_alloc.get());
 
   auto &fbb = *fbb_ptr;
 
-  auto transform_location = schema::CreateTransformComponent(fbb, &schema_local);
+  schema::vec3 trans{0, 0, 0}, rot{0, 0, 0}, scale{1.0f, 1.0f, 1.0f};
+  auto transform_location = schema::CreateTransformComponent(fbb, &trans, &rot, &scale);
   auto transform_data_location = schema::CreateComponentData(fbb, schema::Component_TransformComponent, transform_location.Union());
 
   flatbuffers::Offset<schema::ComponentData> components[] = { transform_data_location };
@@ -239,6 +239,7 @@ extern "C" GAME_INIT(Init) {
 
   auto entity_location = CreateEntity(fbb, component_locations);
 
+  fbb.ForceDefaults(true);
   fbb.Finish(entity_location);
 
   // flatbuffers::Parser parser;
@@ -264,21 +265,14 @@ extern "C" GAME_INIT(Init) {
   //   parser.Parse(c_str(buf));
   // }
 
-  // auto *entity_table = schema::GetEntity(fbb.GetBufferPointer());
-  // auto *schema_component_data = entity_table->components()->Get(0);
-  // auto &transform_root = *reinterpret_cast<const flatbuffers::Table *>(schema_component_data->component());
+  // std::string json;
+  // GenerateText(parser, fbb.GetBufferPointer(),
+  //              flatbuffers::GeneratorOptions(), &json);
 
-  // auto *entity_table = schema::GetEntity(fbb.GetBufferPointer());
-  // auto *schema_component_data = entity_table->components()->Get(0);
-  // transform_root = const_cast<flatbuffers::Table *>(reinterpret_cast<const flatbuffers::Table *>(schema_component_data->component()));
+  // printf("%s\n", json.c_str());
 
-  // Buffer buffer{allocator};
-  // ReadFile("schema_headers/transform_component.bfbs", buffer);
-  // auto &transform_schema = *reflection::GetSchema(c_str(buffer));
-
-  // auto *root_table = transform_schema.root_table();
-  // auto *fields = root_table->fields();
-  // field = fields->Get(0);
+  auto *entity_table = schema::GetEntity(fbb.GetBufferPointer());
+  component_data = entity_table->components()->Get(0);
 
   // auto &local_field = *fields->LookupByKey("local_position");
   // auto &local_type = *local_field.type();
@@ -288,7 +282,7 @@ extern "C" GAME_INIT(Init) {
 
   // printf("%s\n", local_obj->name()->c_str());
 
-  // auto *local_value = flatbuffers::GetAnyFieldAddressOf<schema::mat4>(transform_root, local_field);
+  // auto *local_value = flatbuffers::GetAnyFieldAddressOf<schema::mat4>(transform_table, local_field);
 
   // printf("%f\n", local_value->col0().y());
   // for (auto &&component_data : *entity_table->components()) {
@@ -307,16 +301,9 @@ extern "C" GAME_INIT(Init) {
 
   // auto *component_tables = flatbuffers::GetFieldV<flatbuffers::Table>(entity_root, components_field);
 
-  // std::string json;
-  // GenerateText(parser, fbb.GetBufferPointer(),
-  //              flatbuffers::GeneratorOptions(), &json);
-
-  //printf("%s\n", json.c_str());
-
   // auto material = fbb.CreateString("../shaders/blinn_phong.shader");
   // auto mesh_location = schema::CreateMeshComponent(fbb, material);
   // auto mesh_data_location = schema::CreateComponentData(fbb, schema::Component_MeshComponent, mesh_location.Union());
-
 
   // flatbuffers::Offset<schema::ComponentData> components[] = { mesh_data_location };
   // auto component_locations = fbb.CreateVector(components, 1);
@@ -330,32 +317,6 @@ extern "C" GAME_INIT(Init) {
   //   writer.Write(fbb.GetBufferPointer(), fbb.GetSize());
   // }
 }
-
-bool DrawVector(czstring<> name, glm::vec3 &vector) {
-  return ImGui::DragFloat3(name, &vector[0], 0.5f);
-}
-
-bool DrawQuat(czstring<> name, glm::quat &quat, glm::vec3 &euler_offset) {
-  auto euler = eulerAngles(quat);
-  euler -= euler_offset;
-
-  auto euler_deg = degrees(euler);
-  if (DrawVector(name, euler_deg)) {
-    euler = radians(euler_deg);
-
-    auto xrot = angleAxis(euler.x, glm::highp_vec3{1.0f, 0.0f, 0.0f});
-    auto yrot = angleAxis(euler.y, glm::highp_vec3{0.0f, 1.0f, 0.0f});
-    auto zrot = angleAxis(euler.z, glm::highp_vec3{0.0f, 0.0f, 1.0f});
-    quat = yrot  * xrot * zrot;
-
-    auto new_euler = eulerAngles(quat);
-    euler_offset = new_euler - euler;
-    return true;
-  }
-
-  return false;
-}
-
 
 // bool DrawTransform(glm::mat4 &matrix) {
 //   bool value_changed = false;
@@ -381,23 +342,80 @@ bool DrawQuat(czstring<> name, glm::quat &quat, glm::vec3 &euler_offset) {
 //   return value_changed;
 // }
 
-// void DrawTransform(flatbuffers::Table *table, const reflection::Field *field) {
-//   auto &schema_matrix = *flatbuffers::GetAnyFieldAddressOf<schema::mat4>(*table, *field);
-//   auto matrix = convert(schema_matrix);
-//   if (DrawTransform(matrix)) {
-//     schema_matrix = schema::convert(matrix);
+void UpdateComponent(const flatbuffers::Table *table) {
+  auto transform_table = reinterpret_cast<const schema::TransformComponent *>(table);
 
-//     auto entity_manager = game_state.injector->get_instance<EntityManager>();
-//     auto entity = entity_manager->Get(game_state.entity_id);
+  auto entity_manager = game_state.injector->get_instance<EntityManager>();
+  auto entity = entity_manager->Get(game_state.entity_id);
 
-//     auto transform_component = game_state.injector->get_instance<TransformComponent>();
-//     auto transform_instance = transform_component->Lookup(*entity);
-//     transform_component->set_local(transform_instance, matrix);
-//   }
-// }
+  auto transform_component = game_state.injector->get_instance<TransformComponent>();
+  auto transform_instance = transform_component->Lookup(*entity);
 
-glm::quat rotation;
-glm::vec3 euler_offset;
+  auto translation = convert(*transform_table->translation());
+  auto rotation = radians(convert(*transform_table->rotation()));
+  auto scale = convert(*transform_table->scale());
+
+  auto translation_mat = glm::translate(glm::mat4{1.0f}, translation);
+  auto rotation_mat = glm::eulerAngleYXZ(rotation.y, rotation.x, rotation.z);
+  auto scale_mat = glm::scale(glm::mat4{1.0f}, scale);
+
+  auto transform = translation_mat * rotation_mat * scale_mat;
+  transform_component->set_local(transform_instance, transform);
+}
+
+// NOTE: This table is being mutated even though it's const
+bool DrawVec3(const flatbuffers::Table *table, const reflection::Field *field) {
+  auto &vec3 = *flatbuffers::GetAnyFieldAddressOf<schema::vec3>(*table, *field);
+
+  float arr[] = { vec3.x(), vec3.y(), vec3.z() };
+  auto changed = ImGui::DragFloat3(field->name()->c_str(), arr, 0.03f);
+  vec3 = schema::vec3{arr[0], arr[1], arr[2]};
+
+  return changed;
+}
+
+bool DrawObj(const reflection::Schema *schema, const flatbuffers::Table *table, const reflection::Field *field) {
+  auto *type = field->type();
+  auto index = type->index();
+
+  auto *objects = schema->objects();
+  auto *object = objects->Get(index);
+  auto *name = object->name();
+
+  if (strcmp(name->c_str(), "vec3") == 0) {
+    return DrawVec3(table, field);
+  }
+
+  return false;
+}
+
+void DrawComponent(const schema::ComponentData *component_data) {
+  auto *table = reinterpret_cast<const flatbuffers::Table *>(component_data->component());
+
+  auto component_name = EnumNameComponent(component_data->component_type());
+  ImGui::Text("%s", component_name);
+
+  auto *schema = reflection::GetSchema(componet_map[component_name]);
+
+  auto *root_table = schema->root_table();
+  auto *fields = root_table->fields();
+
+  bool changed = false;
+  for (auto *&&field : *fields) {
+    auto *type = field->type();
+    switch(type->base_type()) {
+     case reflection::Obj:
+      changed |= DrawObj(schema, table, field);
+      break;
+    }
+  }
+
+  if (changed) {
+    UpdateComponent(table);
+  }
+
+  ImGui::Separator();
+}
 
 extern "C" GAME_UPDATE_AND_RENDER(UpdateAndRender) {
   static auto prev_time = 0.0;
@@ -419,23 +437,9 @@ extern "C" GAME_UPDATE_AND_RENDER(UpdateAndRender) {
   //   ImGui::TreePop();
   // }
 
-  // ImGui::Text("Hello, world!");
-  // ImGui::Text("This one too!");
-
-  // ImGui::InputText("string", game_state.string_buff, 256);
-  // ImGui::InputText("foo", game_state.foo_buff, 256);
-
-  //for (const auto &field : *fields) {
-    //DrawTransform(transform_root, field);
-
-  //}
-
-  //DrawTransform(transform_root, field);
-
-  DrawQuat("rotation", rotation, euler_offset);
+  DrawComponent(component_data);
 
   static bool show_test_window = true;
-
   if (show_test_window) {
     ImGui::ShowTestWindow(&show_test_window);
   }
@@ -447,17 +451,6 @@ extern "C" GAME_UPDATE_AND_RENDER(UpdateAndRender) {
   auto transform_instance = transform_component->Lookup(*entity);
 
   auto local = transform_component->local(transform_instance);
-  local = mat4_cast(rotation);
-
-  // auto rotation_radions = radians(rotation);
-
-  // DrawTransform(local);
-
-  // transform_component->set_local(transform_instance, local);
-
-  //local = glm::eulerAngleYXZ(rotation_radions.y, rotation_radions.x, rotation_radions.z);
-  // local = glm::rotate(local, (float)delta_time, glm::vec3(0.0f, 1.0f, 0.0f));
-  // transform_component->set_local(transform_instance, local);
 
   auto view_matrix = glm::translate(glm::mat4{1.0f}, glm::vec3{0, -8, -40});
   auto projection_matrix = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 100.f);

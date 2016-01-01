@@ -1,7 +1,9 @@
 namespace knight.schema;
 
 table TransformComponent {
-  local_position:mat4;
+  translation:vec3;
+  rotation:vec3;
+  scale:vec3;
 }
 
 table TransformComponentList {

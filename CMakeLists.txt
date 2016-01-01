@@ -92,18 +92,30 @@ add_subdirectory(test)
 set(FBSCHEMAS ${EVENT_FB_SCHEMAS})
 
 if (FBSCHEMAS)
+  set(SCHEMA_BINARY_HEADER "${FBSCHEMA_OUTPUT}schema_binaries.h")
+  file(WRITE ${SCHEMA_BINARY_HEADER} "//Generated headers include\n#pragma once\n")
   foreach(_schema ${FBSCHEMAS})
     get_filename_component(_basename ${_schema} NAME_WE)
     list(APPEND FBSCHEMA_HEADERS "${FBSCHEMA_OUTPUT}${_basename}_generated.h")
+    list(APPEND FBSCHEMA_BINARIES "${FBSCHEMA_OUTPUT}${_basename}.bfbs")
+    list(APPEND FBSCHEMA_BINARY_HEADERS "${FBSCHEMA_OUTPUT}${_basename}_schema.h")
+
+    add_custom_command(
+      OUTPUT "${FBSCHEMA_OUTPUT}${_basename}_schema.h"
+      COMMAND xxd -i "${_basename}.bfbs" "${_basename}_schema.h"
+      WORKING_DIRECTORY ${FBSCHEMA_OUTPUT}
+      DEPENDS "${FBSCHEMA_OUTPUT}${_basename}.bfbs")
+
+    file(APPEND ${SCHEMA_BINARY_HEADER} "#include \"${_basename}_schema.h\"\n")
   endforeach()
 
   add_custom_command(
-      OUTPUT ${FBSCHEMA_HEADERS}
-      COMMAND flatc -c -b --schema --gen-mutable -o "${FBSCHEMA_OUTPUT}" ${FBSCHEMAS}
+      OUTPUT ${FBSCHEMA_HEADERS} ${FBSCHEMA_BINARIES}
+      COMMAND flatc -c -b --schema -o "${FBSCHEMA_OUTPUT}" ${FBSCHEMAS}
       WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
       DEPENDS ${FBSCHEMAS} flatc)
 
-  add_custom_target(fbschema DEPENDS ${FBSCHEMA_HEADERS})
+  add_custom_target(fbschema DEPENDS ${FBSCHEMA_HEADERS} ${FBSCHEMA_BINARIES} ${FBSCHEMA_BINARY_HEADERS})
   add_dependencies(fbschema flatc)
 endif()
 

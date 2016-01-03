@@ -15,5 +15,3 @@ table Entity {
 }
 
 root_type Entity;
-
-

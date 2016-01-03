@@ -72,37 +72,22 @@ namespace detail {
 } // namespace detail
 
 namespace schema {
-
-  vec4 convert(const glm::vec4 &glm_vec) {
-    return { glm_vec.x, glm_vec.y, glm_vec.z, glm_vec.w };
-  }
-
-  mat4 convert(const glm::mat4 &glm_mat) {
-    return {
-      convert(glm_mat[0]),
-      convert(glm_mat[1]),
-      convert(glm_mat[2]),
-      convert(glm_mat[3])
-    };
-  }
-
-  glm::vec3 convert(const vec3 &vec) {
+  auto glm_cast(const vec3 &vec) {
     return glm::vec3{vec.x(), vec.y(), vec.z()};
   }
 
-  glm::vec4 convert(const vec4 &vec) {
+  auto glm_cast(const vec4 &vec) {
     return glm::vec4{vec.x(), vec.y(), vec.z(), vec.w()};
   }
 
-  glm::mat4 convert(const mat4 &mat) {
+  auto glm_cast(const mat4 &mat) {
     return glm::mat4{
-      convert(mat.col0()),
-      convert(mat.col1()),
-      convert(mat.col2()),
-      convert(mat.col3()),
+      glm_cast(mat.col0()),
+      glm_cast(mat.col1()),
+      glm_cast(mat.col2()),
+      glm_cast(mat.col3()),
     };
   }
-
 } // namespace shcema
 
 } // namespace knight
@@ -157,7 +142,7 @@ GameState game_state;
 
 pointer<FlatBufferAllocator> fb_alloc;
 pointer<flatbuffers::FlatBufferBuilder> fbb_ptr;
-const schema::ComponentData *component_data;
+const schema::Entity *entity_table;
 
 extern "C" GAME_INIT(Init) {
   JobSystem::Initialize();
@@ -271,8 +256,7 @@ extern "C" GAME_INIT(Init) {
 
   // printf("%s\n", json.c_str());
 
-  auto *entity_table = schema::GetEntity(fbb.GetBufferPointer());
-  component_data = entity_table->components()->Get(0);
+  entity_table = schema::GetEntity(fbb.GetBufferPointer());
 
   // auto &local_field = *fields->LookupByKey("local_position");
   // auto &local_type = *local_field.type();
@@ -342,43 +326,43 @@ extern "C" GAME_INIT(Init) {
 //   return value_changed;
 // }
 
-void UpdateComponent(const flatbuffers::Table *table) {
-  auto transform_table = reinterpret_cast<const schema::TransformComponent *>(table);
+void UpdateComponent(const flatbuffers::Table &table) {
+  auto &transform_table = reinterpret_cast<const schema::TransformComponent &>(table);
 
-  auto entity_manager = game_state.injector->get_instance<EntityManager>();
-  auto entity = entity_manager->Get(game_state.entity_id);
+  auto &entity_manager = *game_state.injector->get_instance<EntityManager>();
+  auto entity = entity_manager.Get(game_state.entity_id);
 
-  auto transform_component = game_state.injector->get_instance<TransformComponent>();
-  auto transform_instance = transform_component->Lookup(*entity);
+  auto &transform_component = *game_state.injector->get_instance<TransformComponent>();
+  auto transform_instance = transform_component.Lookup(*entity);
 
-  auto translation = convert(*transform_table->translation());
-  auto rotation = radians(convert(*transform_table->rotation()));
-  auto scale = convert(*transform_table->scale());
+  auto translation = glm_cast(*transform_table.translation());
+  auto rotation = radians(glm_cast(*transform_table.rotation()));
+  auto scale = glm_cast(*transform_table.scale());
 
   auto translation_mat = glm::translate(glm::mat4{1.0f}, translation);
   auto rotation_mat = glm::eulerAngleYXZ(rotation.y, rotation.x, rotation.z);
   auto scale_mat = glm::scale(glm::mat4{1.0f}, scale);
 
   auto transform = translation_mat * rotation_mat * scale_mat;
-  transform_component->set_local(transform_instance, transform);
+  transform_component.set_local(transform_instance, transform);
 }
 
 // NOTE: This table is being mutated even though it's const
-bool DrawVec3(const flatbuffers::Table *table, const reflection::Field *field) {
-  auto &vec3 = *flatbuffers::GetAnyFieldAddressOf<schema::vec3>(*table, *field);
+bool DrawVec3(const flatbuffers::Table &table, const reflection::Field &field) {
+  auto &vec3 = *flatbuffers::GetAnyFieldAddressOf<schema::vec3>(table, field);
 
   float arr[] = { vec3.x(), vec3.y(), vec3.z() };
-  auto changed = ImGui::DragFloat3(field->name()->c_str(), arr, 0.03f);
+  auto changed = ImGui::DragFloat3(field.name()->c_str(), arr, 0.03f);
   vec3 = schema::vec3{arr[0], arr[1], arr[2]};
 
   return changed;
 }
 
-bool DrawObj(const reflection::Schema *schema, const flatbuffers::Table *table, const reflection::Field *field) {
-  auto *type = field->type();
+bool DrawObj(const reflection::Schema &schema, const flatbuffers::Table &table, const reflection::Field &field) {
+  auto *type = field.type();
   auto index = type->index();
 
-  auto *objects = schema->objects();
+  auto *objects = schema.objects();
   auto *object = objects->Get(index);
   auto *name = object->name();
 
@@ -389,32 +373,37 @@ bool DrawObj(const reflection::Schema *schema, const flatbuffers::Table *table, 
   return false;
 }
 
-void DrawComponent(const schema::ComponentData *component_data) {
-  auto *table = reinterpret_cast<const flatbuffers::Table *>(component_data->component());
+void DrawComponent(const schema::ComponentData &component_data) {
+  auto &component_table = *reinterpret_cast<const flatbuffers::Table *>(component_data.component());
 
-  auto component_name = EnumNameComponent(component_data->component_type());
+  auto component_name = EnumNameComponent(component_data.component_type());
   ImGui::Text("%s", component_name);
 
-  auto *schema = reflection::GetSchema(componet_map[component_name]);
-
-  auto *root_table = schema->root_table();
-  auto *fields = root_table->fields();
+  auto &schema = *reflection::GetSchema(componet_map[component_name]);
+  auto &fields = *schema.root_table()->fields();
 
   bool changed = false;
-  for (auto *&&field : *fields) {
+  for (auto &&field : fields) {
     auto *type = field->type();
     switch(type->base_type()) {
      case reflection::Obj:
-      changed |= DrawObj(schema, table, field);
+      changed |= DrawObj(schema, component_table, *field);
       break;
     }
   }
 
   if (changed) {
-    UpdateComponent(table);
+    UpdateComponent(component_table);
   }
 
   ImGui::Separator();
+}
+
+void DrawEntity(const schema::Entity &entity_table) {
+  auto &component_data_list = *entity_table.components();
+  for (auto &&component_data : component_data_list) {
+    DrawComponent(*component_data);
+  }
 }
 
 extern "C" GAME_UPDATE_AND_RENDER(UpdateAndRender) {
@@ -437,7 +426,7 @@ extern "C" GAME_UPDATE_AND_RENDER(UpdateAndRender) {
   //   ImGui::TreePop();
   // }
 
-  DrawComponent(component_data);
+  DrawEntity(*entity_table);
 
   static bool show_test_window = true;
   if (show_test_window) {

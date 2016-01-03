@@ -248,6 +248,30 @@ void BeginFrame(double delta_time) {
 
   io.DeltaTime = (float)delta_time;
 
+  if (ImGui::IsMouseDragging() && ImGui::GetActiveID() != 0) {
+    auto *monitor = glfwGetPrimaryMonitor();
+    auto *video_mode = glfwGetVideoMode(monitor);
+    int screen_w = video_mode->width;
+
+    int window_x, window_y;
+    glfwGetWindowPos(imgui_manager_state.window, &window_x, &window_y);
+
+    double mouse_x, mouse_y;
+    glfwGetCursorPos(imgui_manager_state.window, &mouse_x, &mouse_y);
+
+    double screen_x = mouse_x + window_x;
+
+    if (screen_x <= 0) {
+      io.MouseClickedPos[0].x += screen_w;
+      mouse_x = screen_w - window_x;
+    } else if (screen_x >= screen_w - 1) {
+      io.MouseClickedPos[0].x -= screen_w;
+      mouse_x = 1 - window_x;
+    }
+
+    glfwSetCursorPos(imgui_manager_state.window, mouse_x,  mouse_y);
+  }
+
   int w, h;
   int display_w, display_h;
   glfwGetWindowSize(imgui_manager_state.window, &w, &h);
@@ -264,7 +288,8 @@ void BeginFrame(double delta_time) {
   }
 
   for (int i = 0; i < 3; i++) {
-    io.MouseDown[i] = imgui_manager_state.mouse_pressed[i] || glfwGetMouseButton(imgui_manager_state.window, i) != 0; // If a mouse press event came, always pass it as "mouse held this frame", so we don't miss click-release events that are shorter than 1 frame.
+    // If a mouse press event came, always pass it as "mouse held this frame", so we don't miss click-release events that are shorter than 1 frame.
+    io.MouseDown[i] = imgui_manager_state.mouse_pressed[i] || glfwGetMouseButton(imgui_manager_state.window, i) != 0;
     imgui_manager_state.mouse_pressed[i] = false;
   }
 

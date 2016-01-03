@@ -22,6 +22,7 @@ set(BUILD_SHARED_LIBS ON)
 
 add_definitions(-DGLM_FORCE_RADIANS)
 add_definitions(-DDEVELOPMENT)
+add_definitions(-DIMGUI_INCLUDE_IMCONFIG_H)
 add_definitions(-DUNICODE=1)
 add_definitions(-D_UNICODE=1)
 

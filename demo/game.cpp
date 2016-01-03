@@ -108,8 +108,8 @@ namespace schema {
 } // namespace knight
 
 struct Vertex {
-  glm::vec3 position;
-  glm::vec3 normal;
+  TrivialVec3 position;
+  TrivialVec3 normal;
 };
 
 auto EntityManagerFactory() {
@@ -206,7 +206,7 @@ extern "C" GAME_INIT(Init) {
   auto &vao = *game_state.vao;
 
   vbo.SetData(vertices, BufferObject::Usage::StaticDraw);
-  ibo.SetData(obj_mesh.indices, BufferObject::Usage::StaticDraw);
+  ibo.SetData(gsl::as_span(obj_mesh.indices), BufferObject::Usage::StaticDraw);
 
   vao.SetCount(obj_mesh.indices.size())
      .SetPrimitive(ArrayObject::Primitive::Triangles)

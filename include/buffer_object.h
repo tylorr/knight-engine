@@ -56,27 +56,20 @@ class BufferObject {
   void Bind() const;
   void Unbind() const;
 
-  template<typename T>
-  void SetData(gsl::span<T> data, Usage usage) {
-    Bind();
-    GL(glBufferData(GLenum(target_), data.size(), data.data(), GLenum(usage)));
-  }
+  void SetData(gsl::span<const gsl::byte> data, Usage usage);
 
-  void SetSubData(GLintptr offset, gsl::span<const char> data);
+  template <typename T, std::ptrdiff_t... Dimensions>
+  void SetData(gsl::span<T, Dimensions...> data, Usage usage) {
+    SetData(as_bytes(data), usage);
+  }
 
   template<typename T>
   void SetData(const foundation::Array<T> &data, BufferObject::Usage usage) {
     using namespace foundation;
-    gsl::span<const T> span{array::begin(data), static_cast<long long>(array::size(data) * sizeof(T))};
-    SetData(span, usage);
+    SetData(gsl::as_span(array::begin(data), array::end(data)), usage);
   }
 
-  template<typename T>
-  void SetData(const std::vector<T> &data, BufferObject::Usage usage) {
-    using namespace foundation;
-    gsl::span<const T> span{data.data(), static_cast<long long>(data.size() * sizeof(T))};
-    SetData(span, usage);
-  }
+  void SetSubData(GLintptr offset, gsl::span<const gsl::byte> data);
 
  private:
   GLuint handle_;

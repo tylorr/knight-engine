@@ -78,7 +78,6 @@ const char *GetClipboardString();
 void SetClipboardString(const char *text);
 
 void RenderDrawLists(ImDrawData* draw_data) {
-
   // Backup GL state
   GLint last_program, last_texture, last_array_buffer, last_element_array_buffer, last_vertex_array;
   glGetIntegerv(GL_CURRENT_PROGRAM, &last_program);
@@ -311,7 +310,7 @@ void OnMouse(int button, int action) {
   }
 }
 
-void OnKey(const int &key, const int &action, const int &mods) {
+void OnKey(int key, int action, int mods) {
   ImGuiIO &io = ImGui::GetIO();
 
   if (action == GLFW_PRESS) {
@@ -327,13 +326,13 @@ void OnKey(const int &key, const int &action, const int &mods) {
   io.KeyAlt = io.KeysDown[GLFW_KEY_LEFT_ALT] || io.KeysDown[GLFW_KEY_RIGHT_ALT];
 }
 
-void OnCharacter(const unsigned int &character) {
+void OnCharacter(unsigned int character) {
   if (character > 0 && character < 0x10000) {
     ImGui::GetIO().AddInputCharacter((unsigned short)character);
   }
 }
 
-void OnScroll(const double &yoffset) {
+void OnScroll(double yoffset) {
   imgui_manager_state.mouse_wheel += (float)yoffset;
 }
 

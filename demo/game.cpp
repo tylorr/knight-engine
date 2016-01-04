@@ -154,6 +154,7 @@ extern "C" GAME_INIT(Init) {
 
   auto material_manager = game_state.injector->get_instance<MaterialManager>();
 
+  game_state.window = &window;
   ImGuiManager::Initialize(window, *material_manager);
 
   game_state.material = material_manager->CreateMaterial("../assets/shaders/blinn_phong.shader");
@@ -347,7 +348,6 @@ void UpdateComponent(const flatbuffers::Table &table) {
   transform_component.set_local(transform_instance, transform);
 }
 
-// NOTE: This table is being mutated even though it's const
 bool DrawVec3(const flatbuffers::Table &table, const reflection::Field &field) {
   auto &vec3 = *flatbuffers::GetAnyFieldAddressOf<schema::vec3>(table, field);
 
@@ -415,6 +415,11 @@ extern "C" GAME_UPDATE_AND_RENDER(UpdateAndRender) {
   glClear(GL_COLOR_BUFFER_BIT);
 
   ImGuiManager::BeginFrame(delta_time);
+
+  ImGuiIO &io = ImGui::GetIO();
+  if (io.KeyCtrl && ImGui::IsKeyPressed(GLFW_KEY_Q, false)) {
+    glfwSetWindowShouldClose(game_state.window, GL_TRUE);
+  }
 
   // bool tree_open = ImGui::TreeNode((void *)0, "");
   // ImGui::SameLine();

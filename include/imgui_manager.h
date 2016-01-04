@@ -15,9 +15,9 @@ void BeginFrame(double delta_time);
 void EndFrame();
 
 void OnMouse(int button, int action);
-void OnKey(const int &key, const int &action, const int &mods);
-void OnCharacter(const unsigned int &character);
-void OnScroll(const double &yoffset);
+void OnKey(int key, int action, int mods);
+void OnCharacter(unsigned int character);
+void OnScroll(double yoffset);
 
 } // namespace ImGuiManager
 

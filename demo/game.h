@@ -9,10 +9,14 @@
 
 using namespace knight;
 
+struct GLFWwindow;
+
 struct GameState {
   std::shared_ptr<Material> material;
   pointer<BufferObject> vbo;
   pointer<BufferObject> ibo;
+
+  GLFWwindow *window;
 
   pointer<ArrayObject> vao;
 

@@ -4,23 +4,23 @@
 
 #include <bitset>
 
-constexpr std::size_t operator"" _z(unsigned long long n) { 
-  return n; 
+constexpr std::size_t operator"" _z(unsigned long long n) {
+  return n;
 }
 
-constexpr unsigned long long operator""_kib(unsigned long long n) {
+constexpr uint32_t operator""_kib(unsigned long long n) {
   return n * 1024;
 }
 
-constexpr unsigned long long operator""_mib(unsigned long long n) {
+constexpr uint32_t operator""_mib(unsigned long long n) {
   return n * 1024_kib;
 }
 
-constexpr unsigned long long operator""_gib(unsigned long long n) {
+constexpr uint64_t operator""_gib(unsigned long long n) {
   return n * 1024_mib;
 }
 
-constexpr unsigned long long operator""_tib(unsigned long long n) {
+constexpr uint64_t operator""_tib(unsigned long long n) {
   return n * 1024_gib;
 }
 

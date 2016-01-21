@@ -1,7 +1,6 @@
 *.sublime-workspace
 *.o
 *.d
-*.exe
 *.a
 
 CMakeCache.txt

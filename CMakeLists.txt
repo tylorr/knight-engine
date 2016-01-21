@@ -48,7 +48,7 @@ macro(register_event_fbs _target)
 endmacro()
 
 macro(pdb target)
-  # add_custom_command(TARGET ${target} POST_BUILD COMMAND cv2pdb $<TARGET_FILE:${target}>)
+  add_custom_command(TARGET ${target} POST_BUILD COMMAND ${PROJECT_SOURCE_DIR}/bin/cv2pdb $<TARGET_FILE:${target}>)
 endmacro(pdb)
 
 set(FBSCHEMA_OUTPUT "${PROJECT_BINARY_DIR}/schema_headers/")

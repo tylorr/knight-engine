@@ -17,6 +17,7 @@
 #include "dependency_injection.h"
 #include "job_system.h"
 #include "file_util.h"
+#include "buddy_allocator.h"
 
 #include "entity_generated.h"
 // #include "entity_resource_generated.h"
@@ -149,6 +150,24 @@ extern "C" GAME_INIT(Init) {
 
   auto &allocator = memory_globals::default_allocator();
   auto &scratch_allocator = memory_globals::default_scratch_allocator();
+
+  auto &page_allocator = memory_globals::default_page_allocator();
+
+  auto *block = page_allocator.allocate(128_kib );
+  //Ensures(block == nullptr);
+
+  BuddyAllocator buddy{block, 1024};
+
+  auto buddy_block0 = buddy.allocate(128);
+  auto buddy_block1 = buddy.allocate(128);
+  buddy.deallocate(buddy_block1);
+  buddy.deallocate(buddy_block0, 128);
+
+  // auto depth = buddy.get_depth(buddy_block);
+  // DBUG("depth: %u", depth);
+
+  page_allocator.deallocate(block);
+
 
   BuildInjector(game_state);
 

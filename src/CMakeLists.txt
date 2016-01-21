@@ -14,6 +14,7 @@ set(SOURCES
     transform_component.cpp
     dependency_injection.cpp
     attribute.cpp
+    buddy_allocator.cpp
     win32/file_read.cpp
     win32/file_write.cpp
     win32/file_util.cpp

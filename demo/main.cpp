@@ -37,6 +37,7 @@ int main(int argc, char *argv[]) {
 
   // line buffering not supported on win32
   setvbuf(stdout, nullptr, _IONBF, BUFSIZ);
+  std::set_terminate(trace_abort);
 
   memory_globals::init();
 

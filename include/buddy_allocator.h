@@ -1,6 +1,7 @@
 #pragma once
 
 #include "common.h"
+#include "bit_span.h"
 
 #include <gsl.h>
 #include <memory.h>
@@ -18,6 +19,14 @@ constexpr auto node_count(uint32_t height) {
 }
 
 } // namespace btree
+
+namespace bit_span {
+namespace detail {
+  struct TrackingBits : public BitSpan<uint8_t> { using BitSpan<uint8_t>::BitSpan; };
+  struct AllocationBits : public BitSpan<uint8_t> { using BitSpan<uint8_t>::BitSpan; };
+  struct SplitBits : public BitSpan<uint8_t> { using BitSpan<uint8_t>::BitSpan; };
+}
+}
 
 class BuddyAllocator : public foundation::Allocator {
  public:
@@ -37,19 +46,21 @@ class BuddyAllocator : public foundation::Allocator {
     Node *next;
   };
 
+  using TrackingBits = bit_span::detail::TrackingBits;
+
   static constexpr uint32_t kMaxHeight = (1 << 5) - 1;
   static constexpr uint32_t kLeafSize = 1 << 7;
   static_assert(kLeafSize >= sizeof(Node), "Leaf size too small for linked list");
 
   const uint64_t total_size_;
   const uint32_t height_;
-  gsl::byte *buffer_start_;
-  uint8_t *tracking_start_;
+  gsl::byte * const buffer_start_;
+  uint8_t * const tracking_start_;
   std::array<void *, kMaxHeight + 1> free_list_;
 
-  uint32_t tracking_byte_count() const;
-  gsl::span<uint8_t> tracking_bytes();
-  gsl::span<const uint8_t> tracking_bytes() const;
+  uint32_t tracking_bit_count() const;
+  TrackingBits tracking_bits();
+  const TrackingBits tracking_bits() const;
 
   uint32_t depth_of_block_size(uint32_t size) const;
   uint64_t block_size_at_depth(uint32_t depth) const;
@@ -63,9 +74,7 @@ class BuddyAllocator : public foundation::Allocator {
   void *pop_free_list(uint32_t depth);
   void split_and_set_free(gsl::not_null<void *> ptr, uint32_t parent_depth);
 
-  void record_tracking_bits(uint32_t allocation_bits, uint32_t split_bits);
-
-  void *allocate_at_depth(gsl::span<uint8_t> tracking_bytes, uint32_t depth);
+  void *allocate_at_depth(TrackingBits tracking_bits, uint32_t depth);
   void deallocate_at_depth(gsl::not_null<void *> ptr, uint32_t depth);
 };
 

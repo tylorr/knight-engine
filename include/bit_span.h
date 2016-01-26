@@ -13,6 +13,8 @@ class BitSpan {
   using block_type = BlockType;
   using size_type = std::size_t;
   using block_width_type = int32_t;
+  using block_span_type = gsl::span<BlockType>;
+  using block_iterator = typename block_span_type::iterator;
 
   static constexpr block_width_type kBitsPerBlock = std::numeric_limits<BlockType>::digits;
 
@@ -43,9 +45,10 @@ class BitSpan {
 
   BitSpan subspan(std::ptrdiff_t block_offset, std::ptrdiff_t count = gsl::dynamic_range) const;
 
- private:
-  using block_span_type = gsl::span<BlockType>;
+  block_iterator block_begin() const { return block_span_.begin(); }
+  block_iterator block_end() const { return block_span_.end(); }
 
+ private:
   block_span_type block_span_;
   size_type bit_count_;
 

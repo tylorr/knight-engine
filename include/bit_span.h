@@ -4,6 +4,7 @@
 
 #include <limits>
 #include <algorithm>
+#include <type_traits>
 
 namespace knight {
 
@@ -19,6 +20,13 @@ class BitSpan {
   static constexpr block_width_type kBitsPerBlock = std::numeric_limits<BlockType>::digits;
 
   BitSpan(BlockType *ptr, size_type size);
+
+  // construct from a convertible span
+  template <typename OtherBlockType,
+            typename = std::enable_if_t<std::is_convertible<OtherBlockType, BlockType>::value>>
+  BitSpan(BitSpan<OtherBlockType> other)
+    : block_span_{other.block_span_},
+      bit_count_{other.bit_count_} { }
 
   constexpr BitSpan(const BitSpan &) = default;
   constexpr BitSpan(BitSpan &&) = default;

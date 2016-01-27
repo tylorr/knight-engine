@@ -3,6 +3,8 @@
 #include "file_util.h"
 #include "string_util.h"
 
+#include <logog.hpp>
+
 #include <windows.h>
 
 using namespace knight;
@@ -39,13 +41,14 @@ namespace game_code {
 
     bool is_valid = false;
     if (game_code.module_) {
-      game_code.Init = (game_init *)GetProcAddress(game_code.module_, "Init");
-      game_code.UpdateAndRender = (game_update_and_render *)GetProcAddress(game_code.module_, "UpdateAndRender");
-      game_code.Shutdown = (game_shutdown *)GetProcAddress(game_code.module_, "Shutdown");
+      game_code.Init = reinterpret_cast<game_init *>(GetProcAddress(game_code.module_, "Init"));
+      game_code.UpdateAndRender = reinterpret_cast<game_update_and_render *>(GetProcAddress(game_code.module_, "UpdateAndRender"));
+      game_code.Shutdown = reinterpret_cast<game_shutdown *>(GetProcAddress(game_code.module_, "Shutdown"));
       is_valid = game_code.Init && game_code.UpdateAndRender && game_code.Shutdown;
     }
 
     if (!is_valid) {
+      WARN("Could not load game code");
       game_code.Init = nullptr;
       game_code.UpdateAndRender = nullptr;
       game_code.Shutdown = nullptr;

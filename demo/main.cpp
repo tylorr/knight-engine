@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
     auto temp_dll_name = "bin/temp_libgame.dll";
     game_code::Load(game, source_dll_name, temp_dll_name);
 
-    if (game.Init) {
+    if (game.Init != nullptr) {
       game.Init(*window);
     }
 
@@ -82,7 +82,7 @@ int main(int argc, char *argv[]) {
       glfwGetFramebufferSize(window, &current_width, &current_height);
       glViewport(0, 0, current_width, current_height);
 
-      if (game.UpdateAndRender) {
+      if (game.UpdateAndRender != nullptr) {
         game.UpdateAndRender();
       }
 
@@ -90,7 +90,7 @@ int main(int argc, char *argv[]) {
       glfwPollEvents();
     }
 
-    if (game.Shutdown) {
+    if (game.Shutdown != nullptr) {
       game.Shutdown();
     }
 

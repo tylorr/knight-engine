@@ -61,7 +61,6 @@ using std::shared_ptr;
 using std::unique_ptr;
 
 namespace knight {
-
 namespace detail {
 
   template<>
@@ -145,7 +144,7 @@ pointer<FlatBufferAllocator> fb_alloc;
 pointer<flatbuffers::FlatBufferBuilder> fbb_ptr;
 const schema::Entity *entity_table;
 
-extern "C" GAME_INIT(Init) {
+extern "C" void Init(GLFWwindow &window) {
   JobSystem::Initialize();
 
   auto &allocator = memory_globals::default_allocator();
@@ -425,7 +424,7 @@ void DrawEntity(const schema::Entity &entity_table) {
   }
 }
 
-extern "C" GAME_UPDATE_AND_RENDER(UpdateAndRender) {
+extern "C" void UpdateAndRender() {
   static auto prev_time = 0.0;
   auto current_time = glfwGetTime();
   auto delta_time = current_time - prev_time;
@@ -488,7 +487,7 @@ extern "C" GAME_UPDATE_AND_RENDER(UpdateAndRender) {
   game_state.material->Unbind();
 }
 
-extern "C" GAME_SHUTDOWN(Shutdown) {
+extern "C" void Shutdown() {
   ImGuiManager::Shutdown();
   JobSystem::Shutdown();
 }

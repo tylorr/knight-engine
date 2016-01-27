@@ -5,6 +5,7 @@
 #include <memory_types.h>
 
 #include <cstdint>
+#include <windows.h>
 
 struct GameCode {
   GameCode(foundation::Allocator &allocator)

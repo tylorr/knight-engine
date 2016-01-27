@@ -18,6 +18,7 @@
 #include "job_system.h"
 #include "file_util.h"
 #include "buddy_allocator.h"
+#include "vector.h"
 
 #include "entity_generated.h"
 // #include "entity_resource_generated.h"
@@ -49,7 +50,6 @@
 #include <tiny_obj_loader.h>
 
 #include <cstdio>
-#include <vector>
 #include <string>
 
 using namespace knight;
@@ -152,7 +152,7 @@ extern "C" void Init(GLFWwindow &window) {
 
   auto &page_allocator = memory_globals::default_page_allocator();
 
-  auto *block = page_allocator.allocate(128_kib );
+  auto *block = page_allocator.allocate(128_kib);
   //Ensures(block == nullptr);
 
   BuddyAllocator buddy{block, 1024};
@@ -192,9 +192,9 @@ extern "C" void Init(GLFWwindow &window) {
 
   auto &obj_mesh = shapes[0].mesh;
 
-  Array<Vertex> vertices{scratch_allocator};
+  Vector<Vertex> vertices{scratch_allocator};
   for (auto i = 0u; i < obj_mesh.positions.size(); i += 3) {
-    array::push_back(vertices,
+    vertices.push_back(
       Vertex {
         { obj_mesh.positions[i], obj_mesh.positions[i+1], obj_mesh.positions[i+2] },
         { obj_mesh.normals[i], obj_mesh.normals[i+1], obj_mesh.normals[i+2] }

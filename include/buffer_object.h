@@ -1,10 +1,8 @@
 #pragma once
 
-#include "gsl.h"
+#include "vector.h"
 
-#include <array.h>
-
-#include <vector>
+#include <gsl.h>
 
 namespace knight {
 
@@ -64,9 +62,8 @@ class BufferObject {
   }
 
   template<typename T>
-  void SetData(const foundation::Array<T> &data, BufferObject::Usage usage) {
-    using namespace foundation;
-    SetData(gsl::as_span(array::begin(data), array::end(data)), usage);
+  void SetData(const Vector<T> &data, BufferObject::Usage usage) {
+    SetData(gsl::as_span(data), usage);
   }
 
   void SetSubData(GLintptr offset, gsl::span<const gsl::byte> data);

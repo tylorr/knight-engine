@@ -5,7 +5,6 @@
 #include <memory.h>
 #include <array.h>
 
-#include <vector>
 #include <cstddef>
 
 namespace knight {
@@ -19,7 +18,7 @@ class SlotMap {
     : slot_table_(allocator),
       free_list_(allocator) { }
 
-  SlotMap(SlotMap &&other) 
+  SlotMap(SlotMap &&other)
     : slot_table_(std::move(other.slot_table_)),
       free_list_(std::move(other.free_list_)) { }
 

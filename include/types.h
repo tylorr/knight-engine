@@ -3,8 +3,6 @@
 #include "common.h"
 #include "std_allocator.h"
 
-#include <vector>
-
 namespace knight {
 
 class EntityManager;
@@ -12,7 +10,7 @@ class EntityManager;
 template<typename Owner, typename T, size_t index_bits, size_t version_bits>
 union ID {
   using type = T;
-  
+
   T id;
   struct {
     T index   : index_bits;
@@ -43,12 +41,9 @@ class Entity {
  public:
   using ID = ID64<Entity>::ID;
   ID id;
-  
+
   Entity() : id(0) { }
 };
-
-template<typename T>
-using Vector = std::vector<T, StdAllocator<T>>;
 
 template <typename T>
 class Component;

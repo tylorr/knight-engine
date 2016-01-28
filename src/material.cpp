@@ -1,5 +1,4 @@
 #include "material.h"
-#include "iterators.h"
 #include "platform_types.h"
 #include "uniform.h"
 #include "pointers.h"
@@ -21,12 +20,12 @@ namespace knight {
   case GL_ ## UpperTypeName ## _VEC3: uniform = alloc_.make_new<Uniform<LowerTypeName, 3>>(alloc_, *this, name_string); break; \
   case GL_ ## UpperTypeName ## _VEC4: uniform = alloc_.make_new<Uniform<LowerTypeName, 4>>(alloc_, *this, name_string); break;
 
-Material::Material(foundation::Allocator &alloc, GLuint program_handle, 
-                   uint32_t version, foundation::Array<UniformBase *> uniform_list)
+Material::Material(foundation::Allocator &alloc, GLuint program_handle,
+                   uint32_t version, Vector<UniformBase *> uniform_list)
     : program_handle_{program_handle},
       version_{version},
       uniforms_{alloc} {
-  for (auto &uniform : uniform_list) {
+  for (auto &&uniform : uniform_list) {
     auto location = glGetUniformLocation(program_handle, uniform->name());
     uniform->AddMaterial(*this, location);
     hash::set(uniforms_, location, uniform);
@@ -60,7 +59,7 @@ MaterialManager::MaterialManager(foundation::Allocator &alloc)
   glGetIntegerv(GL_MINOR_VERSION, &opengl_version_.minor);
 }
 
-MaterialManager::MaterialManager(foundation::Allocator &alloc, Array<const char *> global_uniforms)
+MaterialManager::MaterialManager(foundation::Allocator &alloc, Vector<const char *> global_uniforms)
     : alloc_{alloc},
       global_uniforms_{global_uniforms},
       shaders_{alloc},
@@ -73,16 +72,16 @@ MaterialManager::MaterialManager(foundation::Allocator &alloc, Array<const char 
 
 
 MaterialManager::~MaterialManager() {
-  for (auto &item : uniforms_) {
+  for (auto &&item : uniforms_) {
     alloc_.make_delete(item.value);
   }
 
-  for (auto &item : shaders_) {
+  for (auto &&item : shaders_) {
     glDeleteShader(item.value.vertex);
     glDeleteShader(item.value.fragment);
     glDeleteProgram(item.value.program);
   }
-  
+
   hash::clear(shaders_);
   hash::clear(uniforms_);
   hash::clear(material_version_);
@@ -131,11 +130,11 @@ GLuint MaterialManager::CreateShaderFromSource(uint64_t shader_id, const char *s
     auto shader_handle = GLuint{};
     GL(shader_handle = glCreateShader(type));
 
-    const char *full_source[] = { 
+    const char *full_source[] = {
       "#version ",
       version_string,
       "\n",
-      getDefine(type), 
+      getDefine(type),
       shader_source
     };
 
@@ -161,7 +160,7 @@ GLuint MaterialManager::CreateShaderFromSource(uint64_t shader_id, const char *s
 
   auto vertex_handle = createAndAttachShader(GL_VERTEX_SHADER);
   auto fragment_handle = createAndAttachShader(GL_FRAGMENT_SHADER);
-  
+
   auto result = GLint{};
   GL(glLinkProgram(program_handle));
   GL(glGetProgramiv(program_handle, GL_LINK_STATUS, &result));
@@ -188,7 +187,7 @@ GLuint MaterialManager::CreateShaderFromSource(uint64_t shader_id, const char *s
     char name[max_uniform_name_length];
     auto size = GLint{};
     auto type = GLenum{};
-    glGetActiveUniform(program_handle, i, max_uniform_name_length, nullptr, 
+    glGetActiveUniform(program_handle, i, max_uniform_name_length, nullptr,
                        &size, &type, name);
 
     //TODO: TR Skip uniforms that are in the global_uniform list
@@ -223,7 +222,7 @@ std::shared_ptr<Material> MaterialManager::CreateMaterial(const char *shader_pat
 }
 
 std::shared_ptr<Material> MaterialManager::CreateMaterial(GLuint program_handle) {
-  Array<UniformBase *> material_uniforms{alloc_};
+  Vector<UniformBase *> material_uniforms{alloc_};
 
   auto version = 0u;
   auto shader_material_hash = murmur_hash_64(&program_handle, sizeof(program_handle), version);
@@ -238,7 +237,7 @@ std::shared_ptr<Material> MaterialManager::CloneMaterial(const std::shared_ptr<M
   auto program_handle = other->program_handle();
 
   TempAllocator64 temp_alloc;
-  Array<UniformBase *> original_uniforms{temp_alloc};
+  Vector<UniformBase *> original_uniforms{temp_alloc};
   auto original_hash = murmur_hash_64(&program_handle, sizeof(program_handle), other->version());
   multi_hash::get(uniforms_, original_hash, original_uniforms);
 
@@ -247,17 +246,17 @@ std::shared_ptr<Material> MaterialManager::CloneMaterial(const std::shared_ptr<M
 
   auto clone_hash = murmur_hash_64(&program_handle, sizeof(program_handle), clone_version);
 
-  Array<UniformBase *> clone_uniforms{alloc_};
-  for (auto &uniform : original_uniforms) {
+  Vector<UniformBase *> clone_uniforms{alloc_};
+  for (auto &&uniform : original_uniforms) {
     auto clone = uniform->Clone(alloc_);
-    array::push_back(clone_uniforms, clone);
+    clone_uniforms.push_back(clone);
     multi_hash::insert(uniforms_, clone_hash, clone);
   }
 
   return allocate_shared<Material>(alloc_, alloc_, program_handle, clone_version, clone_uniforms);
 }
 
-void MaterialManager::MarkDirty(UniformBase *uniform, const Material &mat, 
+void MaterialManager::MarkDirty(UniformBase *uniform, const Material &mat,
                                 GLint location) {
   auto program_handle = mat.program_handle();
   auto shader_hash = murmur_hash_64(&program_handle, sizeof(program_handle), mat.version());
@@ -270,11 +269,11 @@ void MaterialManager::PushUniforms(const Material &mat) {
   auto shader_hash = murmur_hash_64(&program_handle, sizeof(program_handle), mat.version());
 
   TempAllocator64 temp_alloc;
-  Array<DirtyUniform> dirty_uniforms_for_mat{temp_alloc};
+  Vector<DirtyUniform> dirty_uniforms_for_mat{temp_alloc};
   multi_hash::get(dirty_uniforms_, shader_hash, dirty_uniforms_for_mat);
 
   mat.Bind();
-  for (auto &dirty_uniform : dirty_uniforms_for_mat) {
+  for (auto &&dirty_uniform : dirty_uniforms_for_mat) {
     dirty_uniform.uniform->Push(dirty_uniform.location);
   }
 

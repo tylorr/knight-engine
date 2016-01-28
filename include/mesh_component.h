@@ -4,8 +4,8 @@
 #include "shader_types.h"
 #include "component.h"
 #include "pointers.h"
+#include "vector.h"
 
-#include <collection_types.h>
 #include <memory_types.h>
 
 namespace knight {
@@ -28,7 +28,7 @@ class MeshComponent : public Component<MeshComponent> {
   // void GC(const EntityManager &em);
 
  private:
-  foundation::Array<InstanceData> data_;
+  Vector<InstanceData> data_;
 };
 
 } // namespace knight

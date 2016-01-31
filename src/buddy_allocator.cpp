@@ -67,7 +67,6 @@ BuddyAllocator::BuddyAllocator(void *buffer, uint64_t size)
     free_list_{} {
   Expects(height_ <= kMaxHeight);
 
-  DBUG("%u %lu", height_, total_size_);
 
   auto buffer_end = buffer_start_ + total_size_;
   //std::fill(buffer_start_, buffer_end, gsl::byte{});
@@ -90,7 +89,6 @@ BuddyAllocator::BuddyAllocator(void *buffer, uint64_t size)
   temp_tracking_bits.reset();
 
   // for (auto &&byte : temp_tracking_span) {
-  //   DBUG("byte: %u", byte);
   // }
 }
 
@@ -105,7 +103,6 @@ const TrackingBits BuddyAllocator::tracking_bits() const {
 void *BuddyAllocator::allocate(uint32_t size, uint32_t align) {
   auto block_size = pow2_ceil(size);
   auto depth = depth_of_block_size(block_size);
-  DBUG("allocate()");
   return allocate_at_depth(tracking_bits(), depth);
 }
 
@@ -226,9 +223,7 @@ void *BuddyAllocator::allocate_at_depth(TrackingBits tracking_bits, uint32_t dep
     auto block = pop_free_list(ancestor_depth);
 
     auto ancestor_index = index(block, ancestor_depth);
-    DBUG("Allocating index: %u depth: %u", ancestor_index, ancestor_depth);
     mark_allocated(allocation_tracking_bits, ancestor_index);
-
 
     split_and_set_free(block, ancestor_depth);
     split_tracking_bits.set(ancestor_index);
@@ -237,9 +232,7 @@ void *BuddyAllocator::allocate_at_depth(TrackingBits tracking_bits, uint32_t dep
   auto block = pop_free_list(depth);
   auto block_index = index(block, depth);
 
-  DBUG("Allocating index: %u depth: %u", block_index, depth);
   mark_allocated(allocation_tracking_bits, block_index);
-
 
   Ensures(block != nullptr);
   return block;
@@ -250,17 +243,13 @@ void BuddyAllocator::deallocate_at_depth(gsl::not_null<void *> ptr, uint32_t dep
 
   auto index = this->index(ptr, depth);
 
-  DBUG("Deallocating %u at depth %u", index, depth);
-
   if (depth < height_) {
-    DBUG("Marking not split");
     split_bits(tracking_bits()).reset(index);
   }
 
   auto buddy_is_allocated = mark_deallocated(allocation_bits(tracking_bits()), index);
 
   if (buddy_is_allocated || depth == 0) {
-    DBUG("Buddy is allocated or at root, adding self to free list");
     Node *original_front = nullptr;
     if (free_list_[depth] != nullptr) {
       original_front = new (free_list_[depth]) Node{};
@@ -272,10 +261,8 @@ void BuddyAllocator::deallocate_at_depth(gsl::not_null<void *> ptr, uint32_t dep
     auto buddy_node = new (buddy_ptr) Node{};
 
     if (buddy_node->previous != nullptr) {
-      DBUG("Removing buddy from free list");
       buddy_node->previous->next = buddy_node->next;
     } else {
-      DBUG("Removing buddy from free list, now empty");
       free_list_[depth] = nullptr;
     }
 

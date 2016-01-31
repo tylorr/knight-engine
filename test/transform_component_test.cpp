@@ -29,7 +29,7 @@ TEST_CASE("Transform Component") {
   auto entity = entity_manager->Get(entity_id);
 
   transform_component->Add(*entity);
-  auto transform = transform_component->Lookup(*entity);
+  auto transform = transform_component->lookup(*entity);
 
   SECTION("Default matrixes are set to identity") {
     CHECK(transform_component->local(transform) == glm::mat4(1.0f));
@@ -55,7 +55,7 @@ TEST_CASE("Transform Component") {
     auto parent_entity = entity_manager->Get(parent_entity_id);
 
     transform_component->Add(*parent_entity);
-    auto parent_transform = transform_component->Lookup(*parent_entity);
+    auto parent_transform = transform_component->lookup(*parent_entity);
 
     transform_component->set_parent(transform, parent_transform);
 

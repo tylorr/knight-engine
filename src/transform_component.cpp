@@ -29,7 +29,7 @@ void TransformComponent::Add(Entity e) {
     Allocate(data_.capacity * 2 + 8);
   }
 
-  auto null_instance = MakeInstance(-1);
+  auto null_instance = make_instance(-1);
   auto index = data_.size;
   data_.entity[index] = e;
   data_.local[index] = glm::mat4(1.0f);
@@ -45,7 +45,7 @@ void TransformComponent::Add(Entity e) {
 
 void TransformComponent::Add(Entity e, Instance parent) {
   Add(e);
-  set_parent(Lookup(e), parent);
+  set_parent(lookup(e), parent);
 }
 
 void TransformComponent::Allocate(uint32_t capacity) {
@@ -66,8 +66,8 @@ void TransformComponent::Allocate(uint32_t capacity) {
 void TransformComponent::Destroy(uint32_t i) {
   auto last = data_.size - 1;
 
-  auto instance = MakeInstance(i);
-  auto last_instance = MakeInstance(last);
+  auto instance = make_instance(i);
+  auto last_instance = make_instance(last);
 
   auto entity = data_.entity[i];
   auto last_entity = data_.entity[last];
@@ -157,7 +157,7 @@ void TransformComponent::set_parent(Instance instance, Instance parent) {
         data_.next_sibling[instance.i] = original_first_child;
         data_.prev_sibling[original_first_child.i] = instance;
       } else {
-        data_.next_sibling[instance.i] = MakeInstance(-1);
+        data_.next_sibling[instance.i] = make_instance(-1);
       }
 
       data_.local[instance.i] = transform::GetRelative(data_.world[parent.i], data_.world[instance.i]);
@@ -167,7 +167,7 @@ void TransformComponent::set_parent(Instance instance, Instance parent) {
 
 void TransformComponent::Swap(Instance instance_a, Instance instance_b) {
   auto move_instance = [this](Instance instance, int index) {
-    auto new_instance = MakeInstance(index);
+    auto new_instance = make_instance(index);
 
     data_.entity[index] = data_.entity[instance.i];
     data_.local[index] = data_.local[instance.i];

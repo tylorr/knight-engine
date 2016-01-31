@@ -346,7 +346,7 @@ void UpdateComponent(const flatbuffers::Table &table) {
   auto entity = entity_manager.Get(game_state.entity_id);
 
   auto &transform_component = *game_state.injector->get_instance<TransformComponent>();
-  auto transform_instance = transform_component.Lookup(*entity);
+  auto transform_instance = transform_component.lookup(*entity);
 
   auto translation = glm_cast(*transform_table.translation());
   auto rotation = radians(glm_cast(*transform_table.rotation()));
@@ -454,7 +454,7 @@ extern "C" void UpdateAndRender() {
   auto entity = entity_manager->Get(game_state.entity_id);
 
   auto transform_component = game_state.injector->get_instance<TransformComponent>();
-  auto transform_instance = transform_component->Lookup(*entity);
+  auto transform_instance = transform_component->lookup(*entity);
 
   auto local = transform_component->local(transform_instance);
 

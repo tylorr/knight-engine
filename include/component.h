@@ -12,8 +12,8 @@ class Component {
  public:
   struct Instance { int i; };
 
-  Instance MakeInstance(int i);
-  Instance Lookup(Entity e);
+  Instance make_instance(int i);
+  Instance lookup(Entity e);
 
  protected:
   Component(foundation::Allocator &alloc) : map_{alloc} { }
@@ -22,13 +22,13 @@ class Component {
 };
 
 template<typename T>
-auto Component<T>::MakeInstance(int i) -> Instance {
+auto Component<T>::make_instance(int i) -> Instance {
   return Instance{i};
 }
 
 template<typename T>
-auto Component<T>::Lookup(Entity e) -> Instance {
-  return MakeInstance(foundation::hash::get(map_, e.id, 0u));
+auto Component<T>::lookup(Entity e) -> Instance {
+  return make_instance(foundation::hash::get(map_, e.id, 0u));
 }
 
 } // namespace knight

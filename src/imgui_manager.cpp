@@ -117,10 +117,10 @@ void RenderDrawLists(ImDrawData* draw_data) {
     const ImDrawIdx* idx_buffer_offset = 0;
 
     auto vertices = gsl::as_span(cmd_list->VtxBuffer.begin(), cmd_list->VtxBuffer.end());
-    vbo.SetData(vertices, BufferObject::Usage::StreamDraw);
+    vbo.set_data(vertices, BufferObject::Usage::StreamDraw);
 
     auto indices = gsl::as_span(cmd_list->IdxBuffer.begin(), cmd_list->IdxBuffer.end());
-    ibo.SetData(indices, BufferObject::Usage::StreamDraw);
+    ibo.set_data(indices, BufferObject::Usage::StreamDraw);
 
     for (const ImDrawCmd* pcmd = cmd_list->CmdBuffer.begin(); pcmd != cmd_list->CmdBuffer.end(); pcmd++) {
       if (pcmd->UserCallback) {

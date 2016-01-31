@@ -60,7 +60,7 @@ ArrayObject &
 
   // Bind index buffer to VAO
   bind();
-  index_buffer.Bind();
+  index_buffer.bind();
 
   return *this;
 }
@@ -80,7 +80,7 @@ void ArrayObject::attribute_pointer(BufferObject &buffer, GLuint location,
                                    GLsizei stride, GLintptr offset) {
   bind();
   GL(glEnableVertexAttribArray(location));
-  buffer.Bind();
+  buffer.bind();
 
   auto offset_ptr = reinterpret_cast<const GLvoid *>(offset);
 

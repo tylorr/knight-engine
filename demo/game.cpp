@@ -203,8 +203,8 @@ extern "C" void Init(GLFWwindow &window) {
   auto &ibo = *game_state.ibo;
   auto &vao = *game_state.vao;
 
-  vbo.SetData(vertices, BufferObject::Usage::StaticDraw);
-  ibo.SetData(gsl::as_span(obj_mesh.indices), BufferObject::Usage::StaticDraw);
+  vbo.set_data(vertices, BufferObject::Usage::StaticDraw);
+  ibo.set_data(gsl::as_span(obj_mesh.indices), BufferObject::Usage::StaticDraw);
 
   vao.set_count(obj_mesh.indices.size())
      .set_primitive(ArrayObject::Primitive::Triangles)

@@ -30,12 +30,12 @@ BufferObject::~BufferObject() {
   }
 }
 
-void BufferObject::Bind() const {
+void BufferObject::bind() const {
   XASSERT(handle_, "Trying to bind an uninitialized buffer object");
   glBindBuffer(GLenum(target_), handle_);
 }
 
-void BufferObject::Unbind() const {
+void BufferObject::unbind() const {
   XASSERT(handle_, "Trying to unbind an uninitialized buffer object");
 
   auto binding_type = GLenum{};
@@ -65,13 +65,13 @@ void BufferObject::Unbind() const {
   }
 }
 
-void BufferObject::SetData(gsl::span<const gsl::byte> data, Usage usage) {
-  Bind();
+void BufferObject::set_data(gsl::span<const gsl::byte> data, Usage usage) {
+  bind();
   GL(glBufferData(GLenum(target_), data.size(), data.data(), GLenum(usage)));
 }
 
-void BufferObject::SetSubData(GLintptr offset, span<const gsl::byte> data) {
-  Bind();
+void BufferObject::set_subdata(GLintptr offset, span<const gsl::byte> data) {
+  bind();
   GL(glBufferSubData(GLenum(target_), offset, data.size(), data.data()));
 }
 

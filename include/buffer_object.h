@@ -51,22 +51,22 @@ class BufferObject {
   GLuint handle() const { return handle_; }
   Target target() const { return target_; }
 
-  void Bind() const;
-  void Unbind() const;
+  void bind() const;
+  void unbind() const;
 
-  void SetData(gsl::span<const gsl::byte> data, Usage usage);
+  void set_data(gsl::span<const gsl::byte> data, Usage usage);
 
   template <typename T, std::ptrdiff_t... Dimensions>
-  void SetData(gsl::span<T, Dimensions...> data, Usage usage) {
-    SetData(as_bytes(data), usage);
+  void set_data(gsl::span<T, Dimensions...> data, Usage usage) {
+    set_data(as_bytes(data), usage);
   }
 
   template<typename T>
-  void SetData(const Vector<T> &data, BufferObject::Usage usage) {
-    SetData(gsl::as_span(data), usage);
+  void set_data(const Vector<T> &data, BufferObject::Usage usage) {
+    set_data(gsl::as_span(data), usage);
   }
 
-  void SetSubData(GLintptr offset, gsl::span<const gsl::byte> data);
+  void set_subdata(GLintptr offset, gsl::span<const gsl::byte> data);
 
  private:
   GLuint handle_;

@@ -20,9 +20,13 @@ struct StdAllocator {
   template<typename U>
   struct rebind { using other = StdAllocator<U>; };
 
-  StdAllocator() = default;
+  StdAllocator() = delete;
   StdAllocator(foundation::Allocator &allocator) : allocator{&allocator} { }
-  StdAllocator(const StdAllocator<T> &other) = default;
+  StdAllocator(const StdAllocator &other) = default;
+  StdAllocator(StdAllocator &&other) = default;
+
+  StdAllocator &operator=(const StdAllocator &other) = default;
+  StdAllocator &operator=(StdAllocator &&other) = default;
 
   template<typename U>
   StdAllocator(const StdAllocator<U> &other)
@@ -34,6 +38,7 @@ struct StdAllocator {
   }
 
   void deallocate(T *p, std::size_t n) {
+    XASSERT(allocator != nullptr, "Cannot deallocate without foundation allocator");
     allocator->deallocate(p);
   }
 

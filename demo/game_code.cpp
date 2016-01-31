@@ -33,7 +33,7 @@ namespace game_code {
     CopyFile(widen(source_dll_name).c_str(), wide_temp_buffer.c_str(), false);
 
     game_code.module_ = LoadLibrary(wide_temp_buffer.c_str());
-    game_code.last_write_time_ = file_util::GetLastWriteTime(source_dll_name);
+    game_code.last_write_time_ = file_util::get_last_write_time(source_dll_name);
 
     bool is_valid = false;
     if (game_code.module_) {
@@ -66,7 +66,7 @@ namespace game_code {
 
   bool IsDirty(const GameCode &game_code) {
     auto new_dll_write_time = game_code_internal::WindowsFileTime(
-        file_util::GetLastWriteTime(game_code.source_dll_name_));
+        file_util::get_last_write_time(game_code.source_dll_name_));
 
     auto last_windows_write_time = game_code_internal::WindowsFileTime(game_code.last_write_time_);
     return CompareFileTime(&new_dll_write_time, &last_windows_write_time) != 0;

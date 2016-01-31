@@ -16,7 +16,7 @@ using namespace string_stream;
 namespace file_util {
 
 namespace detail {
-  uint64_t UInt64FileTime(FILETIME windows_file_time) {
+  uint64_t u_int64_file_time(FILETIME windows_file_time) {
     ULARGE_INTEGER large_file_time;
     large_file_time.LowPart = windows_file_time.dwLowDateTime;
     large_file_time.HighPart = windows_file_time.dwHighDateTime;
@@ -24,7 +24,7 @@ namespace detail {
     return large_file_time.QuadPart;
   }
 
-  bool ListDirectoryContents(
+  bool list_directory_contents(
       foundation::Allocator &allocator, cwzstring<> directory_path, int depth) { 
     // WIN32_FIND_DATA find_data; 
     // HANDLE find_handle = nullptr; 
@@ -70,7 +70,7 @@ namespace detail {
   }
 }
 
-uint64_t GetLastWriteTime(czstring<> filename) {
+uint64_t get_last_write_time(czstring<> filename) {
   FILETIME last_write_time;
 
   WIN32_FILE_ATTRIBUTE_DATA data;
@@ -78,13 +78,11 @@ uint64_t GetLastWriteTime(czstring<> filename) {
     last_write_time = data.ftLastWriteTime;
   }
 
-  return detail::UInt64FileTime(last_write_time);
+  return detail::u_int64_file_time(last_write_time);
 }
 
-bool ListDirectoryContents(
-    foundation::Allocator &allocator, czstring<> directory_path) {
-  foundation::TempAllocator2048 alloc;
-  return detail::ListDirectoryContents(allocator, widen(directory_path).c_str(), 0);
+bool list_directory_contents(foundation::Allocator &allocator, czstring<> directory_path) {
+  return detail::list_directory_contents(allocator, widen(directory_path).c_str(), 0);
 }
 
 } // namespace file_util

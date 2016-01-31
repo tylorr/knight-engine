@@ -25,9 +25,9 @@ struct DirectoryContent {
 
 namespace file_util {
 
-uint64_t GetLastWriteTime(gsl::czstring<> filename);
+uint64_t get_last_write_time(gsl::czstring<> filename);
 
-bool ListDirectoryContents(foundation::Allocator &allocator, gsl::czstring<> directory_path);
+bool list_directory_contents(foundation::Allocator &allocator, gsl::czstring<> directory_path);
 
 template<typename CharT = char>
 std::tuple<Vector<CharT>, bool> read_file_to_buffer(foundation::Allocator &allocator, gsl::czstring<> file_path) {

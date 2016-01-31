@@ -29,14 +29,10 @@ namespace game_code {
     game_code.source_dll_name_ = source_dll_name;
     game_code.temp_dll_name_ = temp_dll_name;
 
-    auto wide_src_buffer = Widen(game_code.allocator_, source_dll_name);
-    auto wide_temp_buffer = Widen(game_code.allocator_, temp_dll_name);
-    auto wide_src_dll_name = c_str(wide_src_buffer);
-    auto wide_temp_dll_name = c_str(wide_temp_buffer);
+    auto wide_temp_buffer = widen(temp_dll_name);
+    CopyFile(widen(source_dll_name).c_str(), wide_temp_buffer.c_str(), false);
 
-    CopyFile(wide_src_dll_name, wide_temp_dll_name, false);
-
-    game_code.module_ = LoadLibrary(wide_temp_dll_name);
+    game_code.module_ = LoadLibrary(wide_temp_buffer.c_str());
     game_code.last_write_time_ = file_util::GetLastWriteTime(source_dll_name);
 
     bool is_valid = false;
@@ -45,6 +41,8 @@ namespace game_code {
       game_code.UpdateAndRender = reinterpret_cast<game_update_and_render *>(GetProcAddress(game_code.module_, "UpdateAndRender"));
       game_code.Shutdown = reinterpret_cast<game_shutdown *>(GetProcAddress(game_code.module_, "Shutdown"));
       is_valid = game_code.Init && game_code.UpdateAndRender && game_code.Shutdown;
+    } else {
+      DBUG("Could not load module");
     }
 
     if (!is_valid) {

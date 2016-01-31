@@ -6,12 +6,12 @@
 #include <windows.h>
 
 using namespace foundation;
-using namespace string_stream;
 using namespace gsl;
 
 namespace knight {
 
 using namespace string_util;
+using namespace string_stream;
 
 namespace file_util {
 
@@ -73,9 +73,8 @@ namespace detail {
 uint64_t GetLastWriteTime(czstring<> filename) {
   FILETIME last_write_time;
 
-  foundation::TempAllocator128 alloc;
   WIN32_FILE_ATTRIBUTE_DATA data;
-  if(GetFileAttributesEx(c_str(Widen(alloc, filename)), GetFileExInfoStandard, &data)) {
+  if(GetFileAttributesEx(widen(filename).c_str(), GetFileExInfoStandard, &data)) {
     last_write_time = data.ftLastWriteTime;
   }
 
@@ -85,7 +84,7 @@ uint64_t GetLastWriteTime(czstring<> filename) {
 bool ListDirectoryContents(
     foundation::Allocator &allocator, czstring<> directory_path) {
   foundation::TempAllocator2048 alloc;
-  return detail::ListDirectoryContents(allocator, c_str(Widen(alloc, directory_path)), 0);
+  return detail::ListDirectoryContents(allocator, widen(directory_path).c_str(), 0);
 }
 
 } // namespace file_util

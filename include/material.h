@@ -6,6 +6,7 @@
 
 #include <hash.h>
 #include <logog.hpp>
+#include <gsl.h>
 
 namespace knight {
 
@@ -38,7 +39,7 @@ class Material {
   }
 
   template<typename T, size_t row_count, size_t col_count = 1>
-  Uniform<T, row_count, col_count> *Get(const char *name) const;
+  Uniform<T, row_count, col_count> *Get(gsl::czstring<> name) const;
 
   template<typename T, size_t row_count, size_t col_count = 1>
   Uniform<T, row_count, col_count> *Get(GLint location) const;
@@ -58,14 +59,14 @@ bool operator>(const Material &a, const Material &b);
 class MaterialManager {
  public:
   MaterialManager(foundation::Allocator &alloc);
-  MaterialManager(foundation::Allocator &alloc, Vector<const char *> global_uniforms);
+  MaterialManager(foundation::Allocator &alloc, Vector<gsl::czstring<>> global_uniforms);
   ~MaterialManager();
 
-  GLuint CreateShader(const char *shader_path);
-  GLuint CreateShaderFromSource(const char *name, const char *shader_source);
-  GLuint CreateShaderFromSource(uint64_t hash, const char *shader_source);
+  GLuint CreateShader(gsl::czstring<> shader_path);
+  GLuint CreateShaderFromSource(gsl::czstring<> name, gsl::czstring<> shader_source);
+  GLuint CreateShaderFromSource(uint64_t hash, gsl::czstring<> shader_source);
 
-  std::shared_ptr<Material> CreateMaterial(const char *shader_path);
+  std::shared_ptr<Material> CreateMaterial(gsl::czstring<> shader_path);
   std::shared_ptr<Material> CreateMaterial(GLuint program_handle);
   std::shared_ptr<Material> CloneMaterial(const std::shared_ptr<Material> &other);
 
@@ -85,7 +86,7 @@ class MaterialManager {
   };
 
   foundation::Allocator &alloc_;
-  const Vector<const char *> global_uniforms_;
+  const Vector<gsl::czstring<>> global_uniforms_;
   foundation::Hash<ShaderHandles> shaders_;
   foundation::Hash<uint32_t> material_version_;
   foundation::Hash<UniformBase *> uniforms_;
@@ -97,7 +98,7 @@ class MaterialManager {
 };
 
 template<typename T, size_t row_count, size_t col_count>
-Uniform<T, row_count, col_count> *Material::Get(const char *name) const {
+Uniform<T, row_count, col_count> *Material::Get(gsl::czstring<> name) const {
   auto location = GLint{};
   GL(location = glGetUniformLocation(program_handle_, name));
   auto uniform_base = foundation::hash::get<UniformBase *>(uniforms_, location, nullptr);

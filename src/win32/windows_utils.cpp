@@ -4,9 +4,9 @@
 #include <temp_allocator.h>
 
 #include <windows.h>
+#include <cstdio>
 
 using namespace foundation;
-using namespace foundation::string_stream;
 
 namespace knight {
 
@@ -26,10 +26,10 @@ namespace windows {
       nullptr);
 
     foundation::TempAllocator64 alloc;
-    auto error_message = string_util::Narrow(alloc, buffer);
+    auto error_message = string_util::narrow(buffer);
     LocalFree(buffer);
 
-    printf("%lu: %s\n", error_code, string_stream::c_str(error_message));
+    std::printf("%lu: %s\n", error_code, error_message.c_str());
 
     // printf(
     //   result, 

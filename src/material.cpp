@@ -1,18 +1,19 @@
 #include "material.h"
-#include "platform_types.h"
 #include "uniform.h"
 #include "pointers.h"
 #include "common.h"
+#include "file_util.h"
+#include "string_stream.h"
 
 #include <hash.h>
 #include <temp_allocator.h>
-#include <string_stream.h>
 #include <murmur_hash.h>
 
 using namespace foundation;
-using namespace foundation::string_stream;
 
 namespace knight {
+
+using namespace string_stream;
 
 #define KNIGHT_CREATE_UNIFORM_CASES2(UpperTypeName, LowerTypeName) \
   case GL_ ## UpperTypeName:          uniform = alloc_.make_new<Uniform<LowerTypeName, 1>>(alloc_, *this, name_string); break; \
@@ -59,7 +60,7 @@ MaterialManager::MaterialManager(foundation::Allocator &alloc)
   glGetIntegerv(GL_MINOR_VERSION, &opengl_version_.minor);
 }
 
-MaterialManager::MaterialManager(foundation::Allocator &alloc, Vector<const char *> global_uniforms)
+MaterialManager::MaterialManager(foundation::Allocator &alloc, Vector<gsl::czstring<>> global_uniforms)
     : alloc_{alloc},
       global_uniforms_{global_uniforms},
       shaders_{alloc},
@@ -87,27 +88,28 @@ MaterialManager::~MaterialManager() {
   hash::clear(material_version_);
 }
 
-GLuint MaterialManager::CreateShader(const char *shader_path) {
-  TempAllocator4096 temp_allocator;
-  Buffer shader_source{temp_allocator};
-  FileRead shader_file{shader_path};
-  shader_file.Read(shader_source);
-
+GLuint MaterialManager::CreateShader(gsl::czstring<> shader_path) {
   auto shader_id = murmur_hash_64(shader_path, strlen(shader_path), 0u);
   auto shader_handles = hash::get(shaders_, shader_id, ShaderHandles{});
   if (shader_handles.program != 0) {
     return shader_handles.program;
   } else {
+    TempAllocator512 allocator;
+    Buffer shader_source{allocator};
+    bool success;
+    std::tie(shader_source, success) = file_util::read_file_to_buffer(allocator, shader_path);
+    Ensures(success);
+
     return CreateShaderFromSource(shader_id, c_str(shader_source));
   }
 }
 
-GLuint MaterialManager::CreateShaderFromSource(const char *name, const char *shader_source) {
+GLuint MaterialManager::CreateShaderFromSource(gsl::czstring<> name, gsl::czstring<> shader_source) {
   auto shader_id = murmur_hash_64(name, strlen(name), 0u);
   return CreateShaderFromSource(shader_id, shader_source);
 }
 
-GLuint MaterialManager::CreateShaderFromSource(uint64_t shader_id, const char *shader_source) {
+GLuint MaterialManager::CreateShaderFromSource(uint64_t shader_id, gsl::czstring<> shader_source) {
   auto getDefine = [](GLenum type) {
     switch (type) {
       case GL_VERTEX_SHADER: return "#define VERTEX\n";
@@ -130,7 +132,7 @@ GLuint MaterialManager::CreateShaderFromSource(uint64_t shader_id, const char *s
     auto shader_handle = GLuint{};
     GL(shader_handle = glCreateShader(type));
 
-    const char *full_source[] = {
+    gsl::czstring<> full_source[] = {
       "#version ",
       version_string,
       "\n",
@@ -192,8 +194,7 @@ GLuint MaterialManager::CreateShaderFromSource(uint64_t shader_id, const char *s
 
     //TODO: TR Skip uniforms that are in the global_uniform list
 
-    Buffer name_string{alloc_};
-    name_string << name;
+    auto name_string = std::string{name};
 
     UniformBase *uniform = nullptr;
     switch (type) {
@@ -217,7 +218,7 @@ GLuint MaterialManager::CreateShaderFromSource(uint64_t shader_id, const char *s
   return program_handle;
 }
 
-std::shared_ptr<Material> MaterialManager::CreateMaterial(const char *shader_path) {
+std::shared_ptr<Material> MaterialManager::CreateMaterial(gsl::czstring<> shader_path) {
   return CreateMaterial(CreateShader(shader_path));
 }
 

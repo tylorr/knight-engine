@@ -1,26 +1,27 @@
 #pragma once
 
-#include <array.h>
-#include <string_stream.h>
+#include <utf8.h>
+
+#include <string>
+#include <locale>
+#include <codecvt>
+#include <iterator>
 
 namespace knight {
+  namespace string_util {
+    inline std::wstring widen(const std::string &str) {
+      // using codecvt = std::codecvt_utf8_utf16<wchar_t>;
+      // std::wstring_convert<codecvt> converter;
+      // return converter.from_bytes(str);
+      std::wstring wide_buffer;
+      utf8::utf8to16(str.begin(), str.end(), back_inserter(wide_buffer));
+      return wide_buffer;
+    }
 
-namespace string_util {
-
-  using WideBuffer = foundation::Array<wchar_t, 4>;
-
-  const wchar_t *c_str(WideBuffer &wide_buffer);
-  const wchar_t *c_str(WideBuffer &&wide_buffer);
-
-  WideBuffer Widen(foundation::Allocator &allocator, const char *string);
-  WideBuffer Widen(foundation::Allocator &allocator, 
-                   foundation::string_stream::Buffer &buffer);
-
-  foundation::string_stream::Buffer Narrow(foundation::Allocator &allocator, 
-                                           const wchar_t *wide_string);
-  foundation::string_stream::Buffer Narrow(foundation::Allocator &allocator,
-                                           WideBuffer &wide_buffer);
-
-} // namespace string_util
-
-} // namespace knight
+    inline std::string narrow(const std::wstring &string) {
+      using codecvt = std::codecvt_utf8_utf16<wchar_t>;
+      std::wstring_convert<codecvt, wchar_t> converter;
+      return converter.to_bytes(string);
+    }
+  }
+}

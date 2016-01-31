@@ -3,22 +3,23 @@
 #include "common.h"
 #include "shader_types.h"
 
-#include <logog.hpp>
 #include <memory.h>
-#include <string_stream.h>
+#include <gsl.h>
+
+#include <string>
 
 namespace knight {
 
 class UniformBase {
  public:
-  UniformBase(foundation::Allocator &alloc, MaterialManager &manager, foundation::string_stream::Buffer name)
+  UniformBase(foundation::Allocator &alloc, MaterialManager &manager, std::string name)
       : manager_{manager},
         name_{name},
         materials_{alloc} { }
 
   virtual ~UniformBase() { }
 
-  const char *name() { return foundation::string_stream::c_str(name_); }
+  gsl::czstring<> name() { return name_.c_str(); }
 
   virtual void Push(GLint location) = 0;
   virtual UniformBase *Clone(foundation::Allocator &alloc) const = 0;
@@ -27,7 +28,7 @@ class UniformBase {
   void NotifyDirty();
 
   MaterialManager &manager_;
-  foundation::string_stream::Buffer name_;
+  std::string name_;
   foundation::Hash<const Material *> materials_; 
  
  private:

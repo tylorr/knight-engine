@@ -4,7 +4,6 @@
 #include "shader_types.h"
 #include "uniform.h"
 #include "imgui_manager.h"
-#include "platform_types.h"
 #include "mesh_component.h"
 #include "transform_component.h"
 #include "entity_manager.h"
@@ -127,11 +126,6 @@ void BuildInjector(GameState &game_state) {
   config.Add(TransformComponentFactory);
 
   game_state.injector = allocate_unique<di::Injector>(allocator, config.BuildInjector(allocator));
-}
-
-void ReadFile(czstring<> path, Buffer &buffer) {
-  FileRead file{path};
-  file.Read(buffer);
 }
 
 std::unordered_map<czstring<>, const unsigned char *> componet_map {

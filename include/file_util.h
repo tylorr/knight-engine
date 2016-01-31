@@ -3,9 +3,9 @@
 #include "gsl.h"
 #include "types.h"
 #include "vector.h"
+#include "string_stream.h"
 
 #include <collection_types.h>
-#include <string_stream.h>
 #include <gsl.h>
 
 #include <cstdint>
@@ -18,7 +18,7 @@ struct DirectoryContent {
   DirectoryContent(foundation::Allocator &alloc) :
     path{alloc} { }
 
-  foundation::string_stream::Buffer path;
+  string_stream::Buffer path;
 
   int depth;
 };

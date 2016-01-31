@@ -4,7 +4,6 @@
 
 #include <memory.h>
 #include <hash.h>
-
 #include <vector>
 
 namespace knight {
@@ -12,7 +11,6 @@ namespace knight {
 template<typename T>
 class Vector : public std::vector<T, StdAllocator<T>> {
  public:
-  using std::vector<T, StdAllocator<T>>::vector;
   Vector(foundation::Allocator &allocator)
     : std::vector<T, StdAllocator<T>>{StdAllocator<T>{allocator}} {}
 };

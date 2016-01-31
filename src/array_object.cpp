@@ -25,12 +25,12 @@ ArrayObject::~ArrayObject() {
   }
 }
 
-void ArrayObject::Bind() const {
+void ArrayObject::bind() const {
   XASSERT(handle_, "Trying to bind an uninitialized vertex array");
   GL(glBindVertexArray(handle_));
 }
 
-void ArrayObject::Unbind() const {
+void ArrayObject::unbind() const {
   auto vertex_array_binding = GLint{};
   glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &vertex_array_binding);
   if (handle_ == (GLuint)vertex_array_binding) {
@@ -38,18 +38,18 @@ void ArrayObject::Unbind() const {
   }
 }
 
-ArrayObject &ArrayObject::SetCount(GLsizei count) {
+ArrayObject &ArrayObject::set_count(GLsizei count) {
   count_ = count;
   return *this;
 }
 
-ArrayObject &ArrayObject::SetPrimitive(Primitive primitive) {
+ArrayObject &ArrayObject::set_primitive(Primitive primitive) {
   primitive_ = primitive;
   return *this;
 }
 
 ArrayObject &
-  ArrayObject::SetIndexBuffer(
+  ArrayObject::set_index_buffer(
     BufferObject &index_buffer, GLintptr offset, IndexType index_type) {
 
   XASSERT(index_buffer.target() == BufferObject::Target::ElementArray, "Only element arrays can be set as index buffers");
@@ -59,14 +59,14 @@ ArrayObject &
   index_type_ = index_type;
 
   // Bind index buffer to VAO
-  Bind();
+  bind();
   index_buffer.Bind();
 
   return *this;
 }
 
-void ArrayObject::Draw() const {
-  Bind();
+void ArrayObject::draw() const {
+  bind();
 
   if (index_buffer_ == nullptr) {
     glDrawArrays(GLenum(primitive_), 0, count_);
@@ -75,10 +75,10 @@ void ArrayObject::Draw() const {
   }
 }
 
-void ArrayObject::AttributePointer(BufferObject &buffer, GLuint location,
+void ArrayObject::attribute_pointer(BufferObject &buffer, GLuint location,
                                    GLint size, GLenum type, AttributeKind attribute_kind,
                                    GLsizei stride, GLintptr offset) {
-  Bind();
+  bind();
   GL(glEnableVertexAttribArray(location));
   buffer.Bind();
 

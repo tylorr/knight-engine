@@ -206,10 +206,10 @@ extern "C" void Init(GLFWwindow &window) {
   vbo.SetData(vertices, BufferObject::Usage::StaticDraw);
   ibo.SetData(gsl::as_span(obj_mesh.indices), BufferObject::Usage::StaticDraw);
 
-  vao.SetCount(obj_mesh.indices.size())
-     .SetPrimitive(ArrayObject::Primitive::Triangles)
-     .SetIndexBuffer(ibo, 0, ArrayObject::IndexType::UnsignedInt)
-     .AddVertexBuffer(vbo, 0, Attribute<glm::vec3>{0}, Attribute<glm::vec3>{1});
+  vao.set_count(obj_mesh.indices.size())
+     .set_primitive(ArrayObject::Primitive::Triangles)
+     .set_index_buffer(ibo, 0, ArrayObject::IndexType::UnsignedInt)
+     .add_vertex_buffer(vbo, 0, Attribute<glm::vec3>{0}, Attribute<glm::vec3>{1});
 
   auto entity_manager = game_state.injector->get_instance<EntityManager>();
   auto entity_id = entity_manager->Create();

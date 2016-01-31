@@ -42,20 +42,20 @@ class ArrayObject {
 
   GLuint handle() const { return handle_; }
 
-  void Bind() const;
-  void Unbind() const;
+  void bind() const;
+  void unbind() const;
 
   template<typename ...Attributes>
-  ArrayObject &AddVertexBuffer(BufferObject &buffer, GLintptr offset, const Attributes&... attributes) {
-    AddVertexBufferInternal(buffer, offset, StrideOfInterleaved(attributes...), attributes...);
+  ArrayObject &add_vertex_buffer(BufferObject &buffer, GLintptr offset, const Attributes&... attributes) {
+    add_vertex_buffer_internal(buffer, offset, stride_of_interleaved(attributes...), attributes...);
     return *this;
   }
 
-  ArrayObject &SetCount(GLsizei count);
-  ArrayObject &SetPrimitive(Primitive primitive);
-  ArrayObject &SetIndexBuffer(BufferObject &buffer, GLintptr offset, IndexType index_type);
+  ArrayObject &set_count(GLsizei count);
+  ArrayObject &set_primitive(Primitive primitive);
+  ArrayObject &set_index_buffer(BufferObject &buffer, GLintptr offset, IndexType index_type);
 
-  void Draw() const;
+  void draw() const;
 
 private:
   GLuint handle_;
@@ -74,44 +74,44 @@ private:
   };
 
   template<typename T, typename ...Args>
-  static GLsizei StrideOfInterleaved(const Attribute<T> &attribute, const Args&... args) {
-    return attribute.size() + StrideOfInterleaved(args...);
+  static GLsizei stride_of_interleaved(const Attribute<T> &attribute, const Args&... args) {
+    return attribute.size() + stride_of_interleaved(args...);
   }
 
   template<typename ...Args>
-  static GLsizei StrideOfInterleaved(GLintptr gap, const Args&... args) {
-    return gap + StrideOfInterleaved(args...);
+  static GLsizei stride_of_interleaved(GLintptr gap, const Args&... args) {
+    return gap + stride_of_interleaved(args...);
   }
 
-  static GLsizei StrideOfInterleaved() { return 0; }
+  static GLsizei stride_of_interleaved() { return 0; }
 
   template<typename T, typename ...Attributes>
   void
-    AddVertexBufferInternal(
+    add_vertex_buffer_internal(
       BufferObject &buffer, GLintptr offset, GLsizei stride,
       const Attribute<T> &attribute, const Attributes&... attributes) {
-    AddVertexAttribute(buffer, attribute, offset, stride);
-    AddVertexBufferInternal(buffer, offset + attribute.size(), stride, attributes...);
+    add_vertex_attribute(buffer, attribute, offset, stride);
+    add_vertex_buffer_internal(buffer, offset + attribute.size(), stride, attributes...);
   }
 
   template<typename ...Attributes>
   void
-    AddVertexBufferInternal(
+    add_vertex_buffer_internal(
       BufferObject &buffer, GLintptr offset, GLsizei stride,
       GLintptr gap, const Attributes&... attributes) {
-    AddVertexBufferInternal(buffer, offset + gap, stride, attributes...);
+    add_vertex_buffer_internal(buffer, offset + gap, stride, attributes...);
   }
 
-  void AddVertexBufferInternal(BufferObject &, GLintptr, GLsizei) {}
+  void add_vertex_buffer_internal(BufferObject &, GLintptr, GLsizei) {}
 
   template<typename T>
   void
-    AddVertexAttribute(
+    add_vertex_attribute(
       std::enable_if_t<std::is_same<typename Attribute<T>::ScalarType, float>::value, BufferObject &>buffer,
       const Attribute<T> &attribute,
       GLintptr offset,
       GLsizei stride) {
-    AttributePointer(buffer,
+    attribute_pointer(buffer,
         attribute.location(),
         GLint(attribute.components()),
         GLenum(attribute.data_type()),
@@ -122,12 +122,12 @@ private:
 
   template<typename T>
   void
-    AddVertexAttribute(
+    add_vertex_attribute(
       std::enable_if_t<std::is_integral<typename Attribute<T>::ScalarType>::value, BufferObject &>buffer,
       const Attribute<T> &attribute,
       GLintptr offset,
       GLsizei stride) {
-    AttributePointer(buffer,
+    attribute_pointer(buffer,
         attribute.location(),
         GLint(attribute.components()),
         GLenum(attribute.data_type()),
@@ -138,12 +138,12 @@ private:
 
   template<typename T>
   void
-    AddVertexAttribute(
+    add_vertex_attribute(
       std::enable_if_t<std::is_same<typename Attribute<T>::ScalarType, double>::value, BufferObject &>buffer,
       const Attribute<T> &attribute,
       GLintptr offset,
       GLsizei stride) {
-    AttributePointer(buffer,
+    attribute_pointer(buffer,
         attribute.location(),
         GLint(attribute.components()),
         GLenum(attribute.data_type()),
@@ -152,7 +152,7 @@ private:
         offset);
   }
 
-  void AttributePointer(BufferObject &buffer, GLuint location, GLint size, GLenum type,
+  void attribute_pointer(BufferObject &buffer, GLuint location, GLint size, GLenum type,
                         AttributeKind attribute_kind, GLsizei stride, GLintptr offset);
 };
 

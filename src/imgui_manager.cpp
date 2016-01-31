@@ -107,7 +107,7 @@ void RenderDrawLists(ImDrawData* draw_data) {
   GL(glUniform1i(imgui_manager_state.texture_location, 0));
 
   auto &vao = *imgui_manager_state.vao;
-  vao.Bind();
+  vao.bind();
 
   auto &vbo = *imgui_manager_state.vbo;
   auto &ibo = *imgui_manager_state.ibo;
@@ -230,7 +230,7 @@ void CreateDeviceObjects() {
   using Im4Attribute = Attribute<ImVec4>;
   Im4Attribute color_attribute{2, Im4Attribute::DataType::UnsignedByte, Im4Attribute::DataOption::Normalized};
 
-  vao.AddVertexBuffer(vbo, 0, Attribute<ImVec2>{0}, Attribute<ImVec2>{1}, color_attribute);
+  vao.add_vertex_buffer(vbo, 0, Attribute<ImVec2>{0}, Attribute<ImVec2>{1}, color_attribute);
 
   CreateFontsTexture();
 

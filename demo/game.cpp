@@ -120,12 +120,12 @@ void BuildInjector(GameState &game_state) {
   auto &allocator = memory_globals::default_allocator();
   di::InjectorConfig config;
 
-  config.Add(EntityManagerFactory);
-  config.Add(MaterialManagerFactory);
-  config.Add(MeshComponentFactory);
-  config.Add(TransformComponentFactory);
+  config.add(EntityManagerFactory);
+  config.add(MaterialManagerFactory);
+  config.add(MeshComponentFactory);
+  config.add(TransformComponentFactory);
 
-  game_state.injector = allocate_unique<di::Injector>(allocator, config.BuildInjector(allocator));
+  game_state.injector = allocate_unique<di::Injector>(allocator, config.build_injector(allocator));
 }
 
 std::unordered_map<czstring<>, const unsigned char *> componet_map {

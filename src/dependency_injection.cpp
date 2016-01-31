@@ -4,7 +4,7 @@ namespace knight {
 
 namespace di {
 
-Injector InjectorConfig::BuildInjector(foundation::Allocator &allocator) {
+Injector InjectorConfig::build_injector(foundation::Allocator &allocator) {
   Injector inj{allocator};
   std::stack<InitializerFn *> initializers;
 
@@ -16,7 +16,7 @@ Injector InjectorConfig::BuildInjector(foundation::Allocator &allocator) {
 
   while (!unmarked_nodes.empty()) {
     int node_id = *unmarked_nodes.begin();
-    ToposortVisitNode(node_id, unmarked_nodes, initializers);
+    toposort_visit_node(node_id, unmarked_nodes, initializers);
   }
 
   while (!initializers.empty()) {
@@ -27,7 +27,7 @@ Injector InjectorConfig::BuildInjector(foundation::Allocator &allocator) {
   return inj;
 }
 
-void InjectorConfig::ToposortVisitNode(
+void InjectorConfig::toposort_visit_node(
     int node_id, 
     std::unordered_set<int> &unmarked_nodes,
     std::stack<InitializerFn *> &output) {
@@ -39,7 +39,7 @@ void InjectorConfig::ToposortVisitNode(
     unmarked_nodes.erase(node_id);
     info.mark_ = NodeInfo::Mark::Temp;
     for (auto dependent : info.dependents_) {
-      ToposortVisitNode(dependent, unmarked_nodes, output);
+      toposort_visit_node(dependent, unmarked_nodes, output);
     }
     info.mark_ = NodeInfo::Mark::Perm;
     if (info.has_initializer_) {

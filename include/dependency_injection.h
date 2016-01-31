@@ -33,7 +33,7 @@ class Injector {
   auto get_instance() const -> T *;
 
   template<typename InstanceType, typename Deleter, typename ...Deps>
-  auto Inject(
+  auto inject(
     std::unique_ptr<InstanceType, Deleter>(* instance_factory)(Deps *...)) const 
       -> std::unique_ptr<InstanceType, Deleter>;
 
@@ -56,7 +56,7 @@ auto Injector::get_instance() const -> T * {
 }
 
 template<typename InstanceType, typename Deleter, typename ...Deps>
-auto Injector::Inject(
+auto Injector::inject(
   std::unique_ptr<InstanceType, Deleter>(* instance_factory)(Deps *...)) const 
     -> std::unique_ptr<InstanceType, Deleter> {
   return 
@@ -68,10 +68,10 @@ auto Injector::Inject(
 class InjectorConfig {
  public:
   template<typename InstanceType, typename Deleter, typename ...Deps>
-  void Add(
+  void add(
     std::unique_ptr<InstanceType, Deleter>(* instance_factory)(Deps *...));
 
-  Injector BuildInjector(foundation::Allocator &allocator);
+  Injector build_injector(foundation::Allocator &allocator);
 
  private:
   using InitializerFn = std::function<void(Injector &)>;
@@ -89,7 +89,7 @@ class InjectorConfig {
     const char *debug_type_name_;
   };
 
-  void ToposortVisitNode(int node_id, std::unordered_set<int> &unmarked_nodes,
+  void toposort_visit_node(int node_id, std::unordered_set<int> &unmarked_nodes,
                          std::stack<InitializerFn *> &output);
 
   std::unordered_map<int, NodeInfo> graph_;
@@ -99,14 +99,14 @@ template<typename ...Args>
 inline void passthru(Args ...args) { }
 
 template<typename InstanceType, typename Deleter, typename ...Deps>
-void InjectorConfig::Add(
+void InjectorConfig::add(
   std::unique_ptr<InstanceType, Deleter>(* instance_factory)(Deps *...)) {
 
   int instance_type_id = TypeMap<NodeInfo>::type_id<typename std::remove_const<InstanceType>::type>();
 
   NodeInfo &new_node_info = graph_[instance_type_id];
   new_node_info.initializer_ = [instance_factory](Injector &inj) {
-    auto instance = pointer_wrapper::create(inj.Inject(instance_factory));
+    auto instance = pointer_wrapper::create(inj.inject(instance_factory));
     inj.instance_map_.put<InstanceType>(std::move(instance));
   };
   new_node_info.has_initializer_ = true;

@@ -167,7 +167,7 @@ extern "C" void Init(GLFWwindow &window) {
   auto material_manager = game_state.injector->get_instance<MaterialManager>();
 
   game_state.window = &window;
-  ImGuiManager::Initialize(window, *material_manager);
+  ImGuiManager::initialize(window, *material_manager);
 
   game_state.material = material_manager->CreateMaterial("../assets/shaders/blinn_phong.shader");
 
@@ -426,7 +426,7 @@ extern "C" void UpdateAndRender() {
 
   glClear(GL_COLOR_BUFFER_BIT);
 
-  ImGuiManager::BeginFrame(delta_time);
+  ImGuiManager::begin_frame(delta_time);
 
   ImGuiIO &io = ImGui::GetIO();
   if (io.KeyCtrl && ImGui::IsKeyPressed(GLFW_KEY_Q, false)) {
@@ -476,12 +476,12 @@ extern "C" void UpdateAndRender() {
   auto mesh_component = game_state.injector->get_instance<MeshComponent>();
   mesh_component->Render();
 
-  ImGuiManager::EndFrame();
+  ImGuiManager::end_frame();
 
   game_state.material->Unbind();
 }
 
 extern "C" void Shutdown() {
-  ImGuiManager::Shutdown();
+  ImGuiManager::shutdown();
   JobSystem::Shutdown();
 }

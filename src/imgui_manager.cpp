@@ -74,10 +74,10 @@ struct ImGuiManagerState {
 
 ImGuiManagerState imgui_manager_state;
 
-const char *GetClipboardString();
-void SetClipboardString(const char *text);
+const char *get_clipboard_string();
+void set_clipboard_string(const char *text);
 
-void RenderDrawLists(ImDrawData* draw_data) {
+void render_draw_lists(ImDrawData* draw_data) {
   // Backup GL state
   GLint last_program, last_texture, last_array_buffer, last_element_array_buffer, last_vertex_array;
   glGetIntegerv(GL_CURRENT_PROGRAM, &last_program);
@@ -143,11 +143,11 @@ void RenderDrawLists(ImDrawData* draw_data) {
   glDisable(GL_SCISSOR_TEST);
 }
 
-const char *GetClipboardString() {
+const char *get_clipboard_string() {
   return glfwGetClipboardString(imgui_manager_state.window);
 }
 
-void SetClipboardString(const char *text) {
+void set_clipboard_string(const char *text) {
   glfwSetClipboardString(imgui_manager_state.window, text);
 }
 
@@ -155,7 +155,7 @@ void SetClipboardString(const char *text) {
 
 
 
-void Initialize(GLFWwindow &window, MaterialManager &material_manager) {
+void initialize(GLFWwindow &window, MaterialManager &material_manager) {
   imgui_manager_state.window = &window;
   imgui_manager_state.material_manager = &material_manager;
 
@@ -180,12 +180,12 @@ void Initialize(GLFWwindow &window, MaterialManager &material_manager) {
   io.KeyMap[ImGuiKey_Y] = GLFW_KEY_Y;
   io.KeyMap[ImGuiKey_Z] = GLFW_KEY_Z;
 
-  io.RenderDrawListsFn = RenderDrawLists;
-  io.GetClipboardTextFn = GetClipboardString;
-  io.SetClipboardTextFn = SetClipboardString;
+  io.RenderDrawListsFn = render_draw_lists;
+  io.GetClipboardTextFn = get_clipboard_string;
+  io.SetClipboardTextFn = set_clipboard_string;
 }
 
-void CreateFontsTexture() {
+void create_fonts_texture() {
   ImGuiIO &io = ImGui::GetIO();
 
   unsigned char* pixels;
@@ -204,7 +204,7 @@ void CreateFontsTexture() {
   io.Fonts->ClearTexData();
 }
 
-void CreateDeviceObjects() {
+void create_device_objects() {
   // Backup GL state
   GLint last_texture, last_array_buffer, last_vertex_array;
   glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture);
@@ -232,7 +232,7 @@ void CreateDeviceObjects() {
 
   vao.add_vertex_buffer(vbo, 0, Attribute<ImVec2>{0}, Attribute<ImVec2>{1}, color_attribute);
 
-  CreateFontsTexture();
+  create_fonts_texture();
 
   // Restore modified GL state
   glBindTexture(GL_TEXTURE_2D, last_texture);
@@ -240,10 +240,10 @@ void CreateDeviceObjects() {
   glBindVertexArray(last_vertex_array);
 }
 
-void BeginFrame(double delta_time) {
+void begin_frame(double delta_time) {
   ImGuiIO &io = ImGui::GetIO();
 
-  if (!imgui_manager_state.font_texture_handle) CreateDeviceObjects();
+  if (!imgui_manager_state.font_texture_handle) create_device_objects();
 
   io.DeltaTime = (float)delta_time;
 
@@ -300,17 +300,17 @@ void BeginFrame(double delta_time) {
   ImGui::NewFrame();
 }
 
-void EndFrame() {
+void end_frame() {
   ImGui::Render();
 }
 
-void OnMouse(int button, int action) {
+void on_mouse(int button, int action) {
   if (action == GLFW_PRESS && button >= 0 && button < 3) {
     imgui_manager_state.mouse_pressed[button] = true;
   }
 }
 
-void OnKey(int key, int action, int mods) {
+void on_key(int key, int action, int mods) {
   ImGuiIO &io = ImGui::GetIO();
 
   if (action == GLFW_PRESS) {
@@ -326,17 +326,17 @@ void OnKey(int key, int action, int mods) {
   io.KeyAlt = io.KeysDown[GLFW_KEY_LEFT_ALT] || io.KeysDown[GLFW_KEY_RIGHT_ALT];
 }
 
-void OnCharacter(unsigned int character) {
+void on_character(unsigned int character) {
   if (character > 0 && character < 0x10000) {
     ImGui::GetIO().AddInputCharacter((unsigned short)character);
   }
 }
 
-void OnScroll(double yoffset) {
+void on_scroll(double yoffset) {
   imgui_manager_state.mouse_wheel += (float)yoffset;
 }
 
-void Shutdown() {
+void shutdown() {
   // TODO: Fix this by allocating imgui manager state and releasing here
   imgui_manager_state.material.reset();
   imgui_manager_state.vbo.reset();

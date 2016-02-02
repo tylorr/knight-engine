@@ -8,16 +8,16 @@ namespace knight {
 
 namespace ImGuiManager {
 
-void Initialize(GLFWwindow &window, MaterialManager &material_manager);
-void Shutdown();
+void initialize(GLFWwindow &window, MaterialManager &material_manager);
+void shutdown();
 
-void BeginFrame(double delta_time);
-void EndFrame();
+void begin_frame(double delta_time);
+void end_frame();
 
-void OnMouse(int button, int action);
-void OnKey(int key, int action, int mods);
-void OnCharacter(unsigned int character);
-void OnScroll(double yoffset);
+void on_mouse(int button, int action);
+void on_key(int key, int action, int mods);
+void on_character(unsigned int character);
+void on_scroll(double yoffset);
 
 } // namespace ImGuiManager
 

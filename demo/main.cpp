@@ -167,17 +167,17 @@ void GlfwErrorCallback(int error, const char *description) {
 }
 
 void GlfwMouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
-  ImGuiManager::OnMouse(button, action);
+  ImGuiManager::on_mouse(button, action);
 }
 
 void GlfwKeyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
-  ImGuiManager::OnKey(key, action, mods);
+  ImGuiManager::on_key(key, action, mods);
 }
 
 void GlfwCharCallback(GLFWwindow *window, unsigned int character) {
-  ImGuiManager::OnCharacter(character);
+  ImGuiManager::on_character(character);
 }
 
 void GlfwScrollCallback(GLFWwindow *window, double xoffset, double yoffset) {
-  ImGuiManager::OnScroll(yoffset);
+  ImGuiManager::on_scroll(yoffset);
 }

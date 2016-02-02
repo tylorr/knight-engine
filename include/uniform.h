@@ -21,11 +21,11 @@ class UniformBase {
 
   gsl::czstring<> name() { return name_.c_str(); }
 
-  virtual void Push(GLint location) = 0;
-  virtual UniformBase *Clone(foundation::Allocator &alloc) const = 0;
+  virtual void push(GLint location) = 0;
+  virtual UniformBase *clone(foundation::Allocator &alloc) const = 0;
 
-  void AddMaterial(const Material &mat, GLint location);
-  void NotifyDirty();
+  void add_material(const Material &mat, GLint location);
+  void notify_dirty();
 
   MaterialManager &manager_;
   std::string name_;
@@ -43,10 +43,10 @@ class Uniform : public UniformBase {
 
   using UniformBase::UniformBase;
 
-  virtual void Push(GLint location);
-  virtual UniformBase *Clone(foundation::Allocator &alloc) const;
+  virtual void push(GLint location);
+  virtual UniformBase *clone(foundation::Allocator &alloc) const;
 
-  void SetValue(const T *values);
+  void set_value(const T *values);
 
   static const size_t kElementCount = row_count * col_count;
   static const size_t kElementSize = sizeof(T);
@@ -60,17 +60,17 @@ class Uniform : public UniformBase {
 };
 
 template<typename T, size_t row_count, size_t col_count>
-UniformBase *Uniform<T, row_count, col_count>::Clone(foundation::Allocator &alloc) const {
+UniformBase *Uniform<T, row_count, col_count>::clone(foundation::Allocator &alloc) const {
   auto clone = alloc.make_new<Uniform<T, row_count, col_count>>(alloc, manager_, name_);
   std::memcpy(clone->elements_, elements_, kTotalElementSize);
   return clone;
 }
 
 template<typename T, size_t row_count, size_t col_count>
-void Uniform<T, row_count, col_count>::SetValue(const T *values) {
+void Uniform<T, row_count, col_count>::set_value(const T *values) {
   if (std::memcmp(elements_, values, kTotalElementSize) != 0) {
     std::memcpy(elements_, values, kTotalElementSize);
-    NotifyDirty();
+    notify_dirty();
   }
 }
 

@@ -28,7 +28,7 @@ Material::Material(foundation::Allocator &alloc, GLuint program_handle,
       uniforms_{alloc} {
   for (auto &&uniform : uniform_list) {
     auto location = glGetUniformLocation(program_handle, uniform->name());
-    uniform->AddMaterial(*this, location);
+    uniform->add_material(*this, location);
     hash::set(uniforms_, location, uniform);
   }
 }
@@ -88,7 +88,7 @@ MaterialManager::~MaterialManager() {
   hash::clear(material_version_);
 }
 
-GLuint MaterialManager::CreateShader(gsl::czstring<> shader_path) {
+GLuint MaterialManager::create_shader(gsl::czstring<> shader_path) {
   auto shader_id = murmur_hash_64(shader_path, strlen(shader_path), 0u);
   auto shader_handles = hash::get(shaders_, shader_id, ShaderHandles{});
   if (shader_handles.program != 0) {
@@ -100,16 +100,16 @@ GLuint MaterialManager::CreateShader(gsl::czstring<> shader_path) {
     std::tie(shader_source, success) = file_util::read_file_to_buffer(allocator, shader_path);
     Ensures(success);
 
-    return CreateShaderFromSource(shader_id, c_str(shader_source));
+    return create_shader_from_source(shader_id, c_str(shader_source));
   }
 }
 
-GLuint MaterialManager::CreateShaderFromSource(gsl::czstring<> name, gsl::czstring<> shader_source) {
+GLuint MaterialManager::create_shader_from_source(gsl::czstring<> name, gsl::czstring<> shader_source) {
   auto shader_id = murmur_hash_64(name, strlen(name), 0u);
-  return CreateShaderFromSource(shader_id, shader_source);
+  return create_shader_from_source(shader_id, shader_source);
 }
 
-GLuint MaterialManager::CreateShaderFromSource(uint64_t shader_id, gsl::czstring<> shader_source) {
+GLuint MaterialManager::create_shader_from_source(uint64_t shader_id, gsl::czstring<> shader_source) {
   auto getDefine = [](GLenum type) {
     switch (type) {
       case GL_VERTEX_SHADER: return "#define VERTEX\n";
@@ -128,7 +128,7 @@ GLuint MaterialManager::CreateShaderFromSource(uint64_t shader_id, gsl::czstring
     '\0'
   };
 
-  auto createAndAttachShader = [&](GLenum type) {
+  auto create_and_attach_shader = [&](GLenum type) {
     auto shader_handle = GLuint{};
     GL(shader_handle = glCreateShader(type));
 
@@ -160,8 +160,8 @@ GLuint MaterialManager::CreateShaderFromSource(uint64_t shader_id, gsl::czstring
     return shader_handle;
   };
 
-  auto vertex_handle = createAndAttachShader(GL_VERTEX_SHADER);
-  auto fragment_handle = createAndAttachShader(GL_FRAGMENT_SHADER);
+  auto vertex_handle = create_and_attach_shader(GL_VERTEX_SHADER);
+  auto fragment_handle = create_and_attach_shader(GL_FRAGMENT_SHADER);
 
   auto result = GLint{};
   GL(glLinkProgram(program_handle));
@@ -218,11 +218,11 @@ GLuint MaterialManager::CreateShaderFromSource(uint64_t shader_id, gsl::czstring
   return program_handle;
 }
 
-std::shared_ptr<Material> MaterialManager::CreateMaterial(gsl::czstring<> shader_path) {
-  return CreateMaterial(CreateShader(shader_path));
+std::shared_ptr<Material> MaterialManager::create_material(gsl::czstring<> shader_path) {
+  return create_material(create_shader(shader_path));
 }
 
-std::shared_ptr<Material> MaterialManager::CreateMaterial(GLuint program_handle) {
+std::shared_ptr<Material> MaterialManager::create_material(GLuint program_handle) {
   Vector<UniformBase *> material_uniforms{alloc_};
 
   auto version = 0u;
@@ -230,11 +230,11 @@ std::shared_ptr<Material> MaterialManager::CreateMaterial(GLuint program_handle)
   multi_hash::get(uniforms_, shader_material_hash, material_uniforms);
 
   auto material = allocate_shared<Material>(alloc_, alloc_, program_handle, version, material_uniforms);
-  material->Bind();
+  material->bind();
   return material;
 }
 
-std::shared_ptr<Material> MaterialManager::CloneMaterial(const std::shared_ptr<Material> &other) {
+std::shared_ptr<Material> MaterialManager::clone_material(const std::shared_ptr<Material> &other) {
   auto program_handle = other->program_handle();
 
   TempAllocator64 temp_alloc;
@@ -249,7 +249,7 @@ std::shared_ptr<Material> MaterialManager::CloneMaterial(const std::shared_ptr<M
 
   Vector<UniformBase *> clone_uniforms{alloc_};
   for (auto &&uniform : original_uniforms) {
-    auto clone = uniform->Clone(alloc_);
+    auto clone = uniform->clone(alloc_);
     clone_uniforms.push_back(clone);
     multi_hash::insert(uniforms_, clone_hash, clone);
   }
@@ -257,7 +257,7 @@ std::shared_ptr<Material> MaterialManager::CloneMaterial(const std::shared_ptr<M
   return allocate_shared<Material>(alloc_, alloc_, program_handle, clone_version, clone_uniforms);
 }
 
-void MaterialManager::MarkDirty(UniformBase *uniform, const Material &mat,
+void MaterialManager::mark_dirty(UniformBase *uniform, const Material &mat,
                                 GLint location) {
   auto program_handle = mat.program_handle();
   auto shader_hash = murmur_hash_64(&program_handle, sizeof(program_handle), mat.version());
@@ -265,7 +265,7 @@ void MaterialManager::MarkDirty(UniformBase *uniform, const Material &mat,
 }
 
 //TODO: TR Handle going from v0 to v1 back to v0 of shader
-void MaterialManager::PushUniforms(const Material &mat) {
+void MaterialManager::push_uniforms(const Material &mat) {
   auto program_handle = mat.program_handle();
   auto shader_hash = murmur_hash_64(&program_handle, sizeof(program_handle), mat.version());
 
@@ -273,9 +273,9 @@ void MaterialManager::PushUniforms(const Material &mat) {
   Vector<DirtyUniform> dirty_uniforms_for_mat{temp_alloc};
   multi_hash::get(dirty_uniforms_, shader_hash, dirty_uniforms_for_mat);
 
-  mat.Bind();
+  mat.bind();
   for (auto &&dirty_uniform : dirty_uniforms_for_mat) {
-    dirty_uniform.uniform->Push(dirty_uniform.location);
+    dirty_uniform.uniform->push(dirty_uniform.location);
   }
 
   multi_hash::remove_all(dirty_uniforms_, shader_hash);

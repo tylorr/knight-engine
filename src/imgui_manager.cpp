@@ -100,10 +100,10 @@ void render_draw_lists(ImDrawData* draw_data) {
   draw_data->ScaleClipRects(io.DisplayFramebufferScale);
 
   const auto projection = glm::ortho(0.0f, io.DisplaySize.x, io.DisplaySize.y, 0.0f, -1.0f, 1.0f);
-  imgui_manager_state.projection_uniform->SetValue(glm::value_ptr(projection));
+  imgui_manager_state.projection_uniform->set_value(glm::value_ptr(projection));
 
   auto material = imgui_manager_state.material;
-  imgui_manager_state.material_manager->PushUniforms(*material);
+  imgui_manager_state.material_manager->push_uniforms(*material);
   GL(glUniform1i(imgui_manager_state.texture_location, 0));
 
   auto &vao = *imgui_manager_state.vao;
@@ -211,13 +211,13 @@ void create_device_objects() {
   glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &last_array_buffer);
   glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &last_vertex_array);
 
-  auto program_handle = imgui_manager_state.material_manager->CreateShaderFromSource("imgui_shader", kShaderSource);
-  auto material = imgui_manager_state.material_manager->CreateMaterial(program_handle);
+  auto program_handle = imgui_manager_state.material_manager->create_shader_from_source("imgui_shader", kShaderSource);
+  auto material = imgui_manager_state.material_manager->create_material(program_handle);
   imgui_manager_state.material = material;
 
   GL(imgui_manager_state.texture_location = glGetUniformLocation(material->program_handle(), "Texture"));
 
-  imgui_manager_state.projection_uniform = material->Get<float, 4, 4>("ProjMtx");
+  imgui_manager_state.projection_uniform = material->get<float, 4, 4>("ProjMtx");
 
   auto &allocator = foundation::memory_globals::default_allocator();
   imgui_manager_state.vbo = allocate_unique<BufferObject>(allocator, BufferObject::Target::Array);

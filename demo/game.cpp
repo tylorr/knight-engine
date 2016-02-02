@@ -169,13 +169,13 @@ extern "C" void Init(GLFWwindow &window) {
   game_state.window = &window;
   ImGuiManager::initialize(window, *material_manager);
 
-  game_state.material = material_manager->CreateMaterial("../assets/shaders/blinn_phong.shader");
+  game_state.material = material_manager->create_material("../assets/shaders/blinn_phong.shader");
 
   auto material = game_state.material;
 
-  game_state.mvp_uniform = material->Get<float, 4, 4>("MVP");
-  game_state.mv_matrix_uniform = material->Get<float, 4, 4>("ModelView");
-  game_state.normal_matrix_uniform = material->Get<float, 3, 3>("NormalMatrix");
+  game_state.mvp_uniform = material->get<float, 4, 4>("MVP");
+  game_state.mv_matrix_uniform = material->get<float, 4, 4>("ModelView");
+  game_state.normal_matrix_uniform = material->get<float, 3, 3>("NormalMatrix");
 
   std::vector<tinyobj::shape_t> shapes;
   std::vector<tinyobj::material_t> materials;
@@ -462,23 +462,23 @@ extern "C" void UpdateAndRender() {
   auto projection_matrix = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 100.f);
 
   auto model_view_matrix = view_matrix * local;
-  game_state.mv_matrix_uniform->SetValue(glm::value_ptr(model_view_matrix));
+  game_state.mv_matrix_uniform->set_value(glm::value_ptr(model_view_matrix));
 
   auto mvp_matrix = projection_matrix * model_view_matrix;
-  game_state.mvp_uniform->SetValue(glm::value_ptr(mvp_matrix));
+  game_state.mvp_uniform->set_value(glm::value_ptr(mvp_matrix));
 
   auto normal_matrix = glm::inverseTranspose(glm::mat3(model_view_matrix));
-  game_state.normal_matrix_uniform->SetValue(glm::value_ptr(normal_matrix));
+  game_state.normal_matrix_uniform->set_value(glm::value_ptr(normal_matrix));
 
   auto material_manager = game_state.injector->get_instance<MaterialManager>();
-  material_manager->PushUniforms(*game_state.material);
+  material_manager->push_uniforms(*game_state.material);
 
   auto mesh_component = game_state.injector->get_instance<MeshComponent>();
   mesh_component->Render();
 
   ImGuiManager::end_frame();
 
-  game_state.material->Unbind();
+  game_state.material->unbind();
 }
 
 extern "C" void Shutdown() {

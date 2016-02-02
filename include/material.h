@@ -24,12 +24,12 @@ class Material {
   uint32_t version() const { return version_; }
   //TODO: TR Implement GetUniform methods here
 
-  void Bind() const {
+  void bind() const {
     //GL(glUseProgram(program_handle_));
     glUseProgram(program_handle_);
     GL_ASSERT("Trying to bind material program: %u", program_handle_);
   }
-  void Unbind() const {
+  void unbind() const {
     auto current_program = GLint{};
     glGetIntegerv(GL_CURRENT_PROGRAM, &current_program);
 
@@ -39,10 +39,10 @@ class Material {
   }
 
   template<typename T, size_t row_count, size_t col_count = 1>
-  Uniform<T, row_count, col_count> *Get(gsl::czstring<> name) const;
+  Uniform<T, row_count, col_count> *get(gsl::czstring<> name) const;
 
   template<typename T, size_t row_count, size_t col_count = 1>
-  Uniform<T, row_count, col_count> *Get(GLint location) const;
+  Uniform<T, row_count, col_count> *get(GLint location) const;
 
  private:
   GLuint program_handle_;
@@ -62,16 +62,16 @@ class MaterialManager {
   MaterialManager(foundation::Allocator &alloc, Vector<gsl::czstring<>> global_uniforms);
   ~MaterialManager();
 
-  GLuint CreateShader(gsl::czstring<> shader_path);
-  GLuint CreateShaderFromSource(gsl::czstring<> name, gsl::czstring<> shader_source);
-  GLuint CreateShaderFromSource(uint64_t hash, gsl::czstring<> shader_source);
+  GLuint create_shader(gsl::czstring<> shader_path);
+  GLuint create_shader_from_source(gsl::czstring<> name, gsl::czstring<> shader_source);
+  GLuint create_shader_from_source(uint64_t hash, gsl::czstring<> shader_source);
 
-  std::shared_ptr<Material> CreateMaterial(gsl::czstring<> shader_path);
-  std::shared_ptr<Material> CreateMaterial(GLuint program_handle);
-  std::shared_ptr<Material> CloneMaterial(const std::shared_ptr<Material> &other);
+  std::shared_ptr<Material> create_material(gsl::czstring<> shader_path);
+  std::shared_ptr<Material> create_material(GLuint program_handle);
+  std::shared_ptr<Material> clone_material(const std::shared_ptr<Material> &other);
 
-  void MarkDirty(UniformBase *uniform, const Material &mat, GLint location);
-  void PushUniforms(const Material &mat);
+  void mark_dirty(UniformBase *uniform, const Material &mat, GLint location);
+  void push_uniforms(const Material &mat);
 
  private:
   struct ShaderHandles {
@@ -98,7 +98,7 @@ class MaterialManager {
 };
 
 template<typename T, size_t row_count, size_t col_count>
-Uniform<T, row_count, col_count> *Material::Get(gsl::czstring<> name) const {
+Uniform<T, row_count, col_count> *Material::get(gsl::czstring<> name) const {
   auto location = GLint{};
   GL(location = glGetUniformLocation(program_handle_, name));
   auto uniform_base = foundation::hash::get<UniformBase *>(uniforms_, location, nullptr);
@@ -110,7 +110,7 @@ Uniform<T, row_count, col_count> *Material::Get(gsl::czstring<> name) const {
 }
 
 template<typename T, size_t row_count, size_t col_count>
-Uniform<T, row_count, col_count> *Material::Get(GLint location) const {
+Uniform<T, row_count, col_count> *Material::get(GLint location) const {
   auto uniform_base = foundation::hash::get<UniformBase *>(uniforms_, location, nullptr);
 
   XASSERT(uniform_base != nullptr,

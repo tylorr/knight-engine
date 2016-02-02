@@ -40,7 +40,7 @@ void MeshComponent::Destroy(uint32_t i) {
 
 void MeshComponent::Render() const {
   for (auto &&instance : data_) {
-    instance.material->Bind();
+    instance.material->bind();
     instance.vao->draw();
   }
 }

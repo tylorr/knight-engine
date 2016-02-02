@@ -27,30 +27,30 @@ struct Job {
 
 namespace JobSystem {
 
-void Initialize();
-void Shutdown();
+void initialize();
+void shutdown();
 
-bool HasJobCompleted(const Job *job);
+bool has_job_completed(const Job *job);
 
-Job *CreateJob(JobFunction function);
-Job *CreateJobAsChild(Job *parent, JobFunction function);
+Job *create_job(JobFunction function);
+Job *create_job_as_child(Job *parent, JobFunction function);
 
 template<typename ...Args>
-Job *CreateJob(JobFunction function, Args&&... args) {
-  auto job = CreateJob(function);
+Job *create_job(JobFunction function, Args&&... args) {
+  auto job = create_job(function);
   memory_block::pack_data(job->data, std::forward<Args>(args)...);
   return job;
 }
 
 template<typename ...Args>
-Job *CreateJobAsChild(Job *parent, JobFunction function, Args&&... args) {
-  auto job = CreateJobAsChild(parent, function);
+Job *create_job_as_child(Job *parent, JobFunction function, Args&&... args) {
+  auto job = create_job_as_child(parent, function);
   memory_block::pack_data(job->data, std::forward<Args>(args)...);
   return job;
 }
 
-void Run(Job *job);
-void Wait(const Job *job);
+void run(Job *job);
+void wait(const Job *job);
 
 } // namespace JobSystem
 } // namespace knight

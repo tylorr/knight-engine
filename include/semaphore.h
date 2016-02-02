@@ -13,7 +13,7 @@ class Semaphore {
     : count_{count},
       max_{max} { }
 
-  void Notify() {
+  void notify() {
     {
       std::lock_guard<std::mutex> lock{mutex_};
       count_ = std::min(count_ + 1, max_);
@@ -21,13 +21,13 @@ class Semaphore {
     condition_.notify_one();
   }
 
-  void Wait() {
+  void wait() {
     std::unique_lock<std::mutex> lock{mutex_};
     condition_.wait(lock, [this]{ return count_ > 0; });
     count_--;
   }
 
-  bool TryWait() {
+  bool try_wait() {
     std::lock_guard<std::mutex> lock{mutex_};
     if (count_ > 0) {
       count_--;

@@ -139,7 +139,7 @@ pointer<flatbuffers::FlatBufferBuilder> fbb_ptr;
 const schema::Entity *entity_table;
 
 extern "C" void Init(GLFWwindow &window) {
-  JobSystem::Initialize();
+  JobSystem::initialize();
 
   auto &allocator = memory_globals::default_allocator();
   auto &scratch_allocator = memory_globals::default_scratch_allocator();
@@ -483,5 +483,5 @@ extern "C" void UpdateAndRender() {
 
 extern "C" void Shutdown() {
   ImGuiManager::shutdown();
-  JobSystem::Shutdown();
+  JobSystem::shutdown();
 }

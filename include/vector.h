@@ -21,7 +21,7 @@ namespace foundation {
 namespace multi_hash {
 
 template<typename T>
-auto get(const Hash<T> &h, uint64_t key, knight::Vector<T> &items) -> void {
+void get(const Hash<T> &h, uint64_t key, knight::Vector<T> &items) {
   const auto *e = find_first(h, key);
   while (e) {
     items.push_back(e->value);

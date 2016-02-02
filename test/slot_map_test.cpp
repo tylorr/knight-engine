@@ -22,28 +22,28 @@ TEST_CASE("Slot Map") {
     Object *object;
 
     SECTION("Invalid id will return a nullptr") {
-      object = slot_map.Get(id);
+      object = slot_map.get(id);
       CHECK(object == nullptr);
     }
 
-    id = slot_map.Create();
+    id = slot_map.create();
 
     SECTION("Valid id will return correct object") {
-      object = slot_map.Get(id);
+      object = slot_map.get(id);
 
       REQUIRE(object != nullptr);
       CHECK(id == object->id);
     }
 
-    slot_map.Destroy(id);
+    slot_map.destroy(id);
 
     SECTION("Destroying object will invalidate id") {
-      object = slot_map.Get(id);
+      object = slot_map.get(id);
       CHECK(object == nullptr);
     }
 
     SECTION("Objects created at same index will have different versions") {
-      Object::ID new_id = slot_map.Create();
+      Object::ID new_id = slot_map.create();
 
       CHECK(new_id != id);
       CHECK(new_id.index == id.index);

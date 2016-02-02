@@ -212,8 +212,8 @@ extern "C" void Init(GLFWwindow &window) {
      .add_vertex_buffer(vbo, 0, Attribute<glm::vec3>{0}, Attribute<glm::vec3>{1});
 
   auto entity_manager = game_state.injector->get_instance<EntityManager>();
-  auto entity_id = entity_manager->Create();
-  auto entity = entity_manager->Get(entity_id);
+  auto entity_id = entity_manager->create();
+  auto entity = entity_manager->get(entity_id);
 
   game_state.entity_id = entity_id;
 
@@ -343,7 +343,7 @@ void UpdateComponent(const flatbuffers::Table &table) {
   auto &transform_table = reinterpret_cast<const schema::TransformComponent &>(table);
 
   auto &entity_manager = *game_state.injector->get_instance<EntityManager>();
-  auto entity = entity_manager.Get(game_state.entity_id);
+  auto entity = entity_manager.get(game_state.entity_id);
 
   auto &transform_component = *game_state.injector->get_instance<TransformComponent>();
   auto transform_instance = transform_component.lookup(*entity);
@@ -451,7 +451,7 @@ extern "C" void UpdateAndRender() {
   }
 
   auto entity_manager = game_state.injector->get_instance<EntityManager>();
-  auto entity = entity_manager->Get(game_state.entity_id);
+  auto entity = entity_manager->get(game_state.entity_id);
 
   auto transform_component = game_state.injector->get_instance<TransformComponent>();
   auto transform_instance = transform_component->lookup(*entity);

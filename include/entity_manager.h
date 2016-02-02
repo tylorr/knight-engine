@@ -12,12 +12,12 @@ class EntityManager {
  public:
   EntityManager(foundation::Allocator &allocator) : entities_{allocator} { }
 
-  Entity::ID Create();
-  Entity *Get(Entity::ID id) const;
-  void Destroy(Entity::ID id);
+  Entity::ID create();
+  Entity *get(Entity::ID id) const;
+  void destroy(Entity::ID id);
 
-  bool Alive(Entity::ID id) const;
-  bool Alive(const Entity &e) const;
+  bool alive(Entity::ID id) const;
+  bool alive(const Entity &e) const;
 
  private:
   SlotMap<Entity, Entity::ID> entities_;

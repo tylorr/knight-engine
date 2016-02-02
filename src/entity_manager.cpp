@@ -4,25 +4,25 @@
 
 namespace knight {
 
-Entity::ID EntityManager::Create() {
-  return entities_.Create();
+Entity::ID EntityManager::create() {
+  return entities_.create();
 }
 
-Entity *EntityManager::Get(Entity::ID id) const {
-  return entities_.Get(id);
+Entity *EntityManager::get(Entity::ID id) const {
+  return entities_.get(id);
 }
 
-void EntityManager::Destroy(Entity::ID id) {
-  XASSERT(Alive(id), "Cannot destroy non-existent Entity");
-  entities_.Destroy(id);
+void EntityManager::destroy(Entity::ID id) {
+  XASSERT(alive(id), "Cannot destroy non-existent Entity");
+  entities_.destroy(id);
 }
 
-bool EntityManager::Alive(Entity::ID id) const {
-  return Get(id) != nullptr;
+bool EntityManager::alive(Entity::ID id) const {
+  return get(id) != nullptr;
 }
 
-bool EntityManager::Alive(const Entity &e) const {
-  return Alive(e.id);
+bool EntityManager::alive(const Entity &e) const {
+  return alive(e.id);
 }
 
 } // namespace knight

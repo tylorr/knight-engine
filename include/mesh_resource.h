@@ -18,7 +18,6 @@ struct MeshResource {
 
 namespace mesh_resource {
 
-auto
 
 } // namespace mesh_resource
 } // namespace knight

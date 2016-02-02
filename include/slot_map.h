@@ -24,9 +24,9 @@ class SlotMap {
   SlotMap &operator=(const SlotMap &) = delete;
   SlotMap &operator=(SlotMap &&) = default;
 
-  ID Create();
-  T *Get(const ID &id) const;
-  void Destroy(ID id);
+  ID create();
+  T *get(const ID &id) const;
+  void destroy(ID id);
 
  private:
   typedef std::unique_ptr<T[]> Chunk;
@@ -36,7 +36,7 @@ class SlotMap {
 };
 
 template<typename T, typename ID>
-ID SlotMap<T, ID>::Create() {
+ID SlotMap<T, ID>::create() {
   // Are there no spare entities?
   if (free_list_.empty()) {
     auto slot_table_size = slot_table_.size();
@@ -70,7 +70,7 @@ ID SlotMap<T, ID>::Create() {
 }
 
 template<typename T, typename ID>
-T *SlotMap<T, ID>::Get(const ID &id) const {
+T *SlotMap<T, ID>::get(const ID &id) const {
   typename ID::type chunkIndex = id.index / kChunkSize;
 
   // Does the chunk exist?
@@ -87,8 +87,8 @@ T *SlotMap<T, ID>::Get(const ID &id) const {
 }
 
 template<typename T, typename ID>
-void SlotMap<T, ID>::Destroy(ID id) {
-  T *object = Get(id);
+void SlotMap<T, ID>::destroy(ID id) {
+  T *object = get(id);
 
   XASSERT(object != nullptr, "Trying to delete non-existent object: %lu", id.id);
 

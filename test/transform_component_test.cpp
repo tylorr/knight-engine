@@ -25,8 +25,8 @@ TEST_CASE("Transform Component") {
   auto entity_manager = allocate_unique<EntityManager>(allocator, allocator);
   auto transform_component = allocate_unique<TransformComponent>(allocator, allocator);
 
-  auto entity_id = entity_manager->Create();
-  auto entity = entity_manager->Get(entity_id);
+  auto entity_id = entity_manager->create();
+  auto entity = entity_manager->get(entity_id);
 
   transform_component->add(*entity);
   auto transform = transform_component->lookup(*entity);
@@ -51,8 +51,8 @@ TEST_CASE("Transform Component") {
   }
 
   SECTION("Parent child heirarchy") {
-    auto parent_entity_id = entity_manager->Create();
-    auto parent_entity = entity_manager->Get(parent_entity_id);
+    auto parent_entity_id = entity_manager->create();
+    auto parent_entity = entity_manager->get(parent_entity_id);
 
     transform_component->add(*parent_entity);
     auto parent_transform = transform_component->lookup(*parent_entity);

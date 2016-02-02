@@ -84,7 +84,7 @@ void TransformComponent::collect_garbage(const EntityManager &em) {
   auto alive_in_row = 0u;
   while (data_.size > 0 && alive_in_row < kAliveInARowThreshold) {
     auto i = random_in_range(0u, data_.size - 1u);
-    if (em.Alive(data_.entity[i])) {
+    if (em.alive(data_.entity[i])) {
       ++alive_in_row;
       continue;
     }

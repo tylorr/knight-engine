@@ -1,13 +1,11 @@
 #pragma once
 
-#include <string_stream.h>
+#include <string>
 
 namespace knight {
-
 namespace path {
 
-void CurrentWorkingDirectory(foundation::string_stream::Buffer &cwd);
+std::string current_working_directory();
 
 }
-
 }

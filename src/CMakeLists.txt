@@ -16,6 +16,7 @@ set(SOURCES
     buddy_allocator.cpp
     win32/file_util.cpp
     win32/windows_utils.cpp
+    win32/path.cpp
 )
 
 include_directories(${KNIGHT_ENGINE_INCLUDES})

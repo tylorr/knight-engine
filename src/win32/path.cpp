@@ -1,33 +1,18 @@
 #include "path.h"
 #include "string_util.h"
 
-#include <temp_allocator.h>
-#include <array.h>
-
-#include <logog.hpp>
-
 #include <windows.h>
 
-using namespace foundation;
-using namespace foundation::string_stream;
-
 namespace knight {
-
-using namespace string_util;
-
 namespace path {
 
-void CurrentWorkingDirectory(Buffer &cwd)
-{
-  TempAllocator128 allocator;
-  WideBuffer wide_working_directory{allocator};
-
+std::string current_working_directory() {
   auto cwd_buffer_size = GetCurrentDirectoryW(0, nullptr);
+  wchar_t cwd_buffer[cwd_buffer_size];
 
-  array::resize(wide_working_directory, cwd_buffer_size);
-  GetCurrentDirectoryW(cwd_buffer_size, array::begin(wide_working_directory));
+  GetCurrentDirectoryW(cwd_buffer_size, cwd_buffer);
 
-  cwd = Narrow(*cwd._allocator, wide_working_directory);
+  return string_util::narrow(cwd_buffer);
 }
 
 } // namespace path

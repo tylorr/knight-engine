@@ -3,8 +3,10 @@
 #include "game_platform.h"
 
 #include <memory_types.h>
+#include <boost/filesystem/path.hpp>
 
 #include <cstdint>
+#include <ctime>
 #include <windows.h>
 
 struct GameCode {
@@ -15,21 +17,21 @@ struct GameCode {
   game_update_and_render *UpdateAndRender;
   game_shutdown *Shutdown;
 
-  const char *source_dll_name_;
-  const char *temp_dll_name_;
+  boost::filesystem::path source_dll_path_;
+  boost::filesystem::path temp_dll_path_;
 
   HMODULE module_;
-  uint64_t last_write_time_;
+  std::time_t last_write_time_;
 
   foundation::Allocator &allocator_;
 };
 
 namespace game_code {
 
-  void Load(GameCode &game_code, const char *source_dll_name, const char *temp_dll_name);
-  void Unload(GameCode &game_code);
+  void load(GameCode &game_code, boost::filesystem::path source_dll_path, boost::filesystem::path temp_dll_path);
+  void unload(GameCode &game_code);
 
-  bool IsDirty(const GameCode &game_code);
-  void Reload(GameCode &game_code);
+  bool is_dirty(const GameCode &game_code);
+  void reload(GameCode &game_code);
 
 } // namespace game_code

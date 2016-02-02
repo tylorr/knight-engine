@@ -25,6 +25,8 @@ add_definitions(-DDEVELOPMENT)
 add_definitions(-DIMGUI_INCLUDE_IMCONFIG_H)
 add_definitions(-DUNICODE=1)
 add_definitions(-D_UNICODE=1)
+add_definitions(-DBOOST_FILESYSTEM_NO_DEPRECATED=1)
+add_definitions(-DBOOST_SYSTEM_NO_DEPRECATED=1)
 
 macro(add_fbs _fb_list_name)
   file(RELATIVE_PATH _relPath "${CMAKE_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}")
@@ -54,7 +56,7 @@ endmacro(pdb)
 set(FBSCHEMA_OUTPUT "${PROJECT_BINARY_DIR}/schema_headers/")
 
 find_package(GLEW REQUIRED)
-# find_package(Lua REQUIRED)
+find_package(Boost 1.60 REQUIRED COMPONENTS filesystem)
 
 set(KNIGHT_ENGINE_INCLUDES
   ${PROJECT_SOURCE_DIR}/include
@@ -74,6 +76,7 @@ set(KNIGHT_ENGINE_INCLUDES
   ${PROJECT_SOURCE_DIR}/third-party/pcg/include
   ${PROJECT_SOURCE_DIR}/third-party/gsl/include
   ${FBSCHEMA_OUTPUT}
+  ${Boost_INCLUDE_DIR}
   #${LUA_INCLUDE_DIR}
 )
 

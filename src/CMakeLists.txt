@@ -14,9 +14,7 @@ set(SOURCES
     dependency_injection.cpp
     attribute.cpp
     buddy_allocator.cpp
-    win32/file_util.cpp
     win32/windows_util.cpp
-    win32/path.cpp
 )
 
 include_directories(${KNIGHT_ENGINE_INCLUDES})
@@ -38,6 +36,7 @@ target_link_libraries(knight-engine enet)
 target_link_libraries(knight-engine imgui)
 target_link_libraries(knight-engine tinyobjloader)
 target_link_libraries(knight-engine dbghelp)
+target_link_libraries(knight-engine ${Boost_LIBRARIES})
 # target_link_libraries(demo stb_image)
 # target_link_libraries(demo ${LUA_LIBRARIES})
 

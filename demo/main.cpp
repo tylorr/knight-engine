@@ -67,15 +67,15 @@ int main(int argc, char *argv[]) {
     // TODO: TR Get these from cmake
     auto source_dll_name = "bin/libgame.dll";
     auto temp_dll_name = "bin/temp_libgame.dll";
-    game_code::Load(game, source_dll_name, temp_dll_name);
+    game_code::load(game, source_dll_name, temp_dll_name);
 
     if (game.Init != nullptr) {
       game.Init(*window);
     }
 
     while (!glfwWindowShouldClose(window)) {
-      if(game_code::IsDirty(game)) {
-        game_code::Reload(game);
+      if(game_code::is_dirty(game)) {
+        game_code::reload(game);
       }
 
       glfwGetFramebufferSize(window, &current_width, &current_height);
@@ -98,7 +98,7 @@ int main(int argc, char *argv[]) {
     glfwTerminate();
   }
   LOGOG_SHUTDOWN();
-  game_code::Unload(game);
+  game_code::unload(game);
   memory_globals::shutdown();
 
   return EXIT_SUCCESS;

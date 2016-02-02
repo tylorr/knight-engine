@@ -6,7 +6,6 @@
 #include "udp_listener.h"
 #include "game_code.h"
 #include "game_platform.h"
-#include "win32/windows_utils.h"
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>

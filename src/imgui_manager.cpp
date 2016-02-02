@@ -61,9 +61,9 @@ struct ImGuiManagerState {
   GLFWwindow *window;
 
   std::shared_ptr<Material> material;
-  pointer<ArrayObject> vao;
-  pointer<BufferObject> vbo;
-  pointer<BufferObject> ibo;
+  Pointer<ArrayObject> vao;
+  Pointer<BufferObject> vbo;
+  Pointer<BufferObject> ibo;
   GLuint font_texture_handle;
   GLint texture_location;
   Uniform<float, 4, 4> *projection_uniform;

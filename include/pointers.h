@@ -8,7 +8,7 @@
 namespace knight {
 
 template<typename T>
-using pointer = std::unique_ptr<T, StdDeleter>;
+using Pointer = std::unique_ptr<T, StdDeleter>;
 
 template<typename T, typename... Args>
 auto allocate_shared(foundation::Allocator &alloc, Args&&... args) {
@@ -17,30 +17,30 @@ auto allocate_shared(foundation::Allocator &alloc, Args&&... args) {
 
 template<typename T, typename... Args>
 auto allocate_unique(foundation::Allocator &allocator, Args&&... args) 
-  -> std::enable_if_t<!std::is_array<T>::value, pointer<T>> {
+  -> std::enable_if_t<!std::is_array<T>::value, Pointer<T>> {
   auto p = allocator.make_new<T>(std::forward<Args>(args)...);
-  return pointer<T>{p, StdDeleter{allocator}};
+  return Pointer<T>{p, StdDeleter{allocator}};
 }
 
 template<typename T>
 auto allocate_unique(foundation::Allocator &allocator, uint32_t count)
-  -> std::enable_if_t<std::is_array<T>::value, pointer<T>> {
+  -> std::enable_if_t<std::is_array<T>::value, Pointer<T>> {
   auto arr = allocator.make_array<std::remove_extent_t<T>>(count);
-  return pointer<T>{arr, StdDeleter{allocator, count}};
+  return Pointer<T>{arr, StdDeleter{allocator, count}};
 }
 
 // citation: https://turingtester.wordpress.com/2015/06/27/cs-rule-of-zero/
 
 template<typename T>
 struct PointerDeepCopier {
-  auto operator()(const pointer<T> &other) -> pointer<T> {
+  auto operator()(const Pointer<T> &other) -> Pointer<T> {
     auto &deleter = other.get_deleter();
     return allocate_unique<T>(*deleter.allocator, *other);
   }
 };
 
 template<typename T>
-using copy_ptr = Copyer<pointer<T>, PointerDeepCopier<T>>;
+using copy_ptr = Copyer<Pointer<T>, PointerDeepCopier<T>>;
 
 template<typename T, typename ...Args>
 auto allocate_copy(foundation::Allocator &allocator, Args&&... args) {

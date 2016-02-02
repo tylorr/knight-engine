@@ -13,12 +13,12 @@ struct GLFWwindow;
 
 struct GameState {
   std::shared_ptr<Material> material;
-  pointer<BufferObject> vbo;
-  pointer<BufferObject> ibo;
+  Pointer<BufferObject> vbo;
+  Pointer<BufferObject> ibo;
 
   GLFWwindow *window;
 
-  pointer<ArrayObject> vao;
+  Pointer<ArrayObject> vao;
 
   Entity::ID entity_id;
 
@@ -26,7 +26,7 @@ struct GameState {
   Uniform<float, 4, 4> *mv_matrix_uniform;
   Uniform<float, 3, 3> *normal_matrix_uniform;
 
-  pointer<di::Injector> injector;
+  Pointer<di::Injector> injector;
 
   char string_buff[256];
   char foo_buff[256];

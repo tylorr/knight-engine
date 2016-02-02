@@ -60,12 +60,12 @@ namespace pointer_wrapper {
   } // namespace detail
 
   template<typename T, typename Deleter>
-  auto create(std::unique_ptr<T, Deleter> &&ptr) -> pointer<PointerWrapper> {
+  auto create(std::unique_ptr<T, Deleter> &&ptr) -> Pointer<PointerWrapper> {
     return std::make_unique<detail::UniquePointerWrapper<T, Deleter>>(std::move(ptr));
   }
 
   template<typename T>
-  auto create(pointer<T> &&ptr) -> pointer<PointerWrapper> {
+  auto create(Pointer<T> &&ptr) -> Pointer<PointerWrapper> {
     auto &deleter = ptr.get_deleter();
     return allocate_unique<detail::UniquePointerWrapper<T, StdDeleter>>(*deleter.allocator, std::move(ptr));
   }

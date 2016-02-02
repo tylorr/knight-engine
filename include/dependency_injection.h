@@ -41,7 +41,7 @@ class Injector {
   explicit Injector(foundation::Allocator &allocator) :
     instance_map_{allocator} {}
 
-  using InstanceMap = TypeMap<pointer<PointerWrapper>>;
+  using InstanceMap = TypeMap<Pointer<PointerWrapper>>;
 
   InstanceMap instance_map_;
 };

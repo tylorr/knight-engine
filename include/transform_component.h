@@ -22,7 +22,7 @@ class TransformComponent : public Component<TransformComponent> {
   struct InstanceData {
     uint32_t size;
     uint32_t capacity;
-    pointer<char[]> buffer;
+    Pointer<char[]> buffer;
 
     Entity *entity;
     glm::mat4 *local;

@@ -12,7 +12,7 @@ namespace knight {
 namespace memory_block {
 
 template<typename ...Ts>
-pointer<char[]> grow_contiguous(foundation::Allocator &allocator, uint32_t original_capacity, uint32_t capacity, Ts&&... args);
+Pointer<char[]> grow_contiguous(foundation::Allocator &allocator, uint32_t original_capacity, uint32_t capacity, Ts&&... args);
 
 template<std::size_t N, typename ...Args>
 void pack_data(char (&ptr)[N], Args&&... args);
@@ -35,7 +35,7 @@ namespace detail {
   }
 
   template<typename T, typename ...Ts>
-  pointer<char[]>
+  Pointer<char[]>
     grow_contiguous_helper(
       foundation::Allocator &allocator,
       uint32_t original_capacity,
@@ -73,7 +73,7 @@ namespace detail {
 } // namespace detail
 
 template<typename ...Ts>
-pointer<char[]>
+Pointer<char[]>
   grow_contiguous(
     foundation::Allocator &allocator,
     uint32_t original_capacity,

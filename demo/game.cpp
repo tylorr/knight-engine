@@ -134,8 +134,8 @@ std::unordered_map<czstring<>, const unsigned char *> componet_map {
 
 GameState game_state;
 
-pointer<FlatBufferAllocator> fb_alloc;
-pointer<flatbuffers::FlatBufferBuilder> fbb_ptr;
+Pointer<FlatBufferAllocator> fb_alloc;
+Pointer<flatbuffers::FlatBufferBuilder> fbb_ptr;
 const schema::Entity *entity_table;
 
 extern "C" void Init(GLFWwindow &window) {

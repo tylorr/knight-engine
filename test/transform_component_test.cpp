@@ -28,7 +28,7 @@ TEST_CASE("Transform Component") {
   auto entity_id = entity_manager->Create();
   auto entity = entity_manager->Get(entity_id);
 
-  transform_component->Add(*entity);
+  transform_component->add(*entity);
   auto transform = transform_component->lookup(*entity);
 
   SECTION("Default matrixes are set to identity") {
@@ -44,7 +44,7 @@ TEST_CASE("Transform Component") {
   CHECK(transform_component->world(transform) == new_transform_matrix);
 
   SECTION("Growing allocation preserves data") {
-    transform_component->Allocate(transform_component->capacity() * 2);
+    transform_component->allocate(transform_component->capacity() * 2);
 
     CHECK(transform_component->local(transform) == new_transform_matrix);
     CHECK(transform_component->world(transform) == new_transform_matrix);
@@ -54,7 +54,7 @@ TEST_CASE("Transform Component") {
     auto parent_entity_id = entity_manager->Create();
     auto parent_entity = entity_manager->Get(parent_entity_id);
 
-    transform_component->Add(*parent_entity);
+    transform_component->add(*parent_entity);
     auto parent_transform = transform_component->lookup(*parent_entity);
 
     transform_component->set_parent(transform, parent_transform);

@@ -35,17 +35,17 @@ class TransformComponent : public Component<TransformComponent> {
 
   TransformComponent(foundation::Allocator &allocator);
 
-  void Add(Entity e);
-  void Add(Entity e, Instance parent);
+  void add(Entity e);
+  void add(Entity e, Instance parent);
 
-  void Allocate(uint32_t size);
-  void Destroy(uint32_t i);
+  void allocate(uint32_t size);
+  void destroy(uint32_t i);
 
-  void GC(const EntityManager &em);
+  void collect_garbage(const EntityManager &em);
 
-  bool IsValid(Instance instance) const;
+  bool is_valid(Instance instance) const;
   
-  void Swap(Instance instanceA, Instance instanceB);
+  void swap(Instance instanceA, Instance instanceB);
 
   uint32_t capacity() const { return data_.capacity; }
 
@@ -56,7 +56,7 @@ class TransformComponent : public Component<TransformComponent> {
 
   void set_parent(Instance instance, Instance parent);
 
-  void Transform(Instance instance, const glm::mat4 &parent);
+  void transform(Instance instance, const glm::mat4 &parent);
 
  private:
   foundation::Allocator &allocator_;

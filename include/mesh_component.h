@@ -20,10 +20,10 @@ class MeshComponent : public Component<MeshComponent> {
 
   MeshComponent(foundation::Allocator &allocator);
 
-  void Add(Entity e, Material &material, ArrayObject &vao);
-  void Destroy(uint32_t i);
+  void add(Entity e, Material &material, ArrayObject &vao);
+  void destroy(uint32_t i);
 
-  void Render() const;
+  void render() const;
 
   // void GC(const EntityManager &em);
 

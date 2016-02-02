@@ -218,10 +218,10 @@ extern "C" void Init(GLFWwindow &window) {
   game_state.entity_id = entity_id;
 
   auto mesh_component = game_state.injector->get_instance<MeshComponent>();
-  mesh_component->Add(*entity, *game_state.material, *game_state.vao);
+  mesh_component->add(*entity, *game_state.material, *game_state.vao);
 
   auto transform_component = game_state.injector->get_instance<TransformComponent>();
-  transform_component->Add(*entity);
+  transform_component->add(*entity);
 
   fb_alloc = allocate_unique<FlatBufferAllocator>(allocator, allocator);
   fbb_ptr = allocate_unique<flatbuffers::FlatBufferBuilder>(allocator, 1024, fb_alloc.get());
@@ -474,7 +474,7 @@ extern "C" void UpdateAndRender() {
   material_manager->push_uniforms(*game_state.material);
 
   auto mesh_component = game_state.injector->get_instance<MeshComponent>();
-  mesh_component->Render();
+  mesh_component->render();
 
   ImGuiManager::end_frame();
 

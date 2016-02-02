@@ -12,7 +12,7 @@ namespace knight {
 
 namespace transform {
 
-glm::mat4 GetRelative(const glm::mat4 &target, const glm::mat4 &transform) {
+glm::mat4 get_relative(const glm::mat4 &target, const glm::mat4 &transform) {
   return transform * glm::inverse(target);
 }
 
@@ -23,10 +23,10 @@ TransformComponent::TransformComponent(foundation::Allocator &allocator) :
     allocator_{allocator},
     data_{} {}
 
-void TransformComponent::Add(Entity e) {
+void TransformComponent::add(Entity e) {
   if (data_.size + 1 >= data_.capacity) {
     // TODO: Find best growth strategy
-    Allocate(data_.capacity * 2 + 8);
+    allocate(data_.capacity * 2 + 8);
   }
 
   auto null_instance = make_instance(-1);
@@ -43,12 +43,12 @@ void TransformComponent::Add(Entity e) {
   ++data_.size;
 }
 
-void TransformComponent::Add(Entity e, Instance parent) {
-  Add(e);
+void TransformComponent::add(Entity e, Instance parent) {
+  add(e);
   set_parent(lookup(e), parent);
 }
 
-void TransformComponent::Allocate(uint32_t capacity) {
+void TransformComponent::allocate(uint32_t capacity) {
   data_.buffer = 
     memory_block::grow_contiguous(
       allocator_,
@@ -63,7 +63,7 @@ void TransformComponent::Allocate(uint32_t capacity) {
   data_.capacity = capacity;
 }
 
-void TransformComponent::Destroy(uint32_t i) {
+void TransformComponent::destroy(uint32_t i) {
   auto last = data_.size - 1;
 
   auto instance = make_instance(i);
@@ -72,14 +72,14 @@ void TransformComponent::Destroy(uint32_t i) {
   auto entity = data_.entity[i];
   auto last_entity = data_.entity[last];
 
-  Swap(instance, last_instance);
+  swap(instance, last_instance);
   hash::set(map_, last_entity.id, i);
   hash::remove(map_, entity.id);
 
   --data_.size;
 }
 
-void TransformComponent::GC(const EntityManager &em) {
+void TransformComponent::collect_garbage(const EntityManager &em) {
   const auto kAliveInARowThreshold = 4u;
   auto alive_in_row = 0u;
   while (data_.size > 0 && alive_in_row < kAliveInARowThreshold) {
@@ -89,58 +89,58 @@ void TransformComponent::GC(const EntityManager &em) {
       continue;
     }
     alive_in_row = 0;
-    Destroy(i);
+    destroy(i);
   }
 }
 
-bool TransformComponent::IsValid(Instance instance) const {
+bool TransformComponent::is_valid(Instance instance) const {
   return instance.i >= 0 && (uint32_t)instance.i < data_.size;
 }
 
 void TransformComponent::set_local(Instance instance, const glm::mat4 &local) {
-  XASSERT(IsValid(instance), "Invalid instance");
+  XASSERT(is_valid(instance), "Invalid instance");
   data_.local[instance.i] = local;
   auto parent = data_.parent[instance.i];
-  auto parent_tm = IsValid(parent) ? data_.world[parent.i] : glm::mat4(1.0);
-  Transform(instance, parent_tm);
+  auto parent_tm = is_valid(parent) ? data_.world[parent.i] : glm::mat4(1.0);
+  transform(instance, parent_tm);
 }
 
 glm::mat4 TransformComponent::local(Instance instance) const {
-  XASSERT(IsValid(instance), "Invalid instance");
+  XASSERT(is_valid(instance), "Invalid instance");
   return data_.local[instance.i];
 }
 
 glm::mat4 TransformComponent::world(Instance instance) const {
-  XASSERT(IsValid(instance), "Invalid instance");
+  XASSERT(is_valid(instance), "Invalid instance");
   return data_.world[instance.i];
 }
 
-void TransformComponent::Transform(Instance instance, const glm::mat4 &parent_world) {
-  XASSERT(IsValid(instance), "Invalid instance");
+void TransformComponent::transform(Instance instance, const glm::mat4 &parent_world) {
+  XASSERT(is_valid(instance), "Invalid instance");
   data_.world[instance.i] = data_.local[instance.i] * parent_world;
 
   auto child = data_.first_child[instance.i];
-  while (IsValid(child)) {
+  while (is_valid(child)) {
     // TODO: Convert to iterative instead of recursive
-    Transform(child, data_.world[instance.i]); 
+    transform(child, data_.world[instance.i]); 
     child = data_.next_sibling[child.i];
   }
 }
 
 void TransformComponent::set_parent(Instance instance, Instance parent) {
-  XASSERT(IsValid(instance), "Invalid child");
+  XASSERT(is_valid(instance), "Invalid child");
 
   if (data_.parent[instance.i].i != parent.i) {
     auto original_parent = data_.parent[instance.i];
-    if (IsValid(original_parent)) {
+    if (is_valid(original_parent)) {
       auto prev_sibling = data_.prev_sibling[instance.i];
       auto next_sibling = data_.next_sibling[instance.i];
 
-      if (IsValid(next_sibling)) {
+      if (is_valid(next_sibling)) {
         data_.prev_sibling[next_sibling.i] = prev_sibling;
       }
 
-      if (IsValid(prev_sibling)) {
+      if (is_valid(prev_sibling)) {
         data_.next_sibling[prev_sibling.i] = next_sibling;
       } else {
         data_.first_child[original_parent.i] = next_sibling;
@@ -149,23 +149,23 @@ void TransformComponent::set_parent(Instance instance, Instance parent) {
 
     data_.parent[instance.i] = parent;
 
-    if (IsValid(parent)) {
+    if (is_valid(parent)) {
       auto original_first_child = data_.first_child[parent.i];
       data_.first_child[parent.i] = instance;
 
-      if (IsValid(original_first_child)) {
+      if (is_valid(original_first_child)) {
         data_.next_sibling[instance.i] = original_first_child;
         data_.prev_sibling[original_first_child.i] = instance;
       } else {
         data_.next_sibling[instance.i] = make_instance(-1);
       }
 
-      data_.local[instance.i] = transform::GetRelative(data_.world[parent.i], data_.world[instance.i]);
+      data_.local[instance.i] = transform::get_relative(data_.world[parent.i], data_.world[instance.i]);
     }
   }
 }
 
-void TransformComponent::Swap(Instance instance_a, Instance instance_b) {
+void TransformComponent::swap(Instance instance_a, Instance instance_b) {
   auto move_instance = [this](Instance instance, int index) {
     auto new_instance = make_instance(index);
 
@@ -177,16 +177,16 @@ void TransformComponent::Swap(Instance instance_a, Instance instance_b) {
 
     auto parent = data_.parent[index];
 
-    if (IsValid(parent)) {
+    if (is_valid(parent)) {
       auto next_sibling = data_.next_sibling[instance.i];
       data_.next_sibling[index] = next_sibling;
-      if (IsValid(next_sibling)) {
+      if (is_valid(next_sibling)) {
         data_.prev_sibling[next_sibling.i] = new_instance;
       }
 
       auto prev_sibling = data_.prev_sibling[instance.i];
       data_.prev_sibling[index] = prev_sibling;
-      if (IsValid(prev_sibling)) {
+      if (is_valid(prev_sibling)) {
         data_.next_sibling[prev_sibling.i] = new_instance;
       } else {
         data_.first_child[parent.i] = new_instance;

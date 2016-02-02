@@ -19,13 +19,13 @@ MeshComponent::MeshComponent(foundation::Allocator &allocator) :
   Component{allocator},
   data_{allocator} {}
 
-void MeshComponent::Add(Entity e, Material &material, ArrayObject &vao) {
+void MeshComponent::add(Entity e, Material &material, ArrayObject &vao) {
   auto index = gsl::narrow_cast<uint32_t>(data_.size());
   data_.push_back({e, &material, &vao});
   hash::set(map_, e.id, index);
 }
 
-void MeshComponent::Destroy(uint32_t i) {
+void MeshComponent::destroy(uint32_t i) {
   auto last = data_.size() - 1;
   auto entity = data_[i].entity;
   auto last_entity = data_[last].entity;
@@ -38,7 +38,7 @@ void MeshComponent::Destroy(uint32_t i) {
   data_.pop_back();
 }
 
-void MeshComponent::Render() const {
+void MeshComponent::render() const {
   for (auto &&instance : data_) {
     instance.material->bind();
     instance.vao->draw();

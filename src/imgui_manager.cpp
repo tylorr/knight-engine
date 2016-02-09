@@ -247,7 +247,7 @@ void begin_frame(double delta_time) {
 
   io.DeltaTime = (float)delta_time;
 
-  if (ImGui::IsMouseDragging() && ImGui::GetActiveID() != 0) {
+  if (ImGui::IsMouseDragging()) {// && ImGui::GetActiveID() != 0) {
     auto *monitor = glfwGetPrimaryMonitor();
     auto *video_mode = glfwGetVideoMode(monitor);
     int screen_w = video_mode->width;

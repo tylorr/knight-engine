@@ -1,4 +1,7 @@
 // ImGui Allegro 5 bindings
+// You can copy and use unmodified imgui_impl_* files in your project. See main.cpp for an example of using this.
+// If you use this binding you'll need to call 4 functions: ImGui_ImplXXXX_Init(), ImGui_ImplXXXX_NewFrame(), ImGui::Render() and ImGui_ImplXXXX_Shutdown().
+// If you are new to ImGui, see examples/README.txt and documentation at the top of imgui.cpp.
 // https://github.com/ocornut/imgui
 // by @birthggd
 
@@ -29,7 +32,7 @@ struct ImDrawVertAllegro
     ALLEGRO_COLOR col;
 };
 
-static void ImGui_ImplA5_RenderDrawLists(ImDrawData* draw_data)
+void ImGui_ImplA5_RenderDrawLists(ImDrawData* draw_data)
 {
     int op, src, dst;
     al_get_blender(&op, &src, &dst);
@@ -53,7 +56,8 @@ static void ImGui_ImplA5_RenderDrawLists(ImDrawData* draw_data)
             vertices[i] = v;
         }
 
-        // FIXME-OPT: Unfortunately Allegro doesn't support 16-bit vertices
+        // FIXME-OPT: Unfortunately Allegro doesn't support 16-bit indices
+        // You can also use '#define ImDrawIdx unsigned int' in imconfig.h and request ImGui to output 32-bit indices
         static ImVector<int> indices;
         indices.resize(cmd_list->IdxBuffer.size());
         for (int i = 0; i < cmd_list->IdxBuffer.size(); ++i) 
@@ -84,9 +88,8 @@ static void ImGui_ImplA5_RenderDrawLists(ImDrawData* draw_data)
 
 bool Imgui_ImplA5_CreateDeviceObjects()
 {
+    // Build texture atlas
     ImGuiIO &io = ImGui::GetIO();
-
-    // Build texture
     unsigned char *pixels;
     int width, height;
     io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
@@ -120,10 +123,6 @@ bool Imgui_ImplA5_CreateDeviceObjects()
     // Store our identifier
     io.Fonts->TexID = (void*)cloned_img;
     g_Texture = cloned_img;
-
-    // Cleanup (don't clear the input data if you want to append new fonts later)
-    io.Fonts->ClearInputData();
-    io.Fonts->ClearTexData();
 
     // Create an invisible mouse cursor
     // Because al_hide_mouse_cursor() seems to mess up with the actual inputs..
@@ -186,7 +185,7 @@ bool ImGui_ImplA5_Init(ALLEGRO_DISPLAY* display)
     io.KeyMap[ImGuiKey_Y] = ALLEGRO_KEY_Y;
     io.KeyMap[ImGuiKey_Z] = ALLEGRO_KEY_Z;
 
-    io.RenderDrawListsFn = ImGui_ImplA5_RenderDrawLists;
+    io.RenderDrawListsFn = ImGui_ImplA5_RenderDrawLists;        // Alternatively you can set this to NULL and call ImGui::GetDrawData() after ImGui::Render() to get the same ImDrawData pointer.
 #ifdef _WIN32
     io.ImeWindowHandle = al_get_win_window_handle(g_Display);
 #endif

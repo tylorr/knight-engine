@@ -56,8 +56,7 @@ struct StdDeleter {
     array_size_{array_size} {}
 
   template<typename T>
-  std::enable_if_t<!std::is_array<T>::value>
-    operator()(T *p) const {
+  std::enable_if_t<!std::is_array<T>::value> operator()(T *p) const {
     XASSERT(allocator != nullptr, "Cannot delete pointer without foundation allocator");
     allocator->make_delete(p);
   }

@@ -56,7 +56,7 @@ endmacro(pdb)
 set(FBSCHEMA_OUTPUT "${PROJECT_BINARY_DIR}/schema_headers/")
 
 find_package(GLEW REQUIRED)
-find_package(Boost 1.60 REQUIRED COMPONENTS filesystem)
+find_package(Boost 1.60 REQUIRED COMPONENTS filesystem system)
 
 set(KNIGHT_ENGINE_INCLUDES
   ${PROJECT_SOURCE_DIR}/include

@@ -18,6 +18,7 @@
 #include "file_util.h"
 #include "buddy_allocator.h"
 #include "vector.h"
+#include "editor/project_editor.h"
 
 #include "entity_generated.h"
 // #include "entity_resource_generated.h"
@@ -138,29 +139,16 @@ Pointer<FlatBufferAllocator> fb_alloc;
 Pointer<flatbuffers::FlatBufferBuilder> fbb_ptr;
 const schema::Entity *entity_table;
 
+Pointer<editor::ProjectEditor> project_editor;
+
 extern "C" void Init(GLFWwindow &window) {
   JobSystem::initialize();
 
   auto &allocator = memory_globals::default_allocator();
   auto &scratch_allocator = memory_globals::default_scratch_allocator();
 
-  auto &page_allocator = memory_globals::default_page_allocator();
-
-  auto *block = page_allocator.allocate(128_kib);
-  //Ensures(block == nullptr);
-
-  BuddyAllocator buddy{block, 1024};
-
-  auto buddy_block0 = buddy.allocate(128);
-  auto buddy_block1 = buddy.allocate(128);
-  buddy.deallocate(buddy_block1);
-  buddy.deallocate(buddy_block0, 128);
-
-  // auto depth = buddy.get_depth(buddy_block);
-  // DBUG("depth: %u", depth);
-
-  page_allocator.deallocate(block);
-
+  // TODO: Load through injector
+  project_editor = allocate_unique<editor::ProjectEditor>(allocator, allocator, "../assets");
 
   BuildInjector(game_state);
 
@@ -433,15 +421,7 @@ extern "C" void UpdateAndRender() {
     glfwSetWindowShouldClose(game_state.window, GL_TRUE);
   }
 
-  // bool tree_open = ImGui::TreeNode((void *)0, "");
-  // ImGui::SameLine();
-
-  // static bool selected = false;
-  // ImGui::Selectable("models", &selected);
-  // if (tree_open)
-  // {
-  //   ImGui::TreePop();
-  // }
+  project_editor->Draw();
 
   DrawEntity(*entity_table);
 

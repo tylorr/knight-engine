@@ -46,6 +46,29 @@ std::tuple<Vector<CharT>, bool> read_file_to_buffer(foundation::Allocator &alloc
   return std::make_tuple(std::move(buffer), true);
 }
 
+template<typename CharT = char>
+bool write_buffer_to_file(gsl::czstring<> file_path, const Vector<CharT> &buffer) {
+  std::basic_ofstream<CharT> file{file_path, std::ios::binary};
+  if (file.fail()) {
+    return false;
+  }
+
+  file.write(&buffer[0], buffer.size());
+  file.close();
+  return true;
+}
+
+inline bool write_buffer_to_file(gsl::czstring<> file_path, const std::string &str) {
+  std::ofstream file{file_path, std::ios::binary};
+  if (file.fail()) {
+    return false;
+  }
+
+  file << str;
+  file.close();
+  return true;
+}
+
 
 } // namespace file_util
 

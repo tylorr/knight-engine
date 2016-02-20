@@ -28,18 +28,22 @@ Guid GetOrCreateGuid(fs::path file_path) {
   // TODO: Cache loading of this file
   Buffer meta_schema{allocator};
   bool success;
-  std::tie(meta_schema, success) = file_util::read_file_to_buffer(allocator, "../assets/schema/editor/meta.fbs");
+  std::tie(meta_schema, success) = 
+    file_util::read_file_to_buffer(allocator, 
+      "../assets/schema/editor/meta.fbs");
   XASSERT(success, "Could not load meta schema");
   parser.Parse(c_str(meta_schema));
 
   Guid guid;
   if (fs::exists(meta_path)) {
     Buffer meta_buffer{allocator};
-    std::tie(meta_buffer, success) = file_util::read_file_to_buffer(allocator, meta_path.string().c_str());
+    std::tie(meta_buffer, success) = 
+      file_util::read_file_to_buffer(allocator, meta_path.string().c_str());
     XASSERT(success, "Could not load meta file");
     parser.Parse(c_str(meta_buffer));
 
-    auto resource_handle = schema::GetResourceHandle(parser.builder_.GetBufferPointer());
+    auto resource_handle = 
+      schema::GetResourceHandle(parser.builder_.GetBufferPointer());
     guid = Guid{resource_handle->guid()->str()};
   } else {
     GuidGenerator guid_generator;
@@ -65,7 +69,8 @@ Guid GetOrCreateGuid(fs::path file_path) {
 
 ProjectEditor::ProjectEditor(Allocator &allocator, fs::path project_path)
   : project_path_{project_path},
-    project_root_{allocate_unique<DirectoryEntry>(allocator, allocator, 0, Guid{}, project_path, nullptr)},
+    project_root_{allocate_unique<DirectoryEntry>(
+      allocator, allocator, 0, Guid{}, project_path, nullptr)},
     selected_entry_{nullptr} {
   auto current_id = 1;
   auto current_level = 0;

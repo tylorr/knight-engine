@@ -1,0 +1,7 @@
+namespace knight.editor.schema;
+
+table ResourceHandle {
+  guid:string;
+}
+
+root_type ResourceHandle;

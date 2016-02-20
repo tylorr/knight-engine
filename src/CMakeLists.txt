@@ -16,6 +16,9 @@ set(SOURCES
     buddy_allocator.cpp
     win32/windows_util.cpp
     editor/project_editor.cpp
+    ../third-party/flatbuffers/src/idl_parser.cpp
+    ../third-party/flatbuffers/src/idl_gen_text.cpp
+    ../third-party/flatbuffers/src/reflection.cpp
 )
 
 include_directories(${KNIGHT_ENGINE_INCLUDES})
@@ -28,6 +31,8 @@ register_event_fbs(knight-engine ../assets/schema/transform_component.fbs)
 register_event_fbs(knight-engine ../assets/schema/mesh_component.fbs)
 register_event_fbs(knight-engine ../assets/schema/entity.fbs)
 register_event_fbs(knight-engine ../assets/schema/entity_list.fbs)
+
+register_event_fbs(knight-engine ../assets/schema/editor/meta.fbs)
 
 target_link_libraries(knight-engine glfw ${GLFW_LIBRARIES})
 target_link_libraries(knight-engine ${GLEW_LIBRARIES})

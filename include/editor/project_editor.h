@@ -6,6 +6,7 @@
 #include <boost/filesystem/path.hpp>
 #include <memory.h>
 #include <gsl.h>
+#include <guid.h>
 
 namespace knight {
 namespace editor {
@@ -20,14 +21,17 @@ class ProjectEditor {
   struct DirectoryEntry {
     int id;
     boost::filesystem::path path;
+    Guid guid;
     DirectoryEntry *parent;
     Vector<Pointer<DirectoryEntry>> children;
 
     DirectoryEntry(foundation::Allocator &allocator, int entry_id, 
+                   Guid entry_guid,
                    boost::filesystem::path entry_path, 
                    DirectoryEntry *parent_entry)
       : id{entry_id},
         path{entry_path},
+        guid{entry_guid},
         parent{parent_entry},
         children{allocator} { }
   };

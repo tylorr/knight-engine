@@ -38,6 +38,7 @@ target_link_libraries(knight-engine imgui)
 target_link_libraries(knight-engine tinyobjloader)
 target_link_libraries(knight-engine dbghelp)
 target_link_libraries(knight-engine ${Boost_LIBRARIES})
+target_link_libraries(knight-engine crossguid)
 # target_link_libraries(demo stb_image)
 # target_link_libraries(demo ${LUA_LIBRARIES})
 

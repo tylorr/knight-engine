@@ -75,6 +75,7 @@ set(KNIGHT_ENGINE_INCLUDES
   ${PROJECT_SOURCE_DIR}/third-party/tinyobjloader
   ${PROJECT_SOURCE_DIR}/third-party/pcg/include
   ${PROJECT_SOURCE_DIR}/third-party/gsl/include
+  ${PROJECT_SOURCE_DIR}/third-party/crossguid
   ${FBSCHEMA_OUTPUT}
   ${Boost_INCLUDE_DIR}
   #${LUA_INCLUDE_DIR}
@@ -88,6 +89,7 @@ add_subdirectory(third-party/foundation)
 add_subdirectory(third-party/enet)
 add_subdirectory(third-party/tinyobjloader)
 add_subdirectory(third-party/gsl)
+add_subdirectory(third-party/crossguid)
 add_subdirectory(type_erasure)
 add_subdirectory(src)
 add_subdirectory(demo)

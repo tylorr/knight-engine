@@ -1,3 +1,5 @@
+include "types.fbs";
+
 namespace knight.schema;
 
 table TransformComponent {

@@ -38,6 +38,8 @@
 #include <limits.h>
 #endif
 
+#include "flatbuffers/flatbuffers.h"
+
 namespace flatbuffers {
 
 // Convert an integer or floating point value to a string.
@@ -68,7 +70,7 @@ template<> inline std::string NumToString<double>(double t) {
   auto p = s.find_last_not_of('0');
   if (p != std::string::npos) {
     s.resize(p + 1);  // Strip trailing zeroes.
-    if (s.back() == '.')
+    if (s[s.size() - 1] == '.')
       s.erase(s.size() - 1, 1);  // Strip '.' if a whole number.
   }
   return s;
@@ -174,6 +176,12 @@ inline std::string StripExtension(const std::string &filepath) {
   return i != std::string::npos ? filepath.substr(0, i) : filepath;
 }
 
+// Returns the extension, if any.
+inline std::string GetExtension(const std::string &filepath) {
+  size_t i = filepath.find_last_of(".");
+  return i != std::string::npos ? filepath.substr(i + 1) : "";
+}
+
 // Return the last component of the path, after the last separator.
 inline std::string StripPath(const std::string &filepath) {
   size_t i = filepath.find_last_of(PathSeparatorSet);
@@ -191,8 +199,8 @@ inline std::string StripFileName(const std::string &filepath) {
 inline std::string ConCatPathFileName(const std::string &path,
                                       const std::string &filename) {
   std::string filepath = path;
-  if (path.length() && path.back() != kPathSeparator &&
-                       path.back() != kPosixPathSeparator)
+  if (path.length() && path[path.size() - 1] != kPathSeparator &&
+                       path[path.size() - 1] != kPosixPathSeparator)
     filepath += kPathSeparator;
   filepath += filename;
   return filepath;
@@ -204,7 +212,7 @@ inline void EnsureDirExists(const std::string &filepath) {
   auto parent = StripFileName(filepath);
   if (parent.length()) EnsureDirExists(parent);
   #ifdef _WIN32
-    _mkdir(filepath.c_str());
+    (void)_mkdir(filepath.c_str());
   #else
     mkdir(filepath.c_str(), S_IRWXU|S_IRGRP|S_IXGRP);
   #endif
@@ -213,15 +221,19 @@ inline void EnsureDirExists(const std::string &filepath) {
 // Obtains the absolute path from any other path.
 // Returns the input path if the absolute path couldn't be resolved.
 inline std::string AbsolutePath(const std::string &filepath) {
-  #ifdef _WIN32
-    char abs_path[MAX_PATH];
-    return GetFullPathNameA(filepath.c_str(), MAX_PATH, abs_path, nullptr)
+  #ifdef FLATBUFFERS_NO_ABSOLUTE_PATH_RESOLUTION
+    return filepath;
   #else
-    char abs_path[PATH_MAX];
-    return realpath(filepath.c_str(), abs_path)
-  #endif
-    ? abs_path
-    : filepath;
+    #ifdef _WIN32
+      char abs_path[MAX_PATH];
+      return GetFullPathNameA(filepath.c_str(), MAX_PATH, abs_path, nullptr)
+    #else
+      char abs_path[PATH_MAX];
+      return realpath(filepath.c_str(), abs_path)
+    #endif
+      ? abs_path
+      : filepath;
+  #endif // FLATBUFFERS_NO_ABSOLUTE_PATH_RESOLUTION
 }
 
 // To and from UTF-8 unicode conversion functions

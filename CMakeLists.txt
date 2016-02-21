@@ -78,12 +78,13 @@ set(KNIGHT_ENGINE_INCLUDES
   ${PROJECT_SOURCE_DIR}/third-party/crossguid
   ${FBSCHEMA_OUTPUT}
   ${Boost_INCLUDE_DIR}
-  #${LUA_INCLUDE_DIR}
 )
 
 add_subdirectory(third-party/glfw)
 add_subdirectory(third-party/logog)
 add_subdirectory(third-party/imgui)
+
+set(FLATBUFFERS_FLATC_EXECUTABLE flatc)
 add_subdirectory(third-party/flatbuffers)
 add_subdirectory(third-party/foundation)
 add_subdirectory(third-party/enet)
@@ -116,8 +117,14 @@ if (FBSCHEMAS)
   endforeach()
 
   add_custom_command(
-      OUTPUT ${FBSCHEMA_HEADERS} ${FBSCHEMA_BINARIES}
-      COMMAND flatc -c -b --schema -o "${FBSCHEMA_OUTPUT}" ${FBSCHEMAS}
+      OUTPUT ${FBSCHEMA_HEADERS}
+      COMMAND flatc -c -o "${FBSCHEMA_OUTPUT}" ${FBSCHEMAS}
+      WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+      DEPENDS ${FBSCHEMAS} flatc)
+
+  add_custom_command(
+      OUTPUT ${FBSCHEMA_BINARIES}
+      COMMAND flatc -b --schema -o "${FBSCHEMA_OUTPUT}" ${FBSCHEMAS}
       WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
       DEPENDS ${FBSCHEMAS} flatc)
 

@@ -58,8 +58,7 @@ Guid GetOrCreateGuid(fs::path file_path) {
     schema::FinishResourceHandleBuffer(builder, resource_handle);
 
     std::string json;
-    GenerateText(parser, builder.GetBufferPointer(),
-                 flatbuffers::GeneratorOptions(), &json);
+    GenerateText(parser, builder.GetBufferPointer(), &json);
 
     file_util::write_buffer_to_file(meta_path.string().c_str(), json);
   }

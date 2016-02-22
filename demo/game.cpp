@@ -129,15 +129,12 @@ void BuildInjector(GameState &game_state) {
   game_state.injector = allocate_unique<di::Injector>(allocator, config.build_injector(allocator));
 }
 
-std::unordered_map<czstring<>, const unsigned char *> componet_map {
+std::unordered_map<czstring<>, const uint8_t *> componet_map {
   { "TransformComponent", transform_component_bfbs }
 };
 
 GameState game_state;
-
-Pointer<FlatBufferAllocator> fb_alloc;
-Pointer<flatbuffers::FlatBufferBuilder> fbb_ptr;
-const schema::Entity *entity_table;
+std::vector<uint8_t> scene_entity_buffer;
 
 Pointer<editor::ProjectEditor> project_editor;
 
@@ -211,53 +208,26 @@ extern "C" void Init(GLFWwindow &window) {
   auto transform_component = game_state.injector->get_instance<TransformComponent>();
   transform_component->add(*entity);
 
-  fb_alloc = allocate_unique<FlatBufferAllocator>(allocator, allocator);
-  fbb_ptr = allocate_unique<flatbuffers::FlatBufferBuilder>(allocator, 1024, fb_alloc.get());
-
-  auto &fbb = *fbb_ptr;
+  flatbuffers::FlatBufferBuilder fbb;
 
   schema::vec3 trans{0, 0, 0}, rot{0, 0, 0}, scale{1.0f, 1.0f, 1.0f};
   auto transform_location = schema::CreateTransformComponent(fbb, &trans, &rot, &scale);
   auto transform_data_location = schema::CreateComponentData(fbb, schema::Component_TransformComponent, transform_location.Union());
 
   flatbuffers::Offset<schema::ComponentData> components[] = { transform_data_location };
-  auto component_locations = fbb.CreateVector(components, 1);
+  auto component_data_location = fbb.CreateVector(components, 1);
 
-  auto entity_location = CreateEntity(fbb, component_locations);
+  auto children_location = fbb.CreateVector<flatbuffers::Offset<schema::Entity>>(nullptr, 0);
+
+  auto name_location = fbb.CreateString("scene");
+  auto entity_location = schema::CreateEntity(fbb, name_location, component_data_location, children_location);
 
   fbb.ForceDefaults(true);
   fbb.Finish(entity_location);
 
-  // flatbuffers::Parser parser;
-
-  // {
-  //   FileRead file{"../assets/schema/types.fbs"};
-  //   Buffer buf{allocator};
-  //   file.Read(buf);
-  //   parser.Parse(c_str(buf));
-  // }
-
-  // {
-  //   FileRead file{"../assets/schema/transform_component.fbs"};
-  //   Buffer buf{allocator};
-  //   file.Read(buf);
-  //   parser.Parse(c_str(buf));
-  // }
-
-  // {
-  //   FileRead file{"../assets/schema/entity.fbs"};
-  //   Buffer buf{allocator};
-  //   file.Read(buf);
-  //   parser.Parse(c_str(buf));
-  // }
-
-  // std::string json;
-  // GenerateText(parser, fbb.GetBufferPointer(),
-  //              flatbuffers::GeneratorOptions(), &json);
-
-  // printf("%s\n", json.c_str());
-
-  entity_table = schema::GetEntity(fbb.GetBufferPointer());
+  auto flatbuf = fbb.GetBufferPointer();
+  auto length = fbb.GetSize();
+  scene_entity_buffer = std::vector<uint8_t>{flatbuf, flatbuf + length};
 
   // auto &local_field = *fields->LookupByKey("local_position");
   // auto &local_type = *local_field.type();
@@ -359,11 +329,8 @@ bool DrawVec3(const flatbuffers::Table &table, const reflection::Field &field) {
 }
 
 bool DrawObj(const reflection::Schema &schema, const flatbuffers::Table &table, const reflection::Field &field) {
-  auto *type = field.type();
-  auto index = type->index();
-
   auto *objects = schema.objects();
-  auto *object = objects->Get(index);
+  auto *object = objects->Get(field.type()->index());
   auto *name = object->name();
 
   if (strcmp(name->c_str(), "vec3") == 0) {
@@ -400,10 +367,112 @@ void DrawComponent(const schema::ComponentData &component_data) {
 }
 
 void DrawEntity(const schema::Entity &entity_table) {
-  auto &component_data_list = *entity_table.components();
-  for (auto &&component_data : component_data_list) {
-    DrawComponent(*component_data);
+  auto *component_data_list = entity_table.components();
+  if (component_data_list != nullptr) {
+    for (auto &&component_data : *component_data_list) {
+      DrawComponent(*component_data);
+    }
   }
+}
+
+void AddChild(schema::Entity &entity_table) {
+  auto &schema = *reflection::GetSchema(entity_bfbs);
+  auto root_table = schema.root_table();
+  auto fields = root_table->fields();
+  auto &children_field = *fields->LookupByKey("children");
+
+  auto entity_root = 
+    flatbuffers::piv(
+      reinterpret_cast<flatbuffers::Table *>(&entity_table), scene_entity_buffer);
+
+  auto resizing_children = 
+    flatbuffers::piv(
+      flatbuffers::GetFieldV<flatbuffers::Offset<schema::Entity>>(**entity_root, children_field), 
+      scene_entity_buffer);
+
+  if (*resizing_children != nullptr) {
+    auto new_size = resizing_children->size() + 1;
+    // It's a vector of 2 strings, to which we add one more, initialized to
+    // offset 0.
+    flatbuffers::ResizeVector<flatbuffers::Offset<schema::Entity>>(
+          schema, new_size, 0, *resizing_children, &scene_entity_buffer);
+    // Here we just create a buffer that contans a single string, but this
+    // could also be any complex set of tables and other values.
+    flatbuffers::FlatBufferBuilder entity_fbb;
+    auto entity = 
+      schema::CreateEntity(entity_fbb, entity_fbb.CreateString("entity"),
+        entity_fbb.CreateVector<flatbuffers::Offset<schema::ComponentData>>(nullptr, 0),
+        entity_fbb.CreateVector<flatbuffers::Offset<schema::Entity>>(nullptr, 0));
+    entity_fbb.Finish(entity);
+    
+    // Add the contents of it to our existing FlatBuffer.
+    // We do this last, so the pointer doesn't get invalidated (since it is
+    // at the end of the buffer):
+    auto entity_ptr = flatbuffers::AddFlatBuffer(scene_entity_buffer,
+                                                 entity_fbb.GetBufferPointer(),
+                                                 entity_fbb.GetSize());
+
+    resizing_children->MutateOffset(new_size - 1, entity_ptr);
+  } else {
+    flatbuffers::FlatBufferBuilder children_fbb;
+
+    auto entity = schema::CreateEntity(children_fbb, children_fbb.CreateString("entity"));
+    flatbuffers::Offset<schema::Entity> children[] = { entity };
+    children_fbb.Finish(children_fbb.CreateVector(children, 1));
+
+    auto children_ptr = flatbuffers::AddFlatBuffer(scene_entity_buffer,
+                                                   children_fbb.GetBufferPointer(),
+                                                   children_fbb.GetSize());
+    DBUG("child_ptr %s", BOOL_STRING(children_ptr != nullptr));
+    bool result = SetFieldT(*entity_root, children_field, children_ptr);
+
+    //auto children_vector = flatbuffers::GetFieldV<flatbuffers::Offset<schema::Entity>>(**entity_root, children_field);
+    XASSERT(result, "Could not set field");
+  }
+
+  //entity_table = *reinterpret_cast<schema::Entity *>(*entity_root);
+}
+
+void DrawEntitySelectable(schema::Entity &entity_table) {
+  auto name = entity_table.name();
+  ImGui::Selectable(name->c_str());
+  if (ImGui::BeginPopupContextItem("entity context menu"))
+  {
+      if (ImGui::Selectable("Create Empty")) {
+        //AddChild(entity_table);
+
+        //DBUG("child count %d", entity_table.children()->size());
+      }
+      ImGui::EndPopup();
+  }
+}
+
+void DrawHeirarchyEntity(schema::Entity &entity_table) {
+  auto name = entity_table.name();
+  auto *children = entity_table.mutable_children();
+
+  if (children != nullptr && children->size() > 0) {
+    std::string tree_id = "##" + name->str();
+    //DBUG("node name: %s", tree_id.c_str());
+    auto is_open = ImGui::TreeNode(tree_id.c_str());
+    ImGui::SameLine();
+    DrawEntitySelectable(entity_table);
+
+    if (is_open) {
+      for (auto i = 0; i < children->size(); ++i) {
+        DrawHeirarchyEntity(const_cast<schema::Entity &>(*children->Get(i)));
+      }
+      ImGui::TreePop();
+    }
+  } else {
+    DrawEntitySelectable(entity_table);
+  }
+}
+
+void DrawHeirarchy(schema::Entity &entity_table) {
+  ImGui::Begin("Heirarchy");
+  DrawHeirarchyEntity(entity_table);
+  ImGui::End();
 }
 
 extern "C" void UpdateAndRender() {
@@ -423,7 +492,9 @@ extern "C" void UpdateAndRender() {
 
   project_editor->Draw();
 
-  DrawEntity(*entity_table);
+  auto *scene_entity = schema::GetMutableEntity(scene_entity_buffer.data());
+  DrawEntity(*scene_entity);
+  DrawHeirarchy(*scene_entity);
 
   static bool show_test_window = true;
   if (show_test_window) {

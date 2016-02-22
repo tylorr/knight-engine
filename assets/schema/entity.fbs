@@ -13,6 +13,7 @@ table ComponentData {
 }
 
 table Entity {
+  name:string;
   components:[ComponentData];
   children:[Entity];
 }

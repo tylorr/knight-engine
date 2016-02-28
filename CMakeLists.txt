@@ -14,10 +14,12 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMakeModules)
 set (COTIRE_UNITY_OUTPUT_DIRECTORY "")
 include(cotire)
 
-set(GLFW_BUILD_TESTS OFF)
-set(GLFW_BUILD_DOCS OFF)
-set(GLFW_BUILD_EXAMPLES OFF)
-set(GLFW_INSTALL OFF)
+set(GLFW_BUILD_TESTS OFF CACHE INTERNAL "" FORCE)
+set(GLFW_BUILD_DOCS OFF CACHE INTERNAL "" FORCE)
+set(GLFW_BUILD_EXAMPLES OFF CACHE INTERNAL "" FORCE)
+set(GLFW_INSTALL OFF CACHE INTERNAL "" FORCE)
+set(protobuf_BUILD_TESTS OFF CACHE INTERNAL "" FORCE)
+
 set(BUILD_SHARED_LIBS ON)
 
 add_definitions(-DGLM_FORCE_RADIANS)
@@ -76,6 +78,7 @@ set(KNIGHT_ENGINE_INCLUDES
   ${PROJECT_SOURCE_DIR}/third-party/pcg/include
   ${PROJECT_SOURCE_DIR}/third-party/gsl/include
   ${PROJECT_SOURCE_DIR}/third-party/crossguid
+  ${PROJECT_SOURCE_DIR}/third-party/protobuf/src
   ${FBSCHEMA_OUTPUT}
   ${Boost_INCLUDE_DIR}
 )
@@ -91,6 +94,7 @@ add_subdirectory(third-party/enet)
 add_subdirectory(third-party/tinyobjloader)
 add_subdirectory(third-party/gsl)
 add_subdirectory(third-party/crossguid)
+add_subdirectory(third-party/protobuf/cmake)
 add_subdirectory(type_erasure)
 add_subdirectory(src)
 add_subdirectory(demo)

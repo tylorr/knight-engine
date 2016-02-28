@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+import "google/protobuf/any.proto";
+
+package knight.proto;
+
+message vec3 {
+  float x = 1;
+  float y = 2;
+  float z = 3;
+}
+
+message TransformComponent {
+  vec3 translation = 1;
+  vec3 rotation = 2;
+  vec3 scale = 3;
+}
+
+message Entity {
+  string name = 1;
+  int32 parent = 2;
+  repeated int32 children = 3;
+  repeated int32 components = 4;
+}
+
+message ObjectCollection {
+  map<int32, google.protobuf.Any> objects = 1;
+}

@@ -3,6 +3,8 @@ set(SOURCES
     game_code.cpp
 )
 
+set(PROTO_OUTPUT "${PROJECT_BINARY_DIR}/proto")
+include_directories(${PROTO_OUTPUT})
 include_directories(${KNIGHT_ENGINE_INCLUDES})
 
 add_executable(demo ${SOURCES})
@@ -20,7 +22,7 @@ cotire(demo)
 add_library(game SHARED
     game.cpp
     # TODO: Find a better way to do this
-    
+
 )
 target_link_libraries(game knight-engine)
 target_link_libraries(game dbghelp)

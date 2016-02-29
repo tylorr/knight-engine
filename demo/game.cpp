@@ -21,6 +21,7 @@
 #include "editor/project_editor.h"
 
 #include "assets/proto/object_collection.pb.h"
+#include "assets/proto/transform_component.pb.h"
 
 // #include "entity_generated.h"
 // // #include "entity_resource_generated.h"
@@ -37,6 +38,7 @@
 #include <string_stream.h>
 
 #include <imgui.h>
+#include <imgui_internal.h>
 
 #include <GLFW/glfw3.h>
 
@@ -153,7 +155,7 @@ static std::string get_type_url(const Descriptor* message) {
 
 int get_file_id() {
   static int current_id = 0;
-  return current_id++;
+  return ++current_id;
 }
 
 void set_proto_vec(proto::vec3 &proto_vec, const glm::vec3 &vec) {
@@ -161,6 +163,8 @@ void set_proto_vec(proto::vec3 &proto_vec, const glm::vec3 &vec) {
   proto_vec.set_y(vec.y);
   proto_vec.set_z(vec.z);
 }
+
+proto::ObjectCollection scene;
 
 extern "C" void Init(GLFWwindow &window) {
   JobSystem::initialize();
@@ -237,6 +241,7 @@ extern "C" void Init(GLFWwindow &window) {
   auto child_file_id = get_file_id();
 
   proto::Entity proto_entity;
+  proto_entity.set_id(entity_file_id);
   proto_entity.set_name("my entity");
   proto_entity.add_children(child_file_id);
   proto_entity.add_components(transform_file_id);
@@ -247,119 +252,14 @@ extern "C" void Init(GLFWwindow &window) {
   set_proto_vec(*proto_transform.mutable_scale(), {1, 1, 1});
 
   proto::Entity proto_child_entity;
+  proto_child_entity.set_id(child_file_id);
   proto_child_entity.set_name("my child entity");
   proto_child_entity.set_parent(entity_file_id);
-
-  proto::ObjectCollection scene;
+  
   auto &objects = *scene.mutable_objects();
   objects[entity_file_id].PackFrom(proto_entity);
   objects[transform_file_id].PackFrom(proto_transform);
   objects[child_file_id].PackFrom(proto_child_entity);
-
-
-  std::unique_ptr<util::TypeResolver> resolver;
-  resolver.reset(util::NewTypeResolverForDescriptorPool(
-        kTypeUrlPrefix, DescriptorPool::generated_pool()));
-
-  util::JsonOptions options;
-  options.add_whitespace = true;
-
-  std::string result;
-  util::BinaryToJsonString(resolver.get(),
-                           get_type_url(scene.GetDescriptor()),
-                           scene.SerializeAsString(), &result, options);
-
-  DBUG("\n%s", result.c_str());
-
-  // flatbuffers::FlatBufferBuilder fbb;
-
-  // schema::vec3 trans{0, 0, 0}, rot{0, 0, 0}, scale{1.0f, 1.0f, 1.0f};
-  // auto transform_location = schema::CreateTransformComponent(fbb, &trans, &rot, &scale);
-
-  // auto entity_file_id = get_file_id();
-  // auto transform_file_id = get_file_id();
-  // auto transform_object_location = schema::CreateFileObject(fbb, transform_file_id, schema::Object_TransformComponent, transform_location.Union());
-
-  // auto component_ids = fbb.CreateVector<int>({transform_file_id});
-  // auto child_ids = fbb.CreateVector<int>({});
-
-  // auto name_location = fbb.CreateString("scene");
-  // auto entity_location = schema::CreateEntity(fbb, name_location, component_ids, 0, child_ids);
-  // auto entity_object_location = schema::CreateFileObject(fbb, entity_file_id, schema::Object_Entity, entity_location.Union());
-
-  // flatbuffers::Offset<schema::FileObject> file_objects[] = {
-  //   entity_object_location,
-  //   transform_object_location
-  // };
-
-  // auto sorted_file_objects = fbb.CreateVectorOfSortedTables(file_objects, 2);
-  // auto object_collection = schema::CreateObjectCollection(fbb, sorted_file_objects);
-  // fbb.Finish(object_collection);
-
-  // auto flatbuf = fbb.GetBufferPointer();
-  // auto length = fbb.GetSize();
-  // scene_entity_buffer = std::vector<uint8_t>{flatbuf, flatbuf + length};
-
-
-  // flatbuffers::Parser parser;
-  // Buffer entity_schema{allocator};
-  // bool success;
-  // std::tie(entity_schema, success) =
-  //   file_util::read_file_to_buffer(allocator,
-  //     "../assets/schema/entity.fbs");
-  // XASSERT(success, "Could not load schema");
-
-  // czstring<> include_dirs[] = {"../assets/schema/", nullptr};
-  // auto parse_result = parser.Parse(c_str(entity_schema), include_dirs);
-  // XASSERT(parse_result, "parse error:\n%s", parser.error_.c_str());
-
-  // std::string file_object_json;
-  // GenerateText(parser, fbb.GetBufferPointer(), &file_object_json);
-
-  // DBUG("\n%s", file_object_json.c_str());
-
-  // auto &local_field = *fields->LookupByKey("local_position");
-  // auto &local_type = *local_field.type();
-  // auto index = local_type.index();
-
-  // auto *local_obj = transform_schema.objects()->Get(index);
-
-  // printf("%s\n", local_obj->name()->c_str());
-
-  // auto *local_value = flatbuffers::GetAnyFieldAddressOf<schema::mat4>(transform_table, local_field);
-
-  // printf("%f\n", local_value->col0().y());
-  // for (auto &&component_data : *entity_table->components()) {
-
-  // }
-
-  // Buffer entity_schema_buffer{allocator};
-  // ReadFile("schema_headers/entity.bfbs", entity_schema_buffer);
-  // auto &enity_schema = *reflection::GetSchema(c_str(entity_schema_buffer));
-
-  // auto *root_Table = enity_schema.root_table();
-  // auto *fields = root_Table->fields();
-
-  // auto &entity_root = *flatbuffers::GetAnyRoot(fbb.GetBufferPointer());
-  // auto &components_field = *fields->LookupByKey("components");
-
-  // auto *component_tables = flatbuffers::GetFieldV<flatbuffers::Table>(entity_root, components_field);
-
-  // auto material = fbb.CreateString("../shaders/blinn_phong.shader");
-  // auto mesh_location = schema::CreateMeshComponent(fbb, material);
-  // auto mesh_data_location = schema::CreateComponentData(fbb, schema::Component_MeshComponent, mesh_location.Union());
-
-  // flatbuffers::Offset<schema::ComponentData> components[] = { mesh_data_location };
-  // auto component_locations = fbb.CreateVector(components, 1);
-
-  // auto entity_location = CreateEntityResource(fbb, component_locations);
-
-  // fbb.Finish(entity_location);
-
-  // {
-  //   FileWrite writer("entity_data.bin");
-  //   writer.Write(fbb.GetBufferPointer(), fbb.GetSize());
-  // }
 }
 
 // bool DrawTransform(glm::mat4 &matrix) {
@@ -464,129 +364,143 @@ extern "C" void Init(GLFWwindow &window) {
 //   }
 // }
 
-// using EntityPiv =
-//   flatbuffers::pointer_inside_vector<schema::Entity, uint8_t>;
+proto::Entity create_entity() {
+  auto file_id = get_file_id();
+  proto::Entity entity;
+  entity.set_id(file_id);
+  entity.set_name("Entity");
+  return entity;
+}
 
-// void AddChild(EntityPiv &entity_piv) {
-//   auto &schema = *reflection::GetSchema(entity_bfbs);
-//   auto root_table = schema.root_table();
-//   auto fields = root_table->fields();
-//   auto &children_field = *fields->LookupByKey("children");
+void store_entity(proto::ObjectCollection &object_collection, const proto::Entity &entity) {
+  (*object_collection.mutable_objects())[entity.id()].PackFrom(entity);
+}
 
-//   auto entity_root =
-//     flatbuffers::piv(
-//       reinterpret_cast<flatbuffers::Table *>(*entity_piv), scene_entity_buffer);
+void create_empty(proto::ObjectCollection &object_collection) {
+  store_entity(object_collection, create_entity());
+}
 
-//   auto resizing_children =
-//     flatbuffers::piv(
-//       flatbuffers::GetFieldV<flatbuffers::Offset<schema::Entity>>(**entity_root, children_field),
-//       scene_entity_buffer);
+void add_empty_child(proto::ObjectCollection &object_collection, proto::Entity &parent) {
+  Expects(parent.id());
 
-//   XASSERT(*resizing_children != nullptr, "children field does not exist");
+  auto child = create_entity();
+  child.set_parent(parent.id());
+  parent.add_children(child.id());
+  store_entity(object_collection, child);
+}
 
-//   auto new_size = resizing_children->size() + 1;
-//   // It's a vector of 2 strings, to which we add one more, initialized to
-//   // offset 0.
-//   flatbuffers::ResizeVector<flatbuffers::Offset<schema::Entity>>(
-//         schema, new_size, 0, *resizing_children, &scene_entity_buffer);
-//   // Here we just create a buffer that contans a single string, but this
-//   // could also be any complex set of tables and other values.
-//   flatbuffers::FlatBufferBuilder entity_fbb;
-//   auto entity =
-//     schema::CreateEntity(entity_fbb, GetEntityId(),
-//       entity_fbb.CreateString("entity"),
-//       entity_fbb.CreateVector<flatbuffers::Offset<schema::ComponentData>>(nullptr, 0),
-//       entity_fbb.CreateVector<flatbuffers::Offset<schema::Entity>>(nullptr, 0));
-//   entity_fbb.Finish(entity);
+void remove_entity(proto::ObjectCollection &object_collection, proto::Entity &entity) {
+  Expects(entity.id());
+}
 
-//   // Add the contents of it to our existing FlatBuffer.
-//   // We do this last, so the pointer doesn't get invalidated (since it is
-//   // at the end of the buffer):
-//   auto entity_ptr = flatbuffers::AddFlatBuffer(scene_entity_buffer,
-//                                                entity_fbb.GetBufferPointer(),
-//                                                entity_fbb.GetSize());
+enum class EntityChange {
+  None = 0,
+  AddedChild = 1,
+  AddedComponent = 2,
+  Removed = 3
+};
 
-//   resizing_children->MutateOffset(new_size - 1, entity_ptr);
-// }
+EntityChange draw_entity_selectable(proto::ObjectCollection &object_collection, proto::Entity &entity) {
+  Expects(entity.id());
 
-// void RemoveChild(EntityPiv &parent_piv, EntityPiv &entity_piv) {
-//   // auto *children = parent_piv->mutable_children();
+  ImGui::Selectable(entity.name().c_str());
 
-//   // auto found = false;
-//   // for (auto i = 0; i < children->size() - 1; ++i) {
-//   //   auto *child = children->Get(i);
-//   //   if (child->id() == entity_piv->id()) {
-//   //     found = true;
-//   //   }
+  auto result = EntityChange::None;
+  ImGui::PushID(&entity);
+  if (ImGui::BeginPopupContextItem("entity context menu"))
+  {
+      if (ImGui::Selectable("Create Empty Child")) {
+        add_empty_child(object_collection, entity);
+        result = EntityChange::AddedChild;
+      }
 
-//   //   if (found) {
+      if (ImGui::Selectable("Delete")) {
+        remove_entity(object_collection, entity);
+        result = EntityChange::Removed;
+      }
 
-//   //   }
-//   //   //
-//   //   // if (child == nullptr) continue;
+      ImGui::EndPopup();
+  }
+  ImGui::PopID();
 
-//   //   // DBUG("child id %d", child->id());
-//   //   // if (child->id() == entity_piv->id()) {
-//   //   //   DBUG("Deleting the child with id %d", entity_piv->id());
-//   //   //   children->MutateOffset(i, nullptr);
-//   //   //   return;
-//   //   // }
-//   // }
-//   // //entity_piv->mutable_children()->MutateOffset(index, nullptr);
-// }
+  return result;
+}
 
-// void DrawEntitySelectable(EntityPiv &parent_piv, EntityPiv &entity_piv) {
-//   auto name = entity_piv->name();
-//   ImGui::Selectable(name->c_str());
+bool draw_heirarchy_entity(proto::ObjectCollection &object_collection, int entity_id) {
+  Expects(entity_id);
+  auto &objects = *object_collection.mutable_objects();
 
-//   ImGui::PushID(entity_piv->id());
-//   if (ImGui::BeginPopupContextItem("entity context menu"))
-//   {
-//       if (ImGui::Selectable("Create Child")) {
-//         AddChild(entity_piv);
-//       }
+  proto::Entity entity;
+  objects[entity_id].UnpackTo(&entity);
+  Expects(entity.id() == entity_id);
 
-//       if (*parent_piv != nullptr && ImGui::Selectable("Delete")) {
-//         RemoveChild(parent_piv, entity_piv);
-//         DBUG("Finished deleting");
-//       }
+  auto entity_change = EntityChange::None;
+  auto child_changed = false;
+  if (entity.children_size() > 0) {
+    auto is_open = ImGui::TreeNode(&entity, "");
+    ImGui::SameLine();
+    entity_change = draw_entity_selectable(object_collection, entity);
 
-//       ImGui::EndPopup();
-//   }
-//   ImGui::PopID();
-// }
+    if (entity_change == EntityChange::Removed) {
+      return true;
+    }
 
-// void DrawHeirarchyEntity(EntityPiv &parent_piv, EntityPiv &entity_piv) {
-//   XASSERT(entity_piv->children() != nullptr, "entity must have children vector");
+    if (is_open) {
+      for (auto &&child_id : *entity.mutable_children()) {
+        child_changed |= draw_heirarchy_entity(object_collection, child_id);
+      }
+      ImGui::TreePop();
+    }
+  } else {
+    ImGui::Indent();
+    entity_change = draw_entity_selectable(object_collection, entity);
+    ImGui::Unindent();
 
-//   if (entity_piv->children()->size() > 0) {
-//     auto is_open = ImGui::TreeNode("");
-//     ImGui::SameLine();
-//     DrawEntitySelectable(parent_piv, entity_piv);
+    if (entity_change == EntityChange::Removed) {
+      return true;
+    }
+  }
 
-//     if (is_open) {
-//       for (auto i = 0; i < entity_piv->mutable_children()->size(); ++i) {
-//         auto *child = entity_piv->mutable_children()->Get(i);
-//         if (child == nullptr) continue;
+  if (entity_change != EntityChange::None) {
+    objects[entity_id].PackFrom(entity);
+  }
 
-//         auto child_piv = flatbuffers::piv(const_cast<schema::Entity *>(child), scene_entity_buffer);
-//         DrawHeirarchyEntity(entity_piv, child_piv);
-//       }
-//       ImGui::TreePop();
-//     }
-//   } else {
-//     ImGui::Indent();
-//     DrawEntitySelectable(parent_piv, entity_piv);
-//     ImGui::Unindent();
-//   }
-// }
+  return false;
+}
 
-// void DrawHeirarchy(EntityPiv &entity_piv) {
-//   ImGui::Begin("Heirarchy");
-//   auto null_parent_piv = EntityPiv{nullptr, scene_entity_buffer};
-//   DrawHeirarchyEntity(null_parent_piv, entity_piv);
-//   ImGui::End();
-// }
+bool begin_window_context_item(gsl::czstring<> str_id, int mouse_button = 1) {
+  if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(mouse_button)) {
+    auto window_rect = ImGui::GetCurrentWindow()->Rect();
+    if (ImGui::IsMouseHoveringRect(window_rect.Min, window_rect.Max, false)) {
+      ImGui::OpenPopup(str_id);
+    }
+  }
+  return ImGui::BeginPopup(str_id);
+}
+
+void draw_heirarchy(proto::ObjectCollection &object_collection) {
+  ImGui::Begin("Heirarchy");
+  if (begin_window_context_item("heirarchy context menu")) {
+      if (ImGui::Selectable("Create Empty")) {
+        create_empty(object_collection);
+      }
+      ImGui::EndPopup();
+  }
+
+  auto &objects = *object_collection.mutable_objects();
+  for (auto &&item : objects) {
+    auto &object = item.second;
+    if (object.Is<proto::Entity>()) {
+      proto::Entity entity;
+      object.UnpackTo(&entity);
+
+      if (!entity.parent()) {
+        draw_heirarchy_entity(object_collection, item.first);
+      }
+    }
+  }
+  ImGui::End();
+}
 
 extern "C" void UpdateAndRender() {
   static auto prev_time = 0.0;
@@ -605,12 +519,7 @@ extern "C" void UpdateAndRender() {
 
   project_editor->Draw();
 
-  //auto *scene_entity = schema::GetMutableEntity(scene_entity_buffer.data());
-  // auto entity_piv =
-  //   flatbuffers::piv(
-  //     schema::GetMutableEntity(scene_entity_buffer.data()), scene_entity_buffer);
-  // DrawEntity(**entity_piv);
-  // DrawHeirarchy(entity_piv);
+  draw_heirarchy(scene);
 
   static bool show_test_window = true;
   if (show_test_window) {

@@ -23,6 +23,9 @@ set(SOURCES
 
 set(protos
   assets/proto/object_collection.proto
+  assets/proto/transform_component.proto
+  assets/proto/types.proto
+  assets/proto/component.proto
   assets/proto/meta.proto
 )
 

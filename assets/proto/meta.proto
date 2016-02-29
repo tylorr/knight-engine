@@ -1,0 +1,6 @@
+syntax = "proto3";
+package knight.editor.proto;
+
+message ResourceHandle {
+  string guid = 1;
+}

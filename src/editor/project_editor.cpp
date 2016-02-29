@@ -1,16 +1,20 @@
 #include "editor/project_editor.h"
 
-#include "meta_generated.h"
+#include "assets/proto/meta.pb.h"
 #include "file_util.h"
 
 #include <boost/filesystem/operations.hpp>
 #include <imgui.h>
 #include <logog.hpp>
-#include <flatbuffers/idl.h>
 #include <temp_allocator.h>
+
+#include <google/protobuf/util/json_util.h>
+#include <google/protobuf/util/type_resolver.h>
+#include <google/protobuf/util/type_resolver_util.h>
 
 namespace fs = boost::filesystem;
 using namespace foundation;
+using namespace google::protobuf;
 
 namespace knight {
 
@@ -18,52 +22,59 @@ using namespace string_stream;
 
 namespace editor {
 
+static const char *kTypeUrlPrefix = "type.googleapis.com";
+static gsl::czstring<> kMetaFileExtenstion = ".meta";
+
+static std::string get_type_url(const Descriptor* message) {
+  return std::string{kTypeUrlPrefix} + "/" + message->full_name();
+}
+
 Guid GetOrCreateGuid(fs::path file_path) {
   auto meta_path = file_path;
-  meta_path += ".meta";
+  meta_path += kMetaFileExtenstion;
   
-  flatbuffers::Parser parser;
   TempAllocator512 allocator;
+  std::unique_ptr<util::TypeResolver> resolver{
+    util::NewTypeResolverForDescriptorPool(
+      kTypeUrlPrefix, DescriptorPool::generated_pool())};
 
-  // TODO: Cache loading of this file
-  Buffer meta_schema{allocator};
-  bool success;
-  std::tie(meta_schema, success) = 
-    file_util::read_file_to_buffer(allocator, 
-      "../assets/schema/editor/meta.fbs");
-  XASSERT(success, "Could not load meta schema");
-  parser.Parse(c_str(meta_schema));
-
-  Guid guid;
+  editor::proto::ResourceHandle resource_handle;
   if (fs::exists(meta_path)) {
-    Buffer meta_buffer{allocator};
-    std::tie(meta_buffer, success) = 
+    Buffer meta_json_buffer{allocator};
+    bool success;
+    std::tie(meta_json_buffer, success) = 
       file_util::read_file_to_buffer(allocator, meta_path.string().c_str());
     XASSERT(success, "Could not load meta file");
-    parser.Parse(c_str(meta_buffer));
 
-    auto resource_handle = 
-      schema::GetResourceHandle(parser.builder_.GetBufferPointer());
-    guid = Guid{resource_handle->guid()->str()};
+    auto meta_json_str = std::string{meta_json_buffer.begin(), meta_json_buffer.end()};
+
+    std::string meta_binary;
+    
+    util::JsonToBinaryString(
+      resolver.get(), get_type_url(resource_handle.GetDescriptor()), 
+      meta_json_str, &meta_binary);
+
+    resource_handle.ParseFromString(meta_binary);
   } else {
     GuidGenerator guid_generator;
-    guid = guid_generator.newGuid();
+    auto guid = guid_generator.newGuid();
     std::stringstream guid_stream;
     guid_stream << guid;
 
-    flatbuffers::FlatBufferBuilder builder;
-    auto guid_location = builder.CreateString(guid_stream.str());
+    resource_handle.set_guid(guid_stream.str());
 
-    auto resource_handle = schema::CreateResourceHandle(builder, guid_location);
-    schema::FinishResourceHandleBuffer(builder, resource_handle);
+    util::JsonOptions options;
+    options.add_whitespace = true;
 
-    std::string json;
-    GenerateText(parser, builder.GetBufferPointer(), &json);
+    std::string meta_json;
+    util::BinaryToJsonString(resolver.get(),
+                             get_type_url(resource_handle.GetDescriptor()),
+                             resource_handle.SerializeAsString(), &meta_json, options);
 
-    file_util::write_buffer_to_file(meta_path.string().c_str(), json);
+    file_util::write_buffer_to_file(meta_path.string().c_str(), meta_json);
   }
   
-  return guid;
+  return resource_handle.guid();
 }
 
 ProjectEditor::ProjectEditor(Allocator &allocator, fs::path project_path)
@@ -78,7 +89,7 @@ ProjectEditor::ProjectEditor(Allocator &allocator, fs::path project_path)
   auto asset_itr = fs::recursive_directory_iterator{project_path};
   for (auto &&directory_entry : asset_itr) {
 
-    if (directory_entry.path().extension() == ".meta")
+    if (directory_entry.path().extension() == kMetaFileExtenstion)
       continue;
 
     if (asset_itr.level() > current_level) {

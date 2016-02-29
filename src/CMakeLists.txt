@@ -23,6 +23,7 @@ set(SOURCES
 
 set(protos
   assets/proto/object_collection.proto
+  assets/proto/meta.proto
 )
 
 set(PROTO_OUTPUT "${PROJECT_BINARY_DIR}/proto")

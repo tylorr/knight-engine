@@ -16,6 +16,7 @@ set(SOURCES
     buddy_allocator.cpp
     win32/windows_util.cpp
     editor/project_editor.cpp
+    path.cpp
     ../third-party/flatbuffers/src/idl_parser.cpp
     ../third-party/flatbuffers/src/idl_gen_text.cpp
     ../third-party/flatbuffers/src/reflection.cpp

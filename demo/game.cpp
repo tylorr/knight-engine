@@ -51,6 +51,11 @@
 #include <glm/gtx/matrix_decompose.hpp>
 #include <glm/ext.hpp>
 
+#include <google/protobuf/util/json_util.h>
+#include <google/protobuf/util/type_resolver.h>
+#include <google/protobuf/util/type_resolver_util.h>
+#include <google/protobuf/dynamic_message.h>
+
 #include <tiny_obj_loader.h>
 
 #include <cstdio>
@@ -97,9 +102,7 @@ namespace detail {
 
 } // namespace knight
 
-#include <google/protobuf/util/json_util.h>
-#include <google/protobuf/util/type_resolver.h>
-#include <google/protobuf/util/type_resolver_util.h>
+
 
 struct Vertex {
   TrivialVec3 position;
@@ -143,6 +146,7 @@ void BuildInjector(GameState &game_state) {
 // };
 
 GameState game_state;
+DynamicMessageFactory message_factory;
 std::vector<uint8_t> scene_entity_buffer;
 
 Pointer<editor::ProjectEditor> project_editor;
@@ -185,6 +189,8 @@ extern "C" void Init(GLFWwindow &window) {
   game_state.material = material_manager->create_material("../assets/shaders/blinn_phong.shader");
 
   auto material = game_state.material;
+
+  message_factory.SetDelegateToGeneratedFactory(true);
 
   game_state.mvp_uniform = material->get<float, 4, 4>("MVP");
   game_state.mv_matrix_uniform = material->get<float, 4, 4>("ModelView");
@@ -255,7 +261,7 @@ extern "C" void Init(GLFWwindow &window) {
   proto_child_entity.set_id(child_file_id);
   proto_child_entity.set_name("my child entity");
   proto_child_entity.set_parent(entity_file_id);
-  
+
   auto &objects = *scene.mutable_objects();
   objects[entity_file_id].PackFrom(proto_entity);
   objects[transform_file_id].PackFrom(proto_transform);
@@ -307,15 +313,7 @@ extern "C" void Init(GLFWwindow &window) {
 //   transform_component.set_local(transform_instance, transform);
 // }
 
-// bool DrawVec3(const flatbuffers::Table &table, const reflection::Field &field) {
-//   auto &vec3 = *flatbuffers::GetAnyFieldAddressOf<schema::vec3>(table, field);
 
-//   float arr[] = { vec3.x(), vec3.y(), vec3.z() };
-//   auto changed = ImGui::DragFloat3(field.name()->c_str(), arr, 0.03f);
-//   vec3 = schema::vec3{arr[0], arr[1], arr[2]};
-
-//   return changed;
-// }
 
 // bool DrawObj(const reflection::Schema &schema, const flatbuffers::Table &table, const reflection::Field &field) {
 //   auto *objects = schema.objects();
@@ -400,6 +398,16 @@ enum class EntityChange {
   Removed = 3
 };
 
+void add_component(proto::ObjectCollection &object_collection, proto::Entity &entity, const Descriptor &descriptor) {
+  auto *factorory_message = message_factory.GetPrototype(&descriptor);
+
+  auto component_file_id = get_file_id();
+  entity.add_components(component_file_id);
+
+  std::unique_ptr<Message> component_messsage{factorory_message->New()};
+  (*object_collection.mutable_objects())[component_file_id].PackFrom(*component_messsage.get());
+}
+
 EntityChange draw_entity_selectable(proto::ObjectCollection &object_collection, proto::Entity &entity) {
   Expects(entity.id());
 
@@ -418,6 +426,18 @@ EntityChange draw_entity_selectable(proto::ObjectCollection &object_collection, 
         remove_entity(object_collection, entity);
         result = EntityChange::Removed;
       }
+
+      // if (ImGui::BeginMenu("Add Component")) {
+      //   for (auto &&item : project_editor->component_descriptors()) {
+      //     auto &component_name = item.first;
+      //     if (ImGui::Selectable(component_name.c_str())) {
+      //       auto *descriptor = item.second;
+      //       add_component(object_collection, entity, *descriptor);
+      //       result = EntityChange::AddedComponent;
+      //     }
+      //   }
+      //   ImGui::EndMenu();
+      // }
 
       ImGui::EndPopup();
   }
@@ -502,6 +522,124 @@ void draw_heirarchy(proto::ObjectCollection &object_collection) {
   ImGui::End();
 }
 
+// void DrawComponent(const schema::ComponentData &component_data) {
+//   auto &component_table = *reinterpret_cast<const flatbuffers::Table *>(component_data.component());
+
+//   auto component_name = EnumNameComponent(component_data.component_type());
+//   ImGui::Text("%s", component_name);
+
+//   auto &schema = *reflection::GetSchema(componet_map[component_name]);
+//   auto &fields = *schema.root_table()->fields();
+
+//   bool changed = false;
+//   for (auto &&field : fields) {
+//     auto *type = field->type();
+//     switch(type->base_type()) {
+//      case reflection::Obj:
+//       changed |= DrawObj(schema, component_table, *field);
+//       break;
+//     }
+//   }
+
+//   if (changed) {
+//     UpdateComponent(component_table);
+//   }
+
+//   ImGui::Separator();
+// }
+
+// bool DrawVec3(const flatbuffers::Table &table, const reflection::Field &field) {
+//   auto &vec3 = *flatbuffers::GetAnyFieldAddressOf<schema::vec3>(table, field);
+
+//   float arr[] = { vec3.x(), vec3.y(), vec3.z() };
+//   auto changed = ImGui::DragFloat3(field.name()->c_str(), arr, 0.03f);
+//   vec3 = schema::vec3{arr[0], arr[1], arr[2]};
+
+//   return changed;
+// }
+
+bool draw_vec3(const FieldDescriptor &field_descriptor, Message &message) {
+  auto &descriptor = *message.GetDescriptor();
+  auto *x_desc = descriptor.FindFieldByName("x");
+  auto *y_desc = descriptor.FindFieldByName("y");
+  auto *z_desc = descriptor.FindFieldByName("z");
+
+  auto &reflection = *message.GetReflection();
+
+  float vec_array[] = {
+    reflection.GetFloat(message, x_desc),
+    reflection.GetFloat(message, y_desc),
+    reflection.GetFloat(message, z_desc)
+  };
+  auto changed = ImGui::DragFloat3(field_descriptor.name().c_str(), vec_array, 0.03f);
+
+  if (changed) {
+    reflection.SetFloat(&message, x_desc, vec_array[0]);
+    reflection.SetFloat(&message, y_desc, vec_array[1]);
+    reflection.SetFloat(&message, z_desc, vec_array[2]);
+  }
+
+  return changed;
+}
+
+bool draw_message_field(const FieldDescriptor &field_descriptor, Message &message) {
+  auto &descriptor = *message.GetDescriptor();
+
+  if (descriptor.full_name() == "knight.proto.vec3") {
+    return draw_vec3(field_descriptor, message);
+  }
+
+  return false;
+}
+
+bool draw_component(Message &component_messsage) {
+  auto &descriptor = *component_messsage.GetDescriptor();
+  auto &reflection = *component_messsage.GetReflection();
+  ImGui::Text("%s", descriptor.name().c_str());
+
+  auto changed = false;
+  for (auto i = 0; i < descriptor.field_count(); ++i) {
+    auto &field_descriptor = *descriptor.field(i);
+
+    switch (field_descriptor.type()) {
+      case FieldDescriptor::TYPE_MESSAGE:
+        auto *field_message = reflection.MutableMessage(&component_messsage, &field_descriptor);
+        changed |= draw_message_field(field_descriptor, *field_message);
+    }
+  }
+
+  return changed;
+}
+
+void draw_inspector(editor::ProjectEditor &project_editor) {
+  ImGui::Begin("Inspector");
+  auto *selected_entry = project_editor.selected_entry();
+  if (selected_entry != nullptr && selected_entry->type == editor::EntryType::ComponentSchema) {
+
+    auto &importer = project_editor.importer();
+    auto *pool = importer.pool();
+    for (auto &&item : *selected_entry->resource_handle.mutable_defaults()) {
+      auto &default_any = item.second;
+
+      std::string full_name;
+      internal::ParseAnyTypeUrl(default_any.type_url(), &full_name);
+      auto *descriptor = pool->FindMessageTypeByName(full_name);
+
+      if (descriptor == nullptr) continue;
+
+      auto *factory_component = message_factory.GetPrototype(descriptor);
+      std::unique_ptr<Message> component_messsage{factory_component->New()};
+
+      // Message component_messsage;
+      default_any.UnpackTo(component_messsage.get());
+      if (draw_component(*component_messsage)) {
+        default_any.PackFrom(*component_messsage);
+      }
+    }
+  }
+  ImGui::End();
+}
+
 extern "C" void UpdateAndRender() {
   static auto prev_time = 0.0;
   auto current_time = glfwGetTime();
@@ -517,9 +655,27 @@ extern "C" void UpdateAndRender() {
     glfwSetWindowShouldClose(game_state.window, GL_TRUE);
   }
 
-  project_editor->Draw();
+  if (ImGui::Selectable("Print scene")) {
+    std::unique_ptr<util::TypeResolver> resolver{
+      util::NewTypeResolverForDescriptorPool(
+        kTypeUrlPrefix, DescriptorPool::generated_pool())};
+
+    util::JsonOptions options;
+    options.add_whitespace = true;
+
+    std::string json;
+    util::BinaryToJsonString(resolver.get(),
+                             get_type_url(scene.GetDescriptor()),
+                             scene.SerializeAsString(), &json, options);
+
+    DBUG("\n%s", json.c_str());
+  }
+
+  project_editor->draw();
 
   draw_heirarchy(scene);
+
+  draw_inspector(*project_editor.get());
 
   static bool show_test_window = true;
   if (show_test_window) {

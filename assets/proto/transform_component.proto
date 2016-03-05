@@ -5,8 +5,8 @@ import "assets/proto/types.proto";
 import "assets/proto/component.proto";
 
 message TransformComponent {
-  option (knight.component) = true;
-  
+  option (knight.proto.component) = true;
+
   vec3 translation = 1;
   vec3 rotation = 2;
   vec3 scale = 3;

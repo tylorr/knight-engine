@@ -1,5 +1,5 @@
 syntax = "proto3";
-package knight;
+package knight.proto;
 
 import "google/protobuf/descriptor.proto";
 

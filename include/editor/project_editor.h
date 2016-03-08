@@ -4,6 +4,7 @@
 #include "vector.h"
 
 #include <google/protobuf/compiler/importer.h>
+#include <google/protobuf/util/type_resolver.h>
 #include <boost/filesystem/path.hpp>
 #include <memory.h>
 #include <gsl.h>
@@ -31,6 +32,8 @@ struct DirectoryEntry {
   Vector<Pointer<DirectoryEntry>> children;
 
   proto::ResourceHandle resource_handle;
+
+  bool dirty;
 
   DirectoryEntry(foundation::Allocator &allocator, Guid entry_guid,
                  boost::filesystem::path entry_path,
@@ -90,19 +93,23 @@ class ProjectEditor {
   const google::protobuf::compiler::Importer &importer() const { return importer_; }
 
   bool draw();
+  void save();
 
  private:
   boost::filesystem::path project_path_;
-  Pointer<DirectoryEntry> project_root_;
+  DirectoryEntry project_root_;
   DirectoryEntry *selected_entry_;
 
   ErrorPrinter error_printer_;
   google::protobuf::compiler::DiskSourceTree source_tree_;
   google::protobuf::compiler::Importer importer_;
+  std::unique_ptr<google::protobuf::util::TypeResolver> type_resolver_;
   ComponentEntryMap component_entries_;
 
   bool draw_entry(DirectoryEntry *entry);
   void draw_entry_selectable(DirectoryEntry *entry, gsl::czstring<> filename);
+
+  void save_directory_entry(DirectoryEntry &entry);
 };
 
 } // namespace editor

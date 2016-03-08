@@ -1,3 +1,15 @@
 {
-  guid: "44263283-1f8b-b84d-ba00-2a2daff0277d"
+ "guid": "44263283-1f8b-b84d-ba00-2a2daff0277d",
+ "defaults": {
+  "knight.proto.TransformComponent": {
+   "@type": "type.googleapis.com/knight.proto.TransformComponent",
+   "translation": {},
+   "rotation": {},
+   "scale": {
+    "x": 1,
+    "y": 1,
+    "z": 1
+   }
+  }
+ }
 }

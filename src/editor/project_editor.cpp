@@ -10,7 +10,6 @@
 #include <temp_allocator.h>
 
 #include <google/protobuf/util/json_util.h>
-#include <google/protobuf/util/type_resolver.h>
 #include <google/protobuf/util/type_resolver_util.h>
 #include <google/protobuf/compiler/importer.h>
 #include <google/protobuf/dynamic_message.h>
@@ -35,15 +34,28 @@ static std::string get_type_url(const protobuf::Descriptor* message) {
   return std::string{kTypeUrlPrefix} + "/" + message->full_name();
 }
 
-proto::ResourceHandle load_resource_handle(fs::path file_path) {
+void write_resource_handle(util::TypeResolver *type_resolver, 
+                           fs::path file_path, 
+                           const proto::ResourceHandle &resource_handle) {
+  auto meta_path = file_path;
+  meta_path += kMetaFileExtenstion;
+
+  util::JsonOptions options;
+  options.add_whitespace = true;
+
+  std::string meta_json;
+  util::BinaryToJsonString(type_resolver,
+                           get_type_url(resource_handle.GetDescriptor()),
+                           resource_handle.SerializeAsString(), &meta_json, options);
+
+  file_util::write_buffer_to_file(meta_path.string().c_str(), meta_json);
+}
+
+proto::ResourceHandle load_resource_handle(util::TypeResolver *type_resolver, fs::path file_path) {
   auto meta_path = file_path;
   meta_path += kMetaFileExtenstion;
 
   TempAllocator512 allocator;
-  std::unique_ptr<util::TypeResolver> resolver{
-    util::NewTypeResolverForDescriptorPool(
-      kTypeUrlPrefix, protobuf::DescriptorPool::generated_pool())};
-
   proto::ResourceHandle resource_handle;
   if (fs::exists(meta_path)) {
     Buffer meta_json_buffer{allocator};
@@ -57,7 +69,7 @@ proto::ResourceHandle load_resource_handle(fs::path file_path) {
     std::string meta_binary;
 
     util::JsonToBinaryString(
-      resolver.get(), get_type_url(resource_handle.GetDescriptor()),
+      type_resolver, get_type_url(resource_handle.GetDescriptor()),
       meta_json_str, &meta_binary);
 
     resource_handle.ParseFromString(meta_binary);
@@ -69,15 +81,7 @@ proto::ResourceHandle load_resource_handle(fs::path file_path) {
 
     resource_handle.set_guid(guid_stream.str());
 
-    util::JsonOptions options;
-    options.add_whitespace = true;
-
-    std::string meta_json;
-    util::BinaryToJsonString(resolver.get(),
-                             get_type_url(resource_handle.GetDescriptor()),
-                             resource_handle.SerializeAsString(), &meta_json, options);
-
-    file_util::write_buffer_to_file(meta_path.string().c_str(), meta_json);
+    write_resource_handle(type_resolver, file_path, resource_handle);
   }
 
   return resource_handle;
@@ -85,19 +89,22 @@ proto::ResourceHandle load_resource_handle(fs::path file_path) {
 
 ProjectEditor::ProjectEditor(Allocator &allocator, fs::path project_path)
   : project_path_{project_path},
-    project_root_{allocate_unique<DirectoryEntry>(allocator,
-      allocator, Guid{}, project_path, nullptr)},
+    project_root_{allocator, Guid{}, project_path, nullptr},
     selected_entry_{nullptr},
     error_printer_{},
     source_tree_{},
     importer_{&source_tree_, &error_printer_},
     component_entries_{} {
 
+  type_resolver_.reset(
+    util::NewTypeResolverForDescriptorPool(
+      kTypeUrlPrefix, protobuf::DescriptorPool::generated_pool()));
+
   source_tree_.MapPath("", "..");
   source_tree_.MapPath("", "../third-party/protobuf/src");
 
   auto current_level = 0;
-  auto *current_parent = project_root_.get();
+  auto *current_parent = &project_root_;
 
   protobuf::DynamicMessageFactory message_factory;
 
@@ -110,7 +117,7 @@ ProjectEditor::ProjectEditor(Allocator &allocator, fs::path project_path)
 
     auto type = EntryType::None;
 
-    auto resource_handle = load_resource_handle(fs_entry);
+    auto resource_handle = load_resource_handle(type_resolver_.get(), fs_entry);
 
     if (project_iterator.level() > current_level) {
       current_parent = current_parent->children.back().get();
@@ -156,7 +163,7 @@ ProjectEditor::ProjectEditor(Allocator &allocator, fs::path project_path)
 
 bool ProjectEditor::draw() {
   ImGui::Begin("Project");
-  auto result = draw_entry(project_root_.get());
+  auto result = draw_entry(&project_root_);
   ImGui::End();
   return result;
 }
@@ -188,6 +195,21 @@ void ProjectEditor::draw_entry_selectable(DirectoryEntry *entry, gsl::czstring<>
   if (selected) {
     selected_entry_ = entry;
   }
+}
+
+void ProjectEditor::save_directory_entry(DirectoryEntry &entry) {
+  if (entry.dirty) {
+    write_resource_handle(type_resolver_.get(), entry.path, entry.resource_handle);
+    entry.dirty = false;
+  }
+
+  for (auto &&child : entry.children) {
+    save_directory_entry(*child);
+  }
+}
+
+void ProjectEditor::save() {
+  save_directory_entry(project_root_);
 }
 
 } // namespace editor

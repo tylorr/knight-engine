@@ -23,17 +23,6 @@
 #include "assets/proto/object_collection.pb.h"
 #include "assets/proto/transform_component.pb.h"
 
-// #include "entity_generated.h"
-// // #include "entity_resource_generated.h"
-// #include "transform_component_generated.h"
-// #include "mesh_component_generated.h"
-// #include "types_generated.h"
-// #include "schema_binaries.h"
-
-
-// #include <flatbuffers/idl.h>
-// #include <flatbuffers/reflection.h>
-
 #include <logog.hpp>
 #include <string_stream.h>
 
@@ -80,29 +69,7 @@ namespace detail {
   struct attribute_traits<glm::vec4> : float_traits, component_traits<4> {};
 
 } // namespace detail
-
-// namespace schema {
-//   auto glm_cast(const vec3 &vec) {
-//     return glm::vec3{vec.x(), vec.y(), vec.z()};
-//   }
-
-//   auto glm_cast(const vec4 &vec) {
-//     return glm::vec4{vec.x(), vec.y(), vec.z(), vec.w()};
-//   }
-
-//   auto glm_cast(const mat4 &mat) {
-//     return glm::mat4{
-//       glm_cast(mat.col0()),
-//       glm_cast(mat.col1()),
-//       glm_cast(mat.col2()),
-//       glm_cast(mat.col3()),
-//     };
-//   }
-// } // namespace schema
-
 } // namespace knight
-
-
 
 struct Vertex {
   TrivialVec3 position;
@@ -140,10 +107,6 @@ void BuildInjector(GameState &game_state) {
 
   game_state.injector = allocate_unique<di::Injector>(allocator, config.build_injector(allocator));
 }
-
-// std::unordered_map<czstring<>, const uint8_t *> componet_map {
-//   { "TransformComponent", transform_component_bfbs }
-// };
 
 GameState game_state;
 DynamicMessageFactory message_factory;
@@ -268,100 +231,6 @@ extern "C" void Init(GLFWwindow &window) {
   objects[child_file_id].PackFrom(proto_child_entity);
 }
 
-// bool DrawTransform(glm::mat4 &matrix) {
-//   bool value_changed = false;
-
-//   glm::vec3 scale;
-//   glm::quat rotation;
-//   glm::vec3 translation;
-//   glm::vec3 skew;
-//   glm::vec4 perspective;
-//   glm::decompose(matrix, scale, rotation, translation, skew, perspective);
-
-//   value_changed |= DrawVector("position", translation);
-//   value_changed |= DrawQuat("rotation", rotation);
-//   value_changed |= DrawVector("scale", scale);
-
-//   if (value_changed) {
-//     //auto translation_mat = glm::translate(glm::mat4{1.0f}, translation);
-//     //auto scale_mat = glm::scale(glm::mat4{1.0f}, scale);
-//     //matrix = translation_mat * rotation_mat * scale_mat;
-//     //matrix = rotation_mat;
-//   }
-
-//   return value_changed;
-// }
-
-// void UpdateComponent(const flatbuffers::Table &table) {
-//   auto &transform_table = reinterpret_cast<const schema::TransformComponent &>(table);
-
-//   auto &entity_manager = *game_state.injector->get_instance<EntityManager>();
-//   auto entity = entity_manager.get(game_state.entity_id);
-
-//   auto &transform_component = *game_state.injector->get_instance<TransformComponent>();
-//   auto transform_instance = transform_component.lookup(*entity);
-
-//   auto translation = glm_cast(*transform_table.translation());
-//   auto rotation = radians(glm_cast(*transform_table.rotation()));
-//   auto scale = glm_cast(*transform_table.scale());
-
-//   auto translation_mat = glm::translate(glm::mat4{1.0f}, translation);
-//   auto rotation_mat = glm::eulerAngleYXZ(rotation.y, rotation.x, rotation.z);
-//   auto scale_mat = glm::scale(glm::mat4{1.0f}, scale);
-
-//   auto transform = translation_mat * rotation_mat * scale_mat;
-//   transform_component.set_local(transform_instance, transform);
-// }
-
-
-
-// bool DrawObj(const reflection::Schema &schema, const flatbuffers::Table &table, const reflection::Field &field) {
-//   auto *objects = schema.objects();
-//   auto *object = objects->Get(field.type()->index());
-//   auto *name = object->name();
-
-//   if (strcmp(name->c_str(), "vec3") == 0) {
-//     return DrawVec3(table, field);
-//   }
-
-//   return false;
-// }
-
-// void DrawComponent(const schema::ComponentData &component_data) {
-//   auto &component_table = *reinterpret_cast<const flatbuffers::Table *>(component_data.component());
-
-//   auto component_name = EnumNameComponent(component_data.component_type());
-//   ImGui::Text("%s", component_name);
-
-//   auto &schema = *reflection::GetSchema(componet_map[component_name]);
-//   auto &fields = *schema.root_table()->fields();
-
-//   bool changed = false;
-//   for (auto &&field : fields) {
-//     auto *type = field->type();
-//     switch(type->base_type()) {
-//      case reflection::Obj:
-//       changed |= DrawObj(schema, component_table, *field);
-//       break;
-//     }
-//   }
-
-//   if (changed) {
-//     UpdateComponent(component_table);
-//   }
-
-//   ImGui::Separator();
-// }
-
-// void DrawEntity(const schema::Entity &entity_table) {
-//   auto *component_data_list = entity_table.components();
-//   if (component_data_list != nullptr) {
-//     for (auto &&component_data : *component_data_list) {
-//       DrawComponent(*component_data);
-//     }
-//   }
-// }
-
 proto::Entity create_entity() {
   auto file_id = get_file_id();
   proto::Entity entity;
@@ -398,15 +267,15 @@ enum class EntityChange {
   Removed = 3
 };
 
-void add_component(proto::ObjectCollection &object_collection, proto::Entity &entity, const Descriptor &descriptor) {
-  auto *factorory_message = message_factory.GetPrototype(&descriptor);
+// void add_component(proto::ObjectCollection &object_collection, proto::Entity &entity, DirectoryEntry &directory_entry) {
+//   auto *factorory_message = message_factory.GetPrototype(&descriptor);
 
-  auto component_file_id = get_file_id();
-  entity.add_components(component_file_id);
+//   auto component_file_id = get_file_id();
+//   entity.add_components(component_file_id);
 
-  std::unique_ptr<Message> component_messsage{factorory_message->New()};
-  (*object_collection.mutable_objects())[component_file_id].PackFrom(*component_messsage.get());
-}
+//   std::unique_ptr<Message> component_messsage{factorory_message->New()};
+//   (*object_collection.mutable_objects())[component_file_id].PackFrom(*component_messsage.get());
+// }
 
 EntityChange draw_entity_selectable(proto::ObjectCollection &object_collection, proto::Entity &entity) {
   Expects(entity.id());
@@ -428,11 +297,11 @@ EntityChange draw_entity_selectable(proto::ObjectCollection &object_collection, 
       }
 
       // if (ImGui::BeginMenu("Add Component")) {
-      //   for (auto &&item : project_editor->component_descriptors()) {
+      //   for (auto &&item : project_editor->component_entries()) {
       //     auto &component_name = item.first;
       //     if (ImGui::Selectable(component_name.c_str())) {
-      //       auto *descriptor = item.second;
-      //       add_component(object_collection, entity, *descriptor);
+      //       auto &entry = *item.second;
+      //       add_component(object_collection, entity, entry);
       //       result = EntityChange::AddedComponent;
       //     }
       //   }
@@ -522,42 +391,7 @@ void draw_heirarchy(proto::ObjectCollection &object_collection) {
   ImGui::End();
 }
 
-// void DrawComponent(const schema::ComponentData &component_data) {
-//   auto &component_table = *reinterpret_cast<const flatbuffers::Table *>(component_data.component());
-
-//   auto component_name = EnumNameComponent(component_data.component_type());
-//   ImGui::Text("%s", component_name);
-
-//   auto &schema = *reflection::GetSchema(componet_map[component_name]);
-//   auto &fields = *schema.root_table()->fields();
-
-//   bool changed = false;
-//   for (auto &&field : fields) {
-//     auto *type = field->type();
-//     switch(type->base_type()) {
-//      case reflection::Obj:
-//       changed |= DrawObj(schema, component_table, *field);
-//       break;
-//     }
-//   }
-
-//   if (changed) {
-//     UpdateComponent(component_table);
-//   }
-
-//   ImGui::Separator();
-// }
-
-// bool DrawVec3(const flatbuffers::Table &table, const reflection::Field &field) {
-//   auto &vec3 = *flatbuffers::GetAnyFieldAddressOf<schema::vec3>(table, field);
-
-//   float arr[] = { vec3.x(), vec3.y(), vec3.z() };
-//   auto changed = ImGui::DragFloat3(field.name()->c_str(), arr, 0.03f);
-//   vec3 = schema::vec3{arr[0], arr[1], arr[2]};
-
-//   return changed;
-// }
-
+// TODO: Find a way to work with proto::vec3 object instead of using reflection
 bool draw_vec3(const FieldDescriptor &field_descriptor, Message &message) {
   auto &descriptor = *message.GetDescriptor();
   auto *x_desc = descriptor.FindFieldByName("x");
@@ -617,23 +451,23 @@ void draw_inspector(editor::ProjectEditor &project_editor) {
   if (selected_entry != nullptr && selected_entry->type == editor::EntryType::ComponentSchema) {
 
     auto &importer = project_editor.importer();
-    auto *pool = importer.pool();
+    auto &pool = *importer.pool();
     for (auto &&item : *selected_entry->resource_handle.mutable_defaults()) {
+      auto &type_name = item.first; 
       auto &default_any = item.second;
 
-      std::string full_name;
-      internal::ParseAnyTypeUrl(default_any.type_url(), &full_name);
-      auto *descriptor = pool->FindMessageTypeByName(full_name);
-
+      auto *descriptor = pool.FindMessageTypeByName(type_name);
       if (descriptor == nullptr) continue;
 
       auto *factory_component = message_factory.GetPrototype(descriptor);
+      
+      // TODO: Cache these so I don't have to allocate every frame
       std::unique_ptr<Message> component_messsage{factory_component->New()};
 
-      // Message component_messsage;
       default_any.UnpackTo(component_messsage.get());
       if (draw_component(*component_messsage)) {
         default_any.PackFrom(*component_messsage);
+        selected_entry->dirty = true;
       }
     }
   }
@@ -655,7 +489,7 @@ extern "C" void UpdateAndRender() {
     glfwSetWindowShouldClose(game_state.window, GL_TRUE);
   }
 
-  if (ImGui::Selectable("Print scene")) {
+  if (ImGui::Button("Print scene")) {
     std::unique_ptr<util::TypeResolver> resolver{
       util::NewTypeResolverForDescriptorPool(
         kTypeUrlPrefix, DescriptorPool::generated_pool())};
@@ -671,10 +505,12 @@ extern "C" void UpdateAndRender() {
     DBUG("\n%s", json.c_str());
   }
 
+  if (ImGui::Button("Save Scene")) {
+    project_editor->save();
+  }
+
   project_editor->draw();
-
   draw_heirarchy(scene);
-
   draw_inspector(*project_editor.get());
 
   static bool show_test_window = true;

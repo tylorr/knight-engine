@@ -3,7 +3,6 @@
 #include "pointers.h"
 #include "vector.h"
 
-#include <google/protobuf/compiler/importer.h>
 #include <google/protobuf/util/type_resolver.h>
 #include <boost/filesystem/path.hpp>
 #include <memory.h>
@@ -22,7 +21,6 @@ enum class EntryType {
   None = 0,
   ComponentSchema = 1,
 };
-
 
 struct DirectoryEntry {
   Guid guid;
@@ -44,39 +42,6 @@ struct DirectoryEntry {
       children{allocator} { }
 };
 
-
-class ErrorPrinter : public google::protobuf::compiler::MultiFileErrorCollector {
- public:
-  void AddError(const std::string& filename, int line, int column,
-                const std::string& message) {
-    AddErrorOrWarning(filename, line, column, message, "error", std::cerr);
-  }
-
-  void AddWarning(const std::string& filename, int line, int column,
-                  const std::string& message) {
-    AddErrorOrWarning(filename, line, column, message, "warning", std::clog);
-  }
-
- private:
-  void AddErrorOrWarning(
-      const std::string& filename, int line, int column,
-      const std::string& message, const std::string& type, std::ostream& out) {
-    out << filename;
-
-    // Users typically expect 1-based line/column numbers, so we add 1
-    // to each here.
-    if (line != -1) {
-      out << ":" << (line + 1) << ":" << (column + 1);
-    }
-
-    if (type == "warning") {
-      out << ": warning: " << message << std::endl;
-    } else {
-      out << ": " << message << std::endl;
-    }
-  }
-};
-
 class ProjectEditor {
  public:
   using ComponentEntryMap = std::map<std::string, DirectoryEntry *>;
@@ -90,8 +55,6 @@ class ProjectEditor {
     return component_entries_;
   }
 
-  const google::protobuf::compiler::Importer &importer() const { return importer_; }
-
   bool draw();
   void save();
 
@@ -100,9 +63,6 @@ class ProjectEditor {
   DirectoryEntry project_root_;
   DirectoryEntry *selected_entry_;
 
-  ErrorPrinter error_printer_;
-  google::protobuf::compiler::DiskSourceTree source_tree_;
-  google::protobuf::compiler::Importer importer_;
   std::unique_ptr<google::protobuf::util::TypeResolver> type_resolver_;
   ComponentEntryMap component_entries_;
 

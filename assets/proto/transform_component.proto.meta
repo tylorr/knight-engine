@@ -3,12 +3,13 @@
  "defaults": {
   "knight.proto.TransformComponent": {
    "@type": "type.googleapis.com/knight.proto.TransformComponent",
-   "translation": {},
+   "translation": {
+    "x": 2.4,
+    "y": -2.4
+   },
    "rotation": {},
    "scale": {
-    "x": 1,
-    "y": 1,
-    "z": 1
+    "z": 2.67
    }
   }
  }

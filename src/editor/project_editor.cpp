@@ -3,6 +3,7 @@
 
 #include "assets/proto/component.pb.h"
 #include "file_util.h"
+#include "assets/proto/transform_component.pb.h"
 
 #include <boost/filesystem/operations.hpp>
 #include <imgui.h>
@@ -34,8 +35,8 @@ static std::string get_type_url(const protobuf::Descriptor* message) {
   return std::string{kTypeUrlPrefix} + "/" + message->full_name();
 }
 
-void write_resource_handle(util::TypeResolver *type_resolver, 
-                           fs::path file_path, 
+void write_resource_handle(util::TypeResolver *type_resolver,
+                           fs::path file_path,
                            const proto::ResourceHandle &resource_handle) {
   auto meta_path = file_path;
   meta_path += kMetaFileExtenstion;
@@ -51,29 +52,41 @@ void write_resource_handle(util::TypeResolver *type_resolver,
   file_util::write_buffer_to_file(meta_path.string().c_str(), meta_json);
 }
 
+template<typename T>
+T load_proto_message(foundation::Allocator &allocator, fs::path file_path, util::TypeResolver *type_resolver) {
+  T message;
+
+  Buffer json_buffer{allocator};
+  bool success;
+  std::tie(json_buffer, success) =
+    file_util::read_file_to_buffer(allocator, file_path.string().c_str());
+  XASSERT(success, "Could not load file");
+
+  auto json_string = std::string{json_buffer.begin(), json_buffer.end()};
+
+  std::string message_binary;
+  auto status = util::JsonToBinaryString(
+    type_resolver, get_type_url(message.GetDescriptor()),
+    json_string, &message_binary);
+  XASSERT(status.ok(), "Could not convert json to binary %s", status.error_message().as_string().c_str());
+
+  success = message.ParseFromString(message_binary);
+  XASSERT(success, "Could not parse message binary");
+
+  return message;
+}
+
 proto::ResourceHandle load_resource_handle(util::TypeResolver *type_resolver, fs::path file_path) {
   auto meta_path = file_path;
   meta_path += kMetaFileExtenstion;
+  DBUG("Loading %s", meta_path.string().c_str());
 
   TempAllocator512 allocator;
   proto::ResourceHandle resource_handle;
   if (fs::exists(meta_path)) {
-    Buffer meta_json_buffer{allocator};
-    bool success;
-    std::tie(meta_json_buffer, success) =
-      file_util::read_file_to_buffer(allocator, meta_path.string().c_str());
-    XASSERT(success, "Could not load meta file");
-
-    auto meta_json_str = std::string{meta_json_buffer.begin(), meta_json_buffer.end()};
-
-    std::string meta_binary;
-
-    util::JsonToBinaryString(
-      type_resolver, get_type_url(resource_handle.GetDescriptor()),
-      meta_json_str, &meta_binary);
-
-    resource_handle.ParseFromString(meta_binary);
+    resource_handle = load_proto_message<proto::ResourceHandle>(allocator, meta_path, type_resolver);
   } else {
+    DBUG("Creating new resource handle");
     GuidGenerator guid_generator;
     auto guid = guid_generator.newGuid();
     std::stringstream guid_stream;
@@ -91,22 +104,27 @@ ProjectEditor::ProjectEditor(Allocator &allocator, fs::path project_path)
   : project_path_{project_path},
     project_root_{allocator, Guid{}, project_path, nullptr},
     selected_entry_{nullptr},
-    error_printer_{},
-    source_tree_{},
-    importer_{&source_tree_, &error_printer_},
     component_entries_{} {
+
+  const auto *generated_pool = protobuf::DescriptorPool::generated_pool();
 
   type_resolver_.reset(
     util::NewTypeResolverForDescriptorPool(
-      kTypeUrlPrefix, protobuf::DescriptorPool::generated_pool()));
-
-  source_tree_.MapPath("", "..");
-  source_tree_.MapPath("", "../third-party/protobuf/src");
+      kTypeUrlPrefix, generated_pool));
 
   auto current_level = 0;
   auto *current_parent = &project_root_;
 
   protobuf::DynamicMessageFactory message_factory;
+
+  proto::ResourceHandle transform_meta;
+  transform_meta = load_proto_message<proto::ResourceHandle>(allocator, "../assets/proto/transform_component.proto.meta", type_resolver_.get());
+
+  knight::proto::TransformComponent transform;
+  transform_meta.defaults().at("knight.proto.TransformComponent").UnpackTo(&transform);
+  auto trans_x = transform.translation().x();
+  DBUG("translation.x %f", trans_x);
+
 
   auto project_iterator = fs::recursive_directory_iterator{project_path};
   for (auto &&fs_entry : project_iterator) {
@@ -131,23 +149,36 @@ ProjectEditor::ProjectEditor(Allocator &allocator, fs::path project_path)
 
     if (extension == ".proto") {
       auto relative_path = fs::relative(fs_entry, "..");
-      auto *file_descriptor = importer_.Import(relative_path.generic_string());
+      const auto *file_descriptor = generated_pool->FindFileByName(relative_path.generic_string());
+      XASSERT(file_descriptor != nullptr, "Could not find file descriptor in exe: %s", relative_path.generic_string().c_str());
 
-      if (file_descriptor != nullptr) {
-        for (auto i = 0; i < file_descriptor->message_type_count(); ++i) {
-          auto *message_descriptor = file_descriptor->message_type(i);
+      for (auto i = 0; i < file_descriptor->message_type_count(); ++i) {
+        auto *message_descriptor = file_descriptor->message_type(i);
 
-          if (message_descriptor->options().GetExtension(knight::proto::component)) {
-            auto full_name = message_descriptor->full_name();
+        if (message_descriptor->options().GetExtension(knight::proto::component)) {
+          auto full_name = message_descriptor->full_name();
 
-            type = EntryType::ComponentSchema;
-            component_entries_[full_name] = entry.get();
+          type = EntryType::ComponentSchema;
+          component_entries_[full_name] = entry.get();
 
-            auto &defaults = *resource_handle.mutable_defaults();
-            if (defaults.find(full_name) == defaults.end()) {
-              auto *factorory_component = message_factory.GetPrototype(message_descriptor);
-              defaults[full_name].PackFrom(*factorory_component);
-            }
+          const auto &defaults = resource_handle.defaults();
+
+          const auto &iter = defaults.find(full_name);
+          if (iter == defaults.end()) {
+            DBUG("Creating empty default for %s", full_name.c_str());
+            // auto *factorory_component = message_factory.GetPrototype(message_descriptor);
+            // iter->second.PackFrom(*factorory_component);
+          } else {
+            DBUG("Full name %s", full_name.c_str());
+            knight::proto::TransformComponent transform;
+            defaults.at(full_name).UnpackTo(&transform);
+
+            const auto &translation = transform.translation();
+            DBUG("trans: %f, %f, %f",
+              translation.x(),
+              translation.y(),
+              translation.z()
+            );
           }
         }
       }
@@ -199,6 +230,7 @@ void ProjectEditor::draw_entry_selectable(DirectoryEntry *entry, gsl::czstring<>
 
 void ProjectEditor::save_directory_entry(DirectoryEntry &entry) {
   if (entry.dirty) {
+    DBUG("Saving entry");
     write_resource_handle(type_resolver_.get(), entry.path, entry.resource_handle);
     entry.dirty = false;
   }

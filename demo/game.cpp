@@ -19,6 +19,7 @@
 #include "buddy_allocator.h"
 #include "vector.h"
 #include "editor/project_editor.h"
+#include "editor/inspector.h"
 
 #include "assets/proto/object_collection.pb.h"
 #include "assets/proto/transform_component.pb.h"
@@ -113,6 +114,7 @@ DynamicMessageFactory message_factory;
 std::vector<uint8_t> scene_entity_buffer;
 
 Pointer<editor::ProjectEditor> project_editor;
+Pointer<editor::Inspector> inspector;
 
 static const char *kTypeUrlPrefix = "type.googleapis.com";
 
@@ -141,6 +143,7 @@ extern "C" void Init(GLFWwindow &window) {
 
   // TODO: Load through injector
   project_editor = allocate_unique<editor::ProjectEditor>(allocator, allocator, "../assets");
+  inspector = allocate_unique<editor::Inspector>(allocator, *project_editor);
 
   BuildInjector(game_state);
 
@@ -391,89 +394,6 @@ void draw_heirarchy(proto::ObjectCollection &object_collection) {
   ImGui::End();
 }
 
-// TODO: Find a way to work with proto::vec3 object instead of using reflection
-bool draw_vec3(const FieldDescriptor &field_descriptor, Message &message) {
-  auto &descriptor = *message.GetDescriptor();
-  auto *x_desc = descriptor.FindFieldByName("x");
-  auto *y_desc = descriptor.FindFieldByName("y");
-  auto *z_desc = descriptor.FindFieldByName("z");
-
-  auto &reflection = *message.GetReflection();
-
-  float vec_array[] = {
-    reflection.GetFloat(message, x_desc),
-    reflection.GetFloat(message, y_desc),
-    reflection.GetFloat(message, z_desc)
-  };
-  auto changed = ImGui::DragFloat3(field_descriptor.name().c_str(), vec_array, 0.03f);
-
-  if (changed) {
-    reflection.SetFloat(&message, x_desc, vec_array[0]);
-    reflection.SetFloat(&message, y_desc, vec_array[1]);
-    reflection.SetFloat(&message, z_desc, vec_array[2]);
-  }
-
-  return changed;
-}
-
-bool draw_message_field(const FieldDescriptor &field_descriptor, Message &message) {
-  auto &descriptor = *message.GetDescriptor();
-
-  if (descriptor.full_name() == "knight.proto.vec3") {
-    return draw_vec3(field_descriptor, message);
-  }
-
-  return false;
-}
-
-bool draw_component(Message &component_messsage) {
-  auto &descriptor = *component_messsage.GetDescriptor();
-  auto &reflection = *component_messsage.GetReflection();
-  ImGui::Text("%s", descriptor.name().c_str());
-
-  auto changed = false;
-  for (auto i = 0; i < descriptor.field_count(); ++i) {
-    auto &field_descriptor = *descriptor.field(i);
-
-    switch (field_descriptor.type()) {
-      case FieldDescriptor::TYPE_MESSAGE:
-        auto *field_message = reflection.MutableMessage(&component_messsage, &field_descriptor);
-        changed |= draw_message_field(field_descriptor, *field_message);
-    }
-  }
-
-  return changed;
-}
-
-void draw_inspector(editor::ProjectEditor &project_editor) {
-  ImGui::Begin("Inspector");
-  auto *selected_entry = project_editor.selected_entry();
-  if (selected_entry != nullptr && selected_entry->type == editor::EntryType::ComponentSchema) {
-
-    auto &importer = project_editor.importer();
-    auto &pool = *importer.pool();
-    for (auto &&item : *selected_entry->resource_handle.mutable_defaults()) {
-      auto &type_name = item.first; 
-      auto &default_any = item.second;
-
-      auto *descriptor = pool.FindMessageTypeByName(type_name);
-      if (descriptor == nullptr) continue;
-
-      auto *factory_component = message_factory.GetPrototype(descriptor);
-      
-      // TODO: Cache these so I don't have to allocate every frame
-      std::unique_ptr<Message> component_messsage{factory_component->New()};
-
-      default_any.UnpackTo(component_messsage.get());
-      if (draw_component(*component_messsage)) {
-        default_any.PackFrom(*component_messsage);
-        selected_entry->dirty = true;
-      }
-    }
-  }
-  ImGui::End();
-}
-
 extern "C" void UpdateAndRender() {
   static auto prev_time = 0.0;
   auto current_time = glfwGetTime();
@@ -511,7 +431,8 @@ extern "C" void UpdateAndRender() {
 
   project_editor->draw();
   draw_heirarchy(scene);
-  draw_inspector(*project_editor.get());
+  // draw_inspector(*project_editor.get());
+  inspector->draw();
 
   static bool show_test_window = true;
   if (show_test_window) {

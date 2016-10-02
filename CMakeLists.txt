@@ -79,6 +79,7 @@ set(KNIGHT_ENGINE_INCLUDES
   ${PROJECT_SOURCE_DIR}/third-party/gsl/include
   ${PROJECT_SOURCE_DIR}/third-party/crossguid
   ${PROJECT_SOURCE_DIR}/third-party/protobuf/src
+  ${PROJECT_SOURCE_DIR}/third-party/cereal/include
   ${FBSCHEMA_OUTPUT}
   ${Boost_INCLUDE_DIR}
 )

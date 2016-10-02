@@ -3,12 +3,9 @@
 #include "pointers.h"
 #include "vector.h"
 
-#include <google/protobuf/util/type_resolver.h>
 #include <boost/filesystem/path.hpp>
 #include <memory.h>
 #include <gsl.h>
-#include "assets/proto/meta.pb.h"
-
 #include <guid.h>
 
 #include <map>
@@ -28,8 +25,6 @@ struct DirectoryEntry {
   boost::filesystem::path path;
   DirectoryEntry *parent;
   Vector<Pointer<DirectoryEntry>> children;
-
-  proto::ResourceHandle resource_handle;
 
   bool dirty;
 
@@ -62,8 +57,6 @@ class ProjectEditor {
   boost::filesystem::path project_path_;
   DirectoryEntry project_root_;
   DirectoryEntry *selected_entry_;
-
-  std::unique_ptr<google::protobuf::util::TypeResolver> type_resolver_;
   ComponentEntryMap component_entries_;
 
   bool draw_entry(DirectoryEntry *entry);

@@ -6,6 +6,7 @@ set(SOURCES
 set(PROTO_OUTPUT "${PROJECT_BINARY_DIR}/proto")
 include_directories(${PROTO_OUTPUT})
 include_directories(${KNIGHT_ENGINE_INCLUDES})
+include_directories("../assets")
 
 add_executable(demo ${SOURCES})
 target_link_libraries(demo knight-engine)
@@ -21,6 +22,7 @@ cotire(demo)
 
 add_library(game SHARED
     game.cpp
+    ../assets/editor_component.cpp
     # TODO: Find a better way to do this
 
 )

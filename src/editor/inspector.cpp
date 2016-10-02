@@ -80,31 +80,31 @@ Inspector::Inspector(ProjectEditor &project_editor)
 }
 
 void Inspector::draw() {
-  ImGui::Begin("Inspector");
-  auto *selected_entry = project_editor_.selected_entry();
-  if (selected_entry != nullptr && selected_entry->type == editor::EntryType::ComponentSchema) {
+  // ImGui::Begin("Inspector");
+  // auto *selected_entry = project_editor_.selected_entry();
+  // if (selected_entry != nullptr && selected_entry->type == editor::EntryType::ComponentSchema) {
 
-    const auto &pool = *google::protobuf::DescriptorPool::generated_pool();
-    for (auto &&item : *selected_entry->resource_handle.mutable_defaults()) {
-      auto &type_name = item.first;
-      auto &default_any = item.second;
+  //   const auto &pool = *google::protobuf::DescriptorPool::generated_pool();
+  //   for (auto &&item : *selected_entry->resource_handle.mutable_defaults()) {
+  //     auto &type_name = item.first;
+  //     auto &default_any = item.second;
 
-      auto *descriptor = pool.FindMessageTypeByName(type_name);
-      if (descriptor == nullptr) continue;
+  //     auto *descriptor = pool.FindMessageTypeByName(type_name);
+  //     if (descriptor == nullptr) continue;
 
-      auto *factory_component = message_factory_.GetPrototype(descriptor);
+  //     auto *factory_component = message_factory_.GetPrototype(descriptor);
 
-      // TODO: Cache these so I don't have to allocate every frame
-      std::unique_ptr<Message> component{factory_component->New()};
+  //     // TODO: Cache these so I don't have to allocate every frame
+  //     std::unique_ptr<Message> component{factory_component->New()};
 
-      default_any.UnpackTo(component.get());
-      if (draw_component(*component)) {
-        default_any.PackFrom(*component);
-        selected_entry->dirty = true;
-      }
-    }
-  }
-  ImGui::End();
+  //     default_any.UnpackTo(component.get());
+  //     if (draw_component(*component)) {
+  //       default_any.PackFrom(*component);
+  //       selected_entry->dirty = true;
+  //     }
+  //   }
+  // }
+  // ImGui::End();
 }
 
 

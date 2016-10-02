@@ -20,9 +20,7 @@
 #include "vector.h"
 #include "editor/project_editor.h"
 #include "editor/inspector.h"
-
-#include "assets/proto/object_collection.pb.h"
-#include "assets/proto/transform_component.pb.h"
+#include "editor_component.h"
 
 #include <logog.hpp>
 #include <string_stream.h>
@@ -41,11 +39,6 @@
 #include <glm/gtx/matrix_decompose.hpp>
 #include <glm/ext.hpp>
 
-#include <google/protobuf/util/json_util.h>
-#include <google/protobuf/util/type_resolver.h>
-#include <google/protobuf/util/type_resolver_util.h>
-#include <google/protobuf/dynamic_message.h>
-
 #include <tiny_obj_loader.h>
 
 #include <cstdio>
@@ -55,7 +48,6 @@ using namespace knight;
 using namespace foundation;
 using namespace gsl;
 using namespace string_stream;
-using namespace google::protobuf;
 
 using std::shared_ptr;
 using std::unique_ptr;
@@ -109,31 +101,41 @@ void BuildInjector(GameState &game_state) {
   game_state.injector = allocate_unique<di::Injector>(allocator, config.build_injector(allocator));
 }
 
+namespace knight {
+namespace editor {
+
+class TransformComponent : public ComponentBase<TransformComponent> {
+ public:
+  glm::vec3 position;
+  glm::vec3 rotation;
+  glm::vec3 scale;
+
+  TransformComponent() : position{}, rotation{}, scale{1} {}
+  TransformComponent(const TransformComponent &other) = default;
+
+ private:
+  static const TransformComponent _protoInstance;
+
+  explicit TransformComponent(Component::Prototype) : TransformComponent() {
+    registerPrototype("TransformComponent", this);
+  }  
+};
+
+const TransformComponent TransformComponent::_protoInstance{Prototype{}};
+
+} // namespace editor
+} // namespace knight
+
 GameState game_state;
-DynamicMessageFactory message_factory;
 std::vector<uint8_t> scene_entity_buffer;
 
 Pointer<editor::ProjectEditor> project_editor;
 Pointer<editor::Inspector> inspector;
 
-static const char *kTypeUrlPrefix = "type.googleapis.com";
-
-static std::string get_type_url(const Descriptor* message) {
-  return std::string(kTypeUrlPrefix) + "/" + message->full_name();
-}
-
 int get_file_id() {
   static int current_id = 0;
   return ++current_id;
 }
-
-void set_proto_vec(proto::vec3 &proto_vec, const glm::vec3 &vec) {
-  proto_vec.set_x(vec.x);
-  proto_vec.set_y(vec.y);
-  proto_vec.set_z(vec.z);
-}
-
-proto::ObjectCollection scene;
 
 extern "C" void Init(GLFWwindow &window) {
   JobSystem::initialize();
@@ -155,8 +157,6 @@ extern "C" void Init(GLFWwindow &window) {
   game_state.material = material_manager->create_material("../assets/shaders/blinn_phong.shader");
 
   auto material = game_state.material;
-
-  message_factory.SetDelegateToGeneratedFactory(true);
 
   game_state.mvp_uniform = material->get<float, 4, 4>("MVP");
   game_state.mv_matrix_uniform = material->get<float, 4, 4>("ModelView");
@@ -208,60 +208,67 @@ extern "C" void Init(GLFWwindow &window) {
   auto transform_component = game_state.injector->get_instance<TransformComponent>();
   transform_component->add(*entity);
 
-  auto entity_file_id = get_file_id();
-  auto transform_file_id = get_file_id();
-  auto child_file_id = get_file_id();
 
-  proto::Entity proto_entity;
-  proto_entity.set_id(entity_file_id);
-  proto_entity.set_name("my entity");
-  proto_entity.add_children(child_file_id);
-  proto_entity.add_components(transform_file_id);
+  auto c = editor::Component::create("TransformComponent");
+  auto tc = dynamic_cast<editor::TransformComponent *>(c.get());
 
-  proto::TransformComponent proto_transform;
-  set_proto_vec(*proto_transform.mutable_translation(), {0, 0, 0});
-  set_proto_vec(*proto_transform.mutable_rotation(), {0, 0, 0});
-  set_proto_vec(*proto_transform.mutable_scale(), {1, 1, 1});
+  DBUG("scale: %s", glm::to_string(tc->scale).c_str());
+  DBUG("pos: %s", glm::to_string(tc->position).c_str());
 
-  proto::Entity proto_child_entity;
-  proto_child_entity.set_id(child_file_id);
-  proto_child_entity.set_name("my child entity");
-  proto_child_entity.set_parent(entity_file_id);
+  // auto entity_file_id = get_file_id();
+  // auto transform_file_id = get_file_id();
+  // auto child_file_id = get_file_id();
 
-  auto &objects = *scene.mutable_objects();
-  objects[entity_file_id].PackFrom(proto_entity);
-  objects[transform_file_id].PackFrom(proto_transform);
-  objects[child_file_id].PackFrom(proto_child_entity);
+  // proto::Entity proto_entity;
+  // proto_entity.set_id(entity_file_id);
+  // proto_entity.set_name("my entity");
+  // proto_entity.add_children(child_file_id);
+  // proto_entity.add_components(transform_file_id);
+
+  // proto::TransformComponent proto_transform;
+  // set_proto_vec(*proto_transform.mutable_translation(), {0, 0, 0});
+  // set_proto_vec(*proto_transform.mutable_rotation(), {0, 0, 0});
+  // set_proto_vec(*proto_transform.mutable_scale(), {1, 1, 1});
+
+  // proto::Entity proto_child_entity;
+  // proto_child_entity.set_id(child_file_id);
+  // proto_child_entity.set_name("my child entity");
+  // proto_child_entity.set_parent(entity_file_id);
+
+  // auto &objects = *scene.mutable_objects();
+  // objects[entity_file_id].PackFrom(proto_entity);
+  // objects[transform_file_id].PackFrom(proto_transform);
+  // objects[child_file_id].PackFrom(proto_child_entity);
 }
 
-proto::Entity create_entity() {
-  auto file_id = get_file_id();
-  proto::Entity entity;
-  entity.set_id(file_id);
-  entity.set_name("Entity");
-  return entity;
-}
+// proto::Entity create_entity() {
+//   auto file_id = get_file_id();
+//   proto::Entity entity;
+//   entity.set_id(file_id);
+//   entity.set_name("Entity");
+//   return entity;
+// }
 
-void store_entity(proto::ObjectCollection &object_collection, const proto::Entity &entity) {
-  (*object_collection.mutable_objects())[entity.id()].PackFrom(entity);
-}
+// void store_entity(proto::ObjectCollection &object_collection, const proto::Entity &entity) {
+//   (*object_collection.mutable_objects())[entity.id()].PackFrom(entity);
+// }
 
-void create_empty(proto::ObjectCollection &object_collection) {
-  store_entity(object_collection, create_entity());
-}
+// void create_empty(proto::ObjectCollection &object_collection) {
+//   store_entity(object_collection, create_entity());
+// }
 
-void add_empty_child(proto::ObjectCollection &object_collection, proto::Entity &parent) {
-  Expects(parent.id());
+// void add_empty_child(proto::ObjectCollection &object_collection, proto::Entity &parent) {
+//   Expects(parent.id());
 
-  auto child = create_entity();
-  child.set_parent(parent.id());
-  parent.add_children(child.id());
-  store_entity(object_collection, child);
-}
+//   auto child = create_entity();
+//   child.set_parent(parent.id());
+//   parent.add_children(child.id());
+//   store_entity(object_collection, child);
+// }
 
-void remove_entity(proto::ObjectCollection &object_collection, proto::Entity &entity) {
-  Expects(entity.id());
-}
+// void remove_entity(proto::ObjectCollection &object_collection, proto::Entity &entity) {
+//   Expects(entity.id());
+// }
 
 enum class EntityChange {
   None = 0,
@@ -280,85 +287,85 @@ enum class EntityChange {
 //   (*object_collection.mutable_objects())[component_file_id].PackFrom(*component_messsage.get());
 // }
 
-EntityChange draw_entity_selectable(proto::ObjectCollection &object_collection, proto::Entity &entity) {
-  Expects(entity.id());
+// EntityChange draw_entity_selectable(proto::ObjectCollection &object_collection, proto::Entity &entity) {
+//   Expects(entity.id());
 
-  ImGui::Selectable(entity.name().c_str());
+//   ImGui::Selectable(entity.name().c_str());
 
-  auto result = EntityChange::None;
-  ImGui::PushID(&entity);
-  if (ImGui::BeginPopupContextItem("entity context menu"))
-  {
-      if (ImGui::Selectable("Create Empty Child")) {
-        add_empty_child(object_collection, entity);
-        result = EntityChange::AddedChild;
-      }
+//   auto result = EntityChange::None;
+//   ImGui::PushID(&entity);
+//   if (ImGui::BeginPopupContextItem("entity context menu"))
+//   {
+//       if (ImGui::Selectable("Create Empty Child")) {
+//         add_empty_child(object_collection, entity);
+//         result = EntityChange::AddedChild;
+//       }
 
-      if (ImGui::Selectable("Delete")) {
-        remove_entity(object_collection, entity);
-        result = EntityChange::Removed;
-      }
+//       if (ImGui::Selectable("Delete")) {
+//         remove_entity(object_collection, entity);
+//         result = EntityChange::Removed;
+//       }
 
-      // if (ImGui::BeginMenu("Add Component")) {
-      //   for (auto &&item : project_editor->component_entries()) {
-      //     auto &component_name = item.first;
-      //     if (ImGui::Selectable(component_name.c_str())) {
-      //       auto &entry = *item.second;
-      //       add_component(object_collection, entity, entry);
-      //       result = EntityChange::AddedComponent;
-      //     }
-      //   }
-      //   ImGui::EndMenu();
-      // }
+//       // if (ImGui::BeginMenu("Add Component")) {
+//       //   for (auto &&item : project_editor->component_entries()) {
+//       //     auto &component_name = item.first;
+//       //     if (ImGui::Selectable(component_name.c_str())) {
+//       //       auto &entry = *item.second;
+//       //       add_component(object_collection, entity, entry);
+//       //       result = EntityChange::AddedComponent;
+//       //     }
+//       //   }
+//       //   ImGui::EndMenu();
+//       // }
 
-      ImGui::EndPopup();
-  }
-  ImGui::PopID();
+//       ImGui::EndPopup();
+//   }
+//   ImGui::PopID();
 
-  return result;
-}
+//   return result;
+// }
 
-bool draw_heirarchy_entity(proto::ObjectCollection &object_collection, int entity_id) {
-  Expects(entity_id);
-  auto &objects = *object_collection.mutable_objects();
+// bool draw_heirarchy_entity(proto::ObjectCollection &object_collection, int entity_id) {
+//   Expects(entity_id);
+//   auto &objects = *object_collection.mutable_objects();
 
-  proto::Entity entity;
-  objects[entity_id].UnpackTo(&entity);
-  Expects(entity.id() == entity_id);
+//   proto::Entity entity;
+//   objects[entity_id].UnpackTo(&entity);
+//   Expects(entity.id() == entity_id);
 
-  auto entity_change = EntityChange::None;
-  auto child_changed = false;
-  if (entity.children_size() > 0) {
-    auto is_open = ImGui::TreeNode(&entity, "");
-    ImGui::SameLine();
-    entity_change = draw_entity_selectable(object_collection, entity);
+//   auto entity_change = EntityChange::None;
+//   auto child_changed = false;
+//   if (entity.children_size() > 0) {
+//     auto is_open = ImGui::TreeNode(&entity, "");
+//     ImGui::SameLine();
+//     entity_change = draw_entity_selectable(object_collection, entity);
 
-    if (entity_change == EntityChange::Removed) {
-      return true;
-    }
+//     if (entity_change == EntityChange::Removed) {
+//       return true;
+//     }
 
-    if (is_open) {
-      for (auto &&child_id : *entity.mutable_children()) {
-        child_changed |= draw_heirarchy_entity(object_collection, child_id);
-      }
-      ImGui::TreePop();
-    }
-  } else {
-    ImGui::Indent();
-    entity_change = draw_entity_selectable(object_collection, entity);
-    ImGui::Unindent();
+//     if (is_open) {
+//       for (auto &&child_id : *entity.mutable_children()) {
+//         child_changed |= draw_heirarchy_entity(object_collection, child_id);
+//       }
+//       ImGui::TreePop();
+//     }
+//   } else {
+//     ImGui::Indent();
+//     entity_change = draw_entity_selectable(object_collection, entity);
+//     ImGui::Unindent();
 
-    if (entity_change == EntityChange::Removed) {
-      return true;
-    }
-  }
+//     if (entity_change == EntityChange::Removed) {
+//       return true;
+//     }
+//   }
 
-  if (entity_change != EntityChange::None) {
-    objects[entity_id].PackFrom(entity);
-  }
+//   if (entity_change != EntityChange::None) {
+//     objects[entity_id].PackFrom(entity);
+//   }
 
-  return false;
-}
+//   return false;
+// }
 
 bool begin_window_context_item(gsl::czstring<> str_id, int mouse_button = 1) {
   if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(mouse_button)) {
@@ -370,27 +377,112 @@ bool begin_window_context_item(gsl::czstring<> str_id, int mouse_button = 1) {
   return ImGui::BeginPopup(str_id);
 }
 
-void draw_heirarchy(proto::ObjectCollection &object_collection) {
-  ImGui::Begin("Heirarchy");
-  if (begin_window_context_item("heirarchy context menu")) {
-      if (ImGui::Selectable("Create Empty")) {
-        create_empty(object_collection);
-      }
-      ImGui::EndPopup();
-  }
+// void draw_heirarchy(proto::ObjectCollection &object_collection) {
+//   ImGui::Begin("Heirarchy");
+//   if (begin_window_context_item("heirarchy context menu")) {
+//       if (ImGui::Selectable("Create Empty")) {
+//         create_empty(object_collection);
+//       }
+//       ImGui::EndPopup();
+//   }
 
-  auto &objects = *object_collection.mutable_objects();
-  for (auto &&item : objects) {
-    auto &object = item.second;
-    if (object.Is<proto::Entity>()) {
-      proto::Entity entity;
-      object.UnpackTo(&entity);
+//   auto &objects = *object_collection.mutable_objects();
+//   for (auto &&item : objects) {
+//     auto &object = item.second;
+    
+//     if (object.Is<proto::Entity>()) {
+//       proto::Entity entity;
+//       object.UnpackTo(&entity);
 
-      if (!entity.parent()) {
-        draw_heirarchy_entity(object_collection, item.first);
-      }
-    }
-  }
+//       if (!entity.parent()) {
+//         draw_heirarchy_entity(object_collection, item.first);
+//       }
+//     }
+//   }
+//   ImGui::End();
+// }
+
+// TODO: Find a way to work with proto::vec3 object instead of using reflection
+// bool draw_vec3(const FieldDescriptor &field_descriptor, Message &message) {
+//   auto &descriptor = *message.GetDescriptor();
+//   auto *x_desc = descriptor.FindFieldByName("x");
+//   auto *y_desc = descriptor.FindFieldByName("y");
+//   auto *z_desc = descriptor.FindFieldByName("z");
+
+//   auto &reflection = *message.GetReflection();
+
+//   float vec_array[] = {
+//     reflection.GetFloat(message, x_desc),
+//     reflection.GetFloat(message, y_desc),
+//     reflection.GetFloat(message, z_desc)
+//   };
+//   auto changed = ImGui::DragFloat3(field_descriptor.name().c_str(), vec_array, 0.03f);
+
+//   if (changed) {
+//     reflection.SetFloat(&message, x_desc, vec_array[0]);
+//     reflection.SetFloat(&message, y_desc, vec_array[1]);
+//     reflection.SetFloat(&message, z_desc, vec_array[2]);
+//   }
+
+//   return changed;
+// }
+
+// bool draw_message_field(const FieldDescriptor &field_descriptor, Message &message) {
+//   auto &descriptor = *message.GetDescriptor();
+
+//   if (descriptor.full_name() == "knight.proto.vec3") {
+//     return draw_vec3(field_descriptor, message);
+//   }
+
+//   return false;
+// }
+
+// bool draw_component(Message &component_messsage) {
+//   auto &descriptor = *component_messsage.GetDescriptor();
+//   auto &reflection = *component_messsage.GetReflection();
+//   ImGui::Text("%s", descriptor.name().c_str());
+
+//   auto changed = false;
+//   for (auto i = 0; i < descriptor.field_count(); ++i) {
+//     auto &field_descriptor = *descriptor.field(i);
+
+//     switch (field_descriptor.type()) {
+//       case FieldDescriptor::TYPE_MESSAGE:
+//         auto *field_message = reflection.MutableMessage(&component_messsage, &field_descriptor);
+//         changed |= draw_message_field(field_descriptor, *field_message);
+//     }
+//   }
+
+//   return changed;
+// }
+
+void draw_inspector(editor::ProjectEditor &project_editor) {
+  ImGui::Begin("Inspector");
+  // auto *selected_entry = project_editor.selected_entry();
+  // if (selected_entry != nullptr && selected_entry->type == editor::EntryType::ComponentSchema) {
+
+  //   auto &importer = project_editor.importer();
+  //   auto &pool = *importer.pool();
+  //   for (auto &&item : *selected_entry->resource_handle.mutable_defaults()) {
+  //     auto &type_name = item.first;
+      
+  //     // auto &default_any = item.second;
+
+  //     auto *descriptor = pool.FindMessageTypeByName(type_name);
+  //     if (descriptor == nullptr) continue;
+
+  //     // auto *factory_component = message_factory.GetPrototype(descriptor);
+      
+  //     // TODO: Cache these so I don't have to allocate every frame
+  //     // std::unique_ptr<Message> component_messsage{factory_component->New()};
+
+  //     // default_any.UnpackTo(component_messsage.get());
+  //     // if (draw_component(*component_messsage)) {
+  //       // default_any.PackFrom(*component_messsage);
+  //       // selected_entry->dirty = true;
+  //     // }
+  //   }
+  // }
   ImGui::End();
 }
 
@@ -410,29 +502,32 @@ extern "C" void UpdateAndRender() {
   }
 
   if (ImGui::Button("Print scene")) {
-    std::unique_ptr<util::TypeResolver> resolver{
-      util::NewTypeResolverForDescriptorPool(
-        kTypeUrlPrefix, DescriptorPool::generated_pool())};
+    // std::unique_ptr<util::TypeResolver> resolver{
+    //   util::NewTypeResolverForDescriptorPool(
+    //     kTypeUrlPrefix, DescriptorPool::generated_pool())};
 
-    util::JsonOptions options;
-    options.add_whitespace = true;
+    // util::JsonOptions options;
+    // options.add_whitespace = true;
 
-    std::string json;
-    util::BinaryToJsonString(resolver.get(),
-                             get_type_url(scene.GetDescriptor()),
-                             scene.SerializeAsString(), &json, options);
+    // std::string json;
+    // util::BinaryToJsonString(resolver.get(),
+    //                          get_type_url(scene.GetDescriptor()),
+    //                          scene.SerializeAsString(), &json, options);
 
-    DBUG("\n%s", json.c_str());
+    // DBUG("\n%s", json.c_str());
   }
 
   if (ImGui::Button("Save Scene")) {
-    project_editor->save();
+    // project_editor->save();
   }
 
-  project_editor->draw();
-  draw_heirarchy(scene);
+  // project_editor->draw();
+  // draw_heirarchy(scene);
+  // // draw_inspector(*project_editor.get());
+  // inspector->draw();
+  // project_editor->draw();
+  // draw_heirarchy(scene);
   // draw_inspector(*project_editor.get());
-  inspector->draw();
 
   static bool show_test_window = true;
   if (show_test_window) {

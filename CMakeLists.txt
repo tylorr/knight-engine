@@ -58,6 +58,7 @@ endmacro(pdb)
 set(FBSCHEMA_OUTPUT "${PROJECT_BINARY_DIR}/schema_headers/")
 
 find_package(GLEW REQUIRED)
+find_package(OpenGL REQUIRED)
 find_package(Boost 1.60 REQUIRED COMPONENTS filesystem system)
 
 set(KNIGHT_ENGINE_INCLUDES
@@ -66,6 +67,7 @@ set(KNIGHT_ENGINE_INCLUDES
   ${PROJECT_SOURCE_DIR}/type_erasure
   ${PROJECT_SOURCE_DIR}/third-party/glfw/include
   ${GLEW_INCLUDE_DIRS}
+  ${OPENGL_INCLUDE_DIR}
   ${PROJECT_SOURCE_DIR}/third-party/glm
   ${PROJECT_SOURCE_DIR}/third-party/logog/include
   ${PROJECT_SOURCE_DIR}/third-party/stb_image

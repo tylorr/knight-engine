@@ -74,6 +74,7 @@ register_event_fbs(knight-engine ../assets/schema/editor/meta.fbs)
 
 target_link_libraries(knight-engine glfw ${GLFW_LIBRARIES})
 target_link_libraries(knight-engine ${GLEW_LIBRARIES})
+target_link_libraries(knight-engine ${OPENGL_gl_LIBRARY})
 target_link_libraries(knight-engine logog)
 target_link_libraries(knight-engine foundation)
 target_link_libraries(knight-engine enet)

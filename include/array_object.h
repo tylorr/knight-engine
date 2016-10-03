@@ -2,8 +2,10 @@
 
 #pragma once
 
-#include "shader_types.h"
 #include "attribute.h"
+#include "shader_types.h"
+
+#include <type_traits>
 
 namespace knight {
 

@@ -1,5 +1,7 @@
 #include "buffer_object.h"
+
 #include "common.h"
+#include "gl_util.h"
 
 namespace knight {
 

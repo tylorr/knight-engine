@@ -13,7 +13,6 @@ set(SOURCES
     transform_component.cpp
     dependency_injection.cpp
     attribute.cpp
-    buddy_allocator.cpp
     win32/windows_util.cpp
     editor/project_editor.cpp
     editor/inspector.cpp
@@ -72,20 +71,19 @@ register_event_fbs(knight-engine ../assets/schema/entity_list.fbs)
 
 register_event_fbs(knight-engine ../assets/schema/editor/meta.fbs)
 
-target_link_libraries(knight-engine glfw ${GLFW_LIBRARIES})
-target_link_libraries(knight-engine ${GLEW_LIBRARIES})
-target_link_libraries(knight-engine ${OPENGL_gl_LIBRARY})
-target_link_libraries(knight-engine logog)
-target_link_libraries(knight-engine foundation)
-target_link_libraries(knight-engine enet)
-target_link_libraries(knight-engine imgui)
-target_link_libraries(knight-engine tinyobjloader)
-target_link_libraries(knight-engine dbghelp)
-target_link_libraries(knight-engine ${Boost_LIBRARIES})
-target_link_libraries(knight-engine crossguid)
-target_link_libraries(knight-engine libprotobuf)
+target_link_libraries(knight-engine PUBLIC glfw ${GLFW_LIBRARIES})
+target_link_libraries(knight-engine PRIVATE gl3w)
+target_link_libraries(knight-engine PUBLIC ${OPENGL_gl_LIBRARY})
+target_link_libraries(knight-engine PUBLIC logog)
+target_link_libraries(knight-engine PUBLIC foundation)
+target_link_libraries(knight-engine PUBLIC enet)
+target_link_libraries(knight-engine PUBLIC imgui)
+target_link_libraries(knight-engine PUBLIC tinyobjloader)
+target_link_libraries(knight-engine PUBLIC dbghelp)
+target_link_libraries(knight-engine PUBLIC ${Boost_LIBRARIES})
+target_link_libraries(knight-engine PUBLIC crossguid)
+target_link_libraries(knight-engine PUBLIC libprotobuf)
 # target_link_libraries(demo stb_image)
 # target_link_libraries(demo ${LUA_LIBRARIES})
 
 pdb(knight-engine)
-cotire(knight-engine)

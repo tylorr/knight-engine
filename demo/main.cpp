@@ -1,13 +1,13 @@
 #define LOGOG_LEVEL LOGOG_LEVEL_ALL
 
 #include "common.h"
+#include "gl_util.h"
 #include "logog_util.h"
 #include "imgui_manager.h"
 #include "udp_listener.h"
 #include "game_code.h"
 #include "game_platform.h"
 
-#include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <memory.h>
 #include <string_stream.h>
@@ -107,15 +107,13 @@ int main(int argc, char *argv[]) {
 void Initialize() {
   InitWindow();
 
-  glewExperimental = GL_TRUE;
-  auto glew_init_result = glewInit();
+  auto gl3w_error = gl3wInit();
 
-  XASSERT(glew_init_result == GLEW_OK, "Glew init error:\n%s", glewGetErrorString(glew_init_result));
+  XASSERT(!gl3w_error, "Failed to initialize openGL");
 
-  // Swallow GL_INVALID_ENUM from glewInit()
   auto error_value = glGetError();
-  if (error_value != GL_NO_ERROR && error_value != GL_INVALID_ENUM) {
-    XASSERT(error_value != GL_NO_ERROR, "glewInit error: %s", glErrorString(error_value));
+  if (error_value != GL_NO_ERROR) {
+    XASSERT(error_value != GL_NO_ERROR, "opengl init error: %s", glErrorString(error_value));
   }
 
   INFO("OpenGL %s", glGetString(GL_VERSION));

@@ -63,5 +63,3 @@ add_library(enet STATIC ${sources})
 if(WIN32)
   target_link_libraries(enet ws2_32 winmm)
 endif()
-
-cotire(enet)

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "shader_types.h"
+#include "gl_util.h"
 #include "iterators.h"
 #include "vector.h"
 

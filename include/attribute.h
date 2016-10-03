@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <GL/gl3w.h>
+
 namespace knight {
 
 namespace detail {

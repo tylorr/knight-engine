@@ -18,8 +18,6 @@ pdb(demo)
 #  emtypen("archetypes/any_bar.hpp" "any_bar.h")
 #end_emtypen()
 
-cotire(demo)
-
 add_library(game SHARED
     game.cpp
     ../assets/editor_component.cpp

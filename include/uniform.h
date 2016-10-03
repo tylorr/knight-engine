@@ -3,8 +3,10 @@
 #include "common.h"
 #include "shader_types.h"
 
+#include <GL/gl3w.h>
 #include <memory.h>
 #include <gsl.h>
+#include <hash.h>
 
 #include <string>
 

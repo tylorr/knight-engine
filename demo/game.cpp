@@ -1,3 +1,5 @@
+#include <GL/gl3w.h>
+
 #include "game.h"
 #include "game_platform.h"
 #include "common.h"
@@ -16,7 +18,6 @@
 #include "dependency_injection.h"
 #include "job_system.h"
 #include "file_util.h"
-#include "buddy_allocator.h"
 #include "vector.h"
 #include "editor/project_editor.h"
 #include "editor/inspector.h"
@@ -27,6 +28,7 @@
 
 #include <imgui.h>
 #include <imgui_internal.h>
+
 
 #include <GLFW/glfw3.h>
 

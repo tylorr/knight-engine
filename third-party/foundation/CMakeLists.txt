@@ -10,7 +10,6 @@ set(SOURCES
 )
 
 add_library(foundation ${SOURCES})
-cotire(foundation)
 
 enable_testing()
 add_executable(foundation_test unit_test.cpp ${SOURCES})

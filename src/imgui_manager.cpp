@@ -1,5 +1,8 @@
+#include <GL/gl3w.h>
+
 #include "imgui_manager.h"
 
+#include "gl_util.h"
 #include "uniform.h"
 #include "material.h"
 #include "buffer_object.h"
@@ -7,9 +10,8 @@
 #include "array_object.h"
 #include "attribute.h"
 
-#include <GL/glew.h>
-#include <imgui.h>
 #include <GLFW/glfw3.h>
+#include <imgui.h>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>

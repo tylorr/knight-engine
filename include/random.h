@@ -3,6 +3,7 @@
 #include <pcg_random.hpp>
 
 #include <random>
+#include <atomic>
 
 namespace knight {
 

@@ -1,7 +1,9 @@
 #include "material.h"
+
+#include "common.h"
+#include "gl_util.h"
 #include "uniform.h"
 #include "pointers.h"
-#include "common.h"
 #include "file_util.h"
 #include "string_stream.h"
 

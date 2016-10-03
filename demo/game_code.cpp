@@ -4,8 +4,6 @@
 #include <logog.hpp>
 #include <boost/filesystem/operations.hpp>
 
-#include <windows.h>
-
 namespace fs = boost::filesystem;
 
 namespace game_code {

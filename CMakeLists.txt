@@ -11,8 +11,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -pthread -Wall -Wno-comment -
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMakeModules)
 
-set (COTIRE_UNITY_OUTPUT_DIRECTORY "")
-include(cotire)
+# set (COTIRE_UNITY_OUTPUT_DIRECTORY "")
+# include(cotire)
 
 set(GLFW_BUILD_TESTS OFF CACHE INTERNAL "" FORCE)
 set(GLFW_BUILD_DOCS OFF CACHE INTERNAL "" FORCE)
@@ -57,7 +57,6 @@ endmacro(pdb)
 
 set(FBSCHEMA_OUTPUT "${PROJECT_BINARY_DIR}/schema_headers/")
 
-find_package(GLEW REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(Boost 1.60 REQUIRED COMPONENTS filesystem system)
 
@@ -66,7 +65,7 @@ set(KNIGHT_ENGINE_INCLUDES
   ${PROJECT_SOURCE_DIR}/include/win32 # TODO: TR Choose by platform
   ${PROJECT_SOURCE_DIR}/type_erasure
   ${PROJECT_SOURCE_DIR}/third-party/glfw/include
-  ${GLEW_INCLUDE_DIRS}
+  ${PROJECT_SOURCE_DIR}/third-party/gl3w/include
   ${OPENGL_INCLUDE_DIR}
   ${PROJECT_SOURCE_DIR}/third-party/glm
   ${PROJECT_SOURCE_DIR}/third-party/logog/include
@@ -87,6 +86,7 @@ set(KNIGHT_ENGINE_INCLUDES
 )
 
 add_subdirectory(third-party/glfw)
+add_subdirectory(third-party/gl3w)
 add_subdirectory(third-party/logog)
 add_subdirectory(third-party/imgui)
 
